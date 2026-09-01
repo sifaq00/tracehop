@@ -256,7 +256,7 @@ export function Engine() {
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 0.95 }}
                 transition={{ duration: 1.4, ease: 'easeOut' }}
-                d="M 12 110 C 10 70, 48 30, 85 42 C 120 54, 88 128, 48 118 C 24 112, 18 84, 52 70 C 95 52, 138 98, 160 148 C 172 174, 186 195, 204 202"
+                d="M 12 95 C 10 55, 42 22, 74 30 C 104 38, 82 104, 46 96 C 22 90, 18 66, 46 56 C 72 46, 60 125, 72 155"
                 stroke="#ff7a29"
                 strokeWidth="1.8"
                 strokeDasharray="4 4"
@@ -265,7 +265,7 @@ export function Engine() {
 
               {/* Connecting entry arrow pointing to card 01 */}
               <path
-                d="M 198 198 L 208 202 L 202 208"
+                d="M 67 150 L 74 156 L 68 161"
                 stroke="#ff7a29"
                 strokeWidth="1.8"
                 strokeLinecap="round"
@@ -274,11 +274,11 @@ export function Engine() {
             </svg>
 
             {/* Twinkling Sparkles along trail */}
-            <SparkleStar x={20} y={90} size={11} delay={0} />
-            <SparkleStar x={56} y={34} size={13} delay={0.4} />
-            <SparkleStar x={88} y={115} size={10} delay={0.8} />
-            <SparkleStar x={126} y={78} size={14} delay={0.2} />
-            <SparkleStar x={165} y={150} size={12} delay={0.6} />
+            <SparkleStar x={16} y={75} size={11} delay={0} />
+            <SparkleStar x={48} y={26} size={13} delay={0.4} />
+            <SparkleStar x={76} y={88} size={10} delay={0.8} />
+            <SparkleStar x={28} y={62} size={12} delay={0.2} />
+            <SparkleStar x={66} y={135} size={13} delay={0.6} />
 
             {/* The Floating Leaping Rabbit */}
             <motion.div
