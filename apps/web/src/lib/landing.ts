@@ -194,9 +194,9 @@ export const PRESET_TOKENS: PresetToken[] = [
 export const NAV_LINKS = [
   { id: 'demo', label: 'Live Demo', icon: Terminal },
   { id: 'engine', label: 'Features', icon: Network },
-  { id: 'api', label: 'API', icon: Code2 },
   { id: 'why', label: 'Why Tracehop', icon: Sparkles },
   { id: 'stats', label: 'Docs', icon: Flame },
+  { id: 'api', label: 'API', icon: Code2 },
 ];
 
 export function scrollToSection(id: string) {

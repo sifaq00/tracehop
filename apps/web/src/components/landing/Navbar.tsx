@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { FaTelegramPlane } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
@@ -11,6 +11,8 @@ import { NAV_LINKS, scrollToSection, triggerCelebration } from '@/lib/landing';
 export function Navbar() {
   const [activeNav, setActiveNav] = useState('demo');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isManualScrollingRef = useRef(false);
+  const manualScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Scroll-spy active section detection
   useEffect(() => {
@@ -20,8 +22,9 @@ export function Navbar() {
       }
     };
 
-    const sectionIds = ['demo', 'engine', 'api', 'why', 'stats'];
+    const sectionIds = ['demo', 'engine', 'why', 'stats', 'api'];
     const handleScroll = () => {
+      if (isManualScrollingRef.current) return;
       const scrollPosition = window.scrollY + 200;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -43,12 +46,18 @@ export function Navbar() {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
+      if (manualScrollTimeoutRef.current) clearTimeout(manualScrollTimeoutRef.current);
     };
   }, []);
 
   const navigate = (id: string) => {
     setActiveNav(id);
     setMobileMenuOpen(false);
+    isManualScrollingRef.current = true;
+    if (manualScrollTimeoutRef.current) clearTimeout(manualScrollTimeoutRef.current);
+    manualScrollTimeoutRef.current = setTimeout(() => {
+      isManualScrollingRef.current = false;
+    }, 850);
     scrollToSection(id);
   };
 
@@ -111,8 +120,9 @@ export function Navbar() {
                       className="absolute inset-0 rounded-full bg-gradient-to-r from-[#7c3aed]/45 to-[#ff7a29]/35 border border-[#ff7a29]/60 shadow-[0_0_6px_rgba(255,122,41,0.2)] -z-10"
                       transition={{
                         type: 'spring',
-                        stiffness: 350,
-                        damping: 30,
+                        stiffness: 380,
+                        damping: 32,
+                        mass: 0.7,
                       }}
                     />
                   )}
