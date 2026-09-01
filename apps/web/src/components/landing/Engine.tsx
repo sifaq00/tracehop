@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
   Crosshair, Users, Network, Layers, ShieldAlert, Lock,
@@ -206,44 +206,54 @@ function EngineStepUnit({
   );
 }
 
+const SCAN_STAGES = [
+  { text: 'Locating deployer & genesis funder...', min: 0, max: 28 },
+  { text: 'Mapping buyers & wallet clusters...', min: 29, max: 52 },
+  { text: 'Building multi-hop funding graph...', min: 53, max: 76 },
+  { text: 'Verifying LP lock & risk patterns...', min: 77, max: 92 },
+  { text: 'Generating final safety verdict...', min: 93, max: 100 },
+];
+
 export function Engine() {
   const sectionRef = useRef<HTMLElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
-  const barLabelRef = useRef<HTMLSpanElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(flowRef, { once: true, amount: 0.25 });
+  const [progress, setProgress] = useState(24);
+  const [currentText, setCurrentText] = useState(SCAN_STAGES[0]!.text);
 
-  // Progress bar GSAP scrub
+  // Real-time continuous live scanning loop
   useEffect(() => {
-    if (!isInView) return;
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      const ctx = gsap.context(() => {
-        gsap.fromTo(
-          barRef.current,
-          { width: '20%' },
-          {
-            width: '100%',
-            ease: 'none',
-            duration: 1,
-            scrollTrigger: {
-              trigger: sectionRef.current,
-              start: 'top 65%',
-              end: 'center 35%',
-              scrub: true,
-              onUpdate: (self) => {
-                if (barLabelRef.current) {
-                  barLabelRef.current.textContent = `${Math.round(20 + self.progress * 80)}%`;
-                }
-              },
-            },
-          }
-        );
-      }, sectionRef);
-      return () => ctx.revert();
-    });
-    return () => mm.revert();
-  }, [isInView]);
+    let current = 24;
+    let isHolding = false;
+
+    const interval = setInterval(() => {
+      if (isHolding) return;
+
+      current += Math.floor(Math.random() * 2) + 1; // Increment by 1-2%
+
+      if (current >= 100) {
+        current = 100;
+        setProgress(100);
+        setCurrentText('Verdict generated: Verified Safe (98/100)');
+        isHolding = true;
+
+        setTimeout(() => {
+          current = 14;
+          setProgress(14);
+          setCurrentText(SCAN_STAGES[0]!.text);
+          isHolding = false;
+        }, 1400);
+        return;
+      }
+
+      setProgress(current);
+      const matchedStage = SCAN_STAGES.find((s) => current >= s.min && current <= s.max);
+      if (matchedStage) {
+        setCurrentText(matchedStage.text);
+      }
+    }, 110);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section ref={sectionRef} id="engine" className="relative py-20 sm:py-28 overflow-hidden">
@@ -433,12 +443,12 @@ export function Engine() {
             </motion.div>
 
             {/* Status text with animated terminal pulse */}
-            <div className="flex items-center gap-1.5 text-[#cbd5e1] font-medium">
-              <span>Building funding graph...</span>
+            <div className="flex items-center gap-1.5 text-[#cbd5e1] font-medium min-w-[280px]">
+              <span className="transition-all duration-200">{currentText}</span>
               <motion.span
                 animate={{ opacity: [0, 1, 0] }}
                 transition={{ duration: 0.9, repeat: Infinity }}
-                className="w-1.5 h-3 bg-[#ff7a29] inline-block"
+                className="w-1.5 h-3 bg-[#ff7a29] inline-block shrink-0"
               />
             </div>
           </div>
@@ -446,30 +456,29 @@ export function Engine() {
           {/* Right Progress Bar Area */}
           <div className="w-full sm:w-1/2 flex items-center gap-3.5">
             <div className="relative w-full h-2 bg-[#1b143f] rounded-full overflow-hidden">
-              {/* Main Progress Fill */}
+              {/* Main Dynamic Progress Fill */}
               <div
-                ref={barRef}
-                style={{ width: '62%' }}
-                className="relative h-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ff7a29] rounded-full shadow-[0_0_10px_rgba(255,122,41,0.5)] overflow-hidden"
+                style={{
+                  width: `${progress}%`,
+                  transition: 'width 0.12s linear',
+                }}
+                className="relative h-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ff7a29] rounded-full shadow-[0_0_10px_rgba(255,122,41,0.6)] overflow-hidden"
               >
                 {/* Continuous Looping Laser Shimmer */}
                 <motion.div
                   animate={{ x: ['-100%', '200%'] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg]"
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/60 to-transparent skew-x-[-20deg]"
                 />
               </div>
             </div>
 
-            {/* Percentage Label with glowing aura */}
-            <motion.span
-              ref={barLabelRef}
-              animate={{ opacity: [0.85, 1, 0.85] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-white font-bold text-xs shrink-0 font-mono tracking-tight"
+            {/* Percentage Label with real-time numeric counter */}
+            <span
+              className="text-white font-bold text-xs shrink-0 font-mono tracking-tight w-9 text-right"
             >
-              62%
-            </motion.span>
+              {progress}%
+            </span>
           </div>
         </div>
 
