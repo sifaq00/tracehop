@@ -290,10 +290,10 @@ export function Why() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, amount: 0.25 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="lg:col-span-6 p-6 sm:p-8 rounded-3xl bg-[#0c0822]/90 border border-[#261c4a] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 hover:border-[#7c3aed]/40 transition-colors"
+            className="lg:col-span-6 p-6 sm:p-8 pb-0 sm:pb-0 rounded-3xl bg-[#0c0822]/90 border border-[#261c4a] shadow-2xl flex flex-col md:flex-row items-end justify-between gap-6 hover:border-[#7c3aed]/40 transition-colors overflow-hidden"
           >
             {/* Left Copy & CTA (Clean & Minimal matching screenshot) */}
-            <div className="flex-1 flex flex-col justify-between self-stretch py-3">
+            <div className="flex-1 flex flex-col justify-between self-stretch py-2 pb-6 sm:pb-8">
               <div>
                 <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-3">
                   TELEGRAM INTEGRATION
@@ -319,8 +319,8 @@ export function Why() {
               </div>
             </div>
 
-            {/* Right: Phone Mockup (Subtly anchored to bottom, full chat clearly visible) */}
-            <div className="w-[260px] sm:w-[290px] h-[460px] sm:h-[490px] overflow-hidden relative shrink-0 select-none flex justify-center items-start pt-1">
+            {/* Right: Phone Mockup (Flush & Anchored to the exact bottom border) */}
+            <div className="w-[260px] sm:w-[290px] h-[400px] sm:h-[420px] overflow-hidden relative shrink-0 select-none flex justify-center items-start self-end pt-1 -mb-[1px]">
               <div className="relative aspect-[433/882] w-full shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)]">
                 
                 {/* Official Apple iPhone 15 Pro Vector Bezel Frame (Transparent Screen Area) */}
