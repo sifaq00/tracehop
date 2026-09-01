@@ -95,7 +95,7 @@ export function Stats() {
         </div>
 
         {/* ================= 4 STAT CARDS (Positioned to the left of the right mascot) ================= */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4 lg:mr-48 xl:mr-56 relative z-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4 lg:mr-40 xl:mr-48 relative z-10">
           {STATS.map((stat, idx) => (
             <motion.div
               key={stat.label}

@@ -41,7 +41,7 @@ export function Cta() {
         <div className="relative">
 
           {/* ================= COOL SUNGLASSES RABBIT FLUSH TO FAR RIGHT OF TOP BORDER ================= */}
-          <div className="hidden lg:flex absolute bottom-full right-2 xl:right-4 items-end z-20 select-none pointer-events-none mb-0">
+          <div className="hidden lg:flex absolute bottom-full -right-2 lg:-right-4 xl:-right-6 items-end z-20 select-none pointer-events-none mb-0">
             <div className="relative flex items-end">
               {/* Curved Dotted Trail behind Cool Rabbit */}
               <svg
