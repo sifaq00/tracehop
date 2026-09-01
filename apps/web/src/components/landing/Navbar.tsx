@@ -9,7 +9,7 @@ import { WalletButton } from '@/components/WalletButton';
 import { NAV_LINKS, scrollToSection, triggerCelebration } from '@/lib/landing';
 
 export function Navbar() {
-  const [activeNav, setActiveNav] = useState('top');
+  const [activeNav, setActiveNav] = useState('demo');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Scroll-spy active section detection
@@ -20,14 +20,9 @@ export function Navbar() {
       }
     };
 
-    const sectionIds = ['demo', 'engine', 'why', 'features', 'stats', 'api'];
+    const sectionIds = ['demo', 'engine', 'api', 'why', 'stats'];
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + 180;
-
-      if (window.scrollY < 280) {
-        setActiveNav('top');
-        return;
-      }
+      const scrollPosition = window.scrollY + 200;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
         const section = document.getElementById(sectionIds[i]);
@@ -58,7 +53,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#06040d]/85 border-b border-[#7c3aed]/15 shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#06040d]/90 border-b border-[#7c3aed]/15 shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 h-[72px] flex items-center justify-between gap-3">
         {/* Brand Logo & Live Network Status */}
         <div className="flex items-center gap-3 shrink-0">
@@ -72,8 +67,8 @@ export function Navbar() {
             className="group flex items-center gap-3 select-none shrink-0 transition-transform duration-200 hover:scale-105"
           >
             <motion.img
-              whileHover={{ rotate: [-6, 6, -3, 0], scale: 1.15 }}
-              transition={{ duration: 0.4 }}
+              whileHover={{ scale: 1.1 }}
+              transition={{ duration: 0.2 }}
               src="/assets/rabbit-minimal.webp"
               alt="Tracehop Logo Mascot"
               width={34}
@@ -116,9 +111,8 @@ export function Navbar() {
                       className="absolute inset-0 rounded-full bg-gradient-to-r from-[#7c3aed]/45 to-[#ff7a29]/35 border border-[#ff7a29]/60 shadow-[0_0_6px_rgba(255,122,41,0.2)] -z-10"
                       transition={{
                         type: 'spring',
-                        stiffness: 320,
-                        damping: 28,
-                        mass: 0.5,
+                        stiffness: 350,
+                        damping: 30,
                       }}
                     />
                   )}
