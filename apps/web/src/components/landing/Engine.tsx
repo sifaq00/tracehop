@@ -221,100 +221,86 @@ export function Engine() {
           </p>
         </div>
 
-        {/* ================= CARDS FLOW WRAPPER WITH FLOATING RABBIT & TRAIL ================= */}
+        {/* ================= CARDS FLOW WRAPPER WITH ATTACHED RABBIT & TRAIL ================= */}
         <div className="relative mb-14">
+          <div ref={flowRef} className="w-full overflow-x-auto pb-6 pt-16 px-2 scrollbar-none">
+            <div className="flex items-center justify-start xl:justify-center min-w-max mx-auto gap-0 relative">
 
-          {/* Independent Floating Leaping Rabbit & Sparkle Trail */}
-          <div className="hidden lg:block absolute -top-28 left-0 pointer-events-none z-30 w-72 h-44">
-            {/* Curved Dotted Trail SVG */}
-            <svg
-              className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
-              viewBox="0 0 280 180"
-              fill="none"
-            >
-              <defs>
-                <filter id="engineStarGlow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="2.5" result="blur" />
-                  <feMerge>
-                    <feMergeNode in="blur" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
-
-              {/* Looping trajectory behind the rabbit connecting to Card 01 */}
-              <motion.path
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 0.95 }}
-                transition={{ duration: 1.4, ease: 'easeOut' }}
-                d="M 12 110 C 10 70, 48 30, 85 42 C 120 54, 88 128, 48 118 C 24 112, 18 84, 52 70 C 95 52, 138 98, 160 148 C 172 174, 186 195, 204 202"
-                stroke="#ff7a29"
-                strokeWidth="1.8"
-                strokeDasharray="4 4"
-                strokeLinecap="round"
-              />
-
-              {/* Connecting entry arrow pointing to card 01 */}
-              <path
-                d="M 198 198 L 208 202 L 202 208"
-                stroke="#ff7a29"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-
-            {/* Twinkling Sparkles along trail */}
-            <SparkleStar x={20} y={90} size={11} delay={0} />
-            <SparkleStar x={56} y={34} size={13} delay={0.4} />
-            <SparkleStar x={88} y={115} size={10} delay={0.8} />
-            <SparkleStar x={126} y={78} size={14} delay={0.2} />
-            <SparkleStar x={165} y={150} size={12} delay={0.6} />
-
-            {/* The Floating Leaping Rabbit */}
-            <motion.div
-              className="absolute left-10 top-0 select-none cursor-pointer pointer-events-auto"
-              animate={{
-                y: [-5, 5, -5],
-                rotate: [-1, 2, -1],
-              }}
-              transition={{
-                duration: 3.6,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              whileHover={{
-                scale: 1.1,
-                rotate: 5,
-                transition: { duration: 0.25 },
-              }}
-            >
-              <img
-                src="/assets/rabbit-leaping.webp"
-                alt="Tracehop Leaping Rabbit Mascot"
-                className="w-24 h-auto object-contain drop-shadow-[0_0_16px_rgba(255,122,41,0.4)] drop-shadow-[0_0_30px_rgba(124,58,237,0.3)] select-none"
-              />
-            </motion.div>
-          </div>
-
-          {/* Cards Pipeline: 10 connected steps */}
-          <div ref={flowRef} className="w-full overflow-x-auto pb-4 pt-6 px-2 scrollbar-none">
-            <div className="flex items-center justify-start lg:justify-center min-w-max mx-auto gap-0">
-              {/* Entry arrow from rabbit trail on larger screens */}
-              <div className="hidden lg:flex items-center -mt-14 mr-1.5 opacity-80">
-                <motion.svg
-                  initial={{ opacity: 0, x: -6 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  className="w-5 h-4 overflow-visible"
-                  viewBox="0 0 20 12"
+              {/* ================= LEAPING RABBIT & LOOPING TRAIL (ATTACHED TO CARD 01) ================= */}
+              <div className="relative w-[130px] sm:w-[155px] lg:w-[170px] h-[190px] shrink-0 -mt-14 mr-1 pointer-events-none select-none">
+                {/* SVG Looping Trail */}
+                <svg
+                  className="absolute inset-0 w-full h-full overflow-visible"
+                  viewBox="0 0 170 190"
                   fill="none"
                 >
-                  <line x1="0" y1="6" x2="16" y2="6" stroke="#ff7a29" strokeWidth="1.5" strokeDasharray="2.5 2.5" strokeLinecap="round" />
-                  <path d="M14 3L18 6L14 9" stroke="#ff7a29" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </motion.svg>
+                  <defs>
+                    <filter id="trailStarGlow" x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                      </feMerge>
+                    </filter>
+                  </defs>
+
+                  {/* Looping dashed trajectory starting behind rabbit, curling into card 01 */}
+                  <motion.path
+                    initial={{ pathLength: 0, opacity: 0 }}
+                    animate={{ pathLength: 1, opacity: 0.95 }}
+                    transition={{ duration: 1.5, ease: 'easeOut' }}
+                    d="M 28 35 C 68 45, 96 70, 82 112 C 68 145, 22 140, 18 112 C 14 78, 52 145, 92 145 L 160 145"
+                    stroke="#ff7a29"
+                    strokeWidth="1.8"
+                    strokeDasharray="3.5 3.5"
+                    strokeLinecap="round"
+                  />
+
+                  {/* Entry arrow pointing into Card 01 */}
+                  <path
+                    d="M 152 140 L 162 145 L 152 150"
+                    stroke="#ff7a29"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                {/* Sparkling Stars along the trajectory */}
+                <SparkleStar x={24} y={30} size={11} delay={0} />
+                <SparkleStar x={85} y={65} size={13} delay={0.3} />
+                <SparkleStar x={78} y={115} size={10} delay={0.6} />
+                <SparkleStar x={16} y={115} size={12} delay={0.9} />
+                <SparkleStar x={52} y={142} size={14} delay={0.4} />
+                <SparkleStar x={120} y={142} size={10} delay={0.7} />
+
+                {/* Floating Leaping Rabbit positioned at the crest of the loop */}
+                <motion.div
+                  className="absolute -top-12 left-1 sm:left-4 z-30 pointer-events-auto cursor-pointer"
+                  animate={{
+                    y: [-4, 4, -4],
+                    rotate: [-1, 1.5, -1],
+                  }}
+                  transition={{
+                    duration: 3.2,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                  whileHover={{
+                    scale: 1.12,
+                    rotate: 4,
+                    transition: { duration: 0.2 },
+                  }}
+                >
+                  <img
+                    src="/assets/rabbit-leaping.webp"
+                    alt="Tracehop Leaping Rabbit Mascot"
+                    className="w-20 sm:w-24 lg:w-28 h-auto object-contain drop-shadow-[0_0_16px_rgba(255,122,41,0.45)] drop-shadow-[0_0_28px_rgba(124,58,237,0.35)] select-none"
+                  />
+                </motion.div>
               </div>
 
+              {/* 10 Step Cards */}
               {STEPS.map((step, idx) => (
                 <div key={step.num} className="flex items-center shrink-0">
                   <EngineStepUnit step={step} index={idx} />
