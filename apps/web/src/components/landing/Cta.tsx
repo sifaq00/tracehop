@@ -34,9 +34,53 @@ function SparkleStar({ x, y, size = 11, delay = 0 }: { x: number; y: number; siz
 
 export function Cta() {
   return (
-    <section id="api" className="relative pt-6 pb-20 sm:pt-8 sm:pb-28 overflow-hidden">
-      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12">
-        <div className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors">
+    <section id="api" className="relative pt-20 pb-20 sm:pt-24 sm:pb-28 overflow-visible">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
+        
+        {/* ================= COOL SUNGLASSES RABBIT SITTING ON TOP BORDER OF CARD ================= */}
+        <div className="hidden lg:flex absolute -top-[128px] right-12 xl:right-16 items-end z-30 select-none pointer-events-none">
+          <div className="relative">
+            {/* Curved Dotted Trail behind Cool Rabbit */}
+            <svg
+              className="absolute inset-0 w-48 h-48 overflow-visible pointer-events-none -left-10 -top-6"
+              viewBox="0 0 160 160"
+              fill="none"
+            >
+              <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                whileInView={{ pathLength: 1, opacity: 0.95 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.6, ease: 'easeOut' }}
+                d="M -20 120 C 20 150, 70 140, 110 100 C 145 70, 155 20, 120 10 C 85 0, 45 35, 75 80 C 105 125, 140 140, 160 190"
+                stroke="#ff7a29"
+                strokeWidth="1.8"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <SparkleStar x={-10} y={110} size={11} delay={0} />
+            <SparkleStar x={115} y={15} size={13} delay={0.4} />
+            <SparkleStar x={50} y={75} size={10} delay={0.8} />
+
+            {/* Cool Sunglasses Mascot */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10"
+            >
+              <img
+                src="/assets/rabbit-cool.webp"
+                alt="Cool Detective Rabbit Mascot"
+                className="w-32 xl:w-36 h-auto object-contain drop-shadow-[0_10px_30px_rgba(124,58,237,0.4)] drop-shadow-[0_0_20px_rgba(255,122,41,0.3)] block translate-y-[2px]"
+              />
+            </motion.div>
+          </div>
+        </div>
+
+        <div className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors z-10">
           
           {/* ================= LEFT: LEAPING RABBIT WITH SPIRAL DOTTED TRAIL & STARS ================= */}
           <div className="relative w-48 sm:w-56 h-36 sm:h-40 shrink-0 flex items-center justify-center select-none">

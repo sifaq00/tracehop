@@ -94,77 +94,29 @@ export function Stats() {
           </h2>
         </div>
 
-        {/* ================= 4 STAT CARDS + COOL RABBIT ROW ================= */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-6 relative">
-          
-          {/* 4 Stat Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4 flex-1 w-full relative z-10">
-            {STATS.map((stat, idx) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 24 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.45, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                whileHover={{ scale: 1.04, y: -3 }}
-                className="p-5 sm:p-7 rounded-2xl bg-[#0c0822]/90 border border-[#261c4a] hover:border-[#7c3aed]/50 shadow-xl text-center flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] transition-all"
-              >
-                <span
-                  data-stat-value
-                  className="font-display font-extrabold text-2xl sm:text-3xl lg:text-4xl text-[#c084fc] tracking-tight mb-2 font-mono"
-                >
-                  {stat.value}{stat.suffix}
-                </span>
-                <span className="text-xs sm:text-sm font-medium text-[#94a3b8]">
-                  {stat.label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Cool Sunglasses Hoodie Rabbit Mascot on Right with Looping Sparkle Trail */}
-          <div className="shrink-0 relative w-36 sm:w-44 h-40 sm:h-44 flex items-center justify-center">
-            {/* Curved Dotted Trail behind Cool Rabbit */}
-            <svg
-              className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
-              viewBox="0 0 160 160"
-              fill="none"
-            >
-              <motion.path
-                initial={{ pathLength: 0, opacity: 0 }}
-                whileInView={{ pathLength: 1, opacity: 0.9 }}
-                viewport={{ once: true }}
-                transition={{ duration: 1.6, ease: 'easeOut' }}
-                d="M -20 130 C 20 150, 70 140, 110 110 C 145 80, 155 30, 120 15 C 85 0, 45 40, 75 85 C 105 130, 160 120, 190 140"
-                stroke="#ff7a29"
-                strokeWidth="1.6"
-                strokeDasharray="4 4"
-                strokeLinecap="round"
-              />
-            </svg>
-
-            {/* Twinkling Sparkles */}
-            <SparkleStar x={10} y={120} size={11} delay={0} />
-            <SparkleStar x={125} y={20} size={13} delay={0.4} />
-            <SparkleStar x={55} y={80} size={10} delay={0.8} />
-
-            {/* Cool Sunglasses Mascot */}
+        {/* ================= 4 STAT CARDS ================= */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-5 relative z-10">
+          {STATS.map((stat, idx) => (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-              whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ scale: 1.08, rotate: 2 }}
-              className="relative z-10 select-none cursor-pointer"
+              key={stat.label}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ duration: 0.45, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ scale: 1.04, y: -3 }}
+              className="p-5 sm:p-7 rounded-2xl bg-[#0c0822]/90 border border-[#261c4a] hover:border-[#7c3aed]/50 shadow-xl text-center flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] transition-all"
             >
-              <img
-                src="/assets/rabbit-cool.webp"
-                alt="Cool Detective Rabbit Mascot"
-                className="w-28 sm:w-36 h-auto object-contain drop-shadow-[0_10px_30px_rgba(124,58,237,0.4)] drop-shadow-[0_0_20px_rgba(255,122,41,0.25)] select-none"
-              />
+              <span
+                data-stat-value
+                className="font-display font-extrabold text-2xl sm:text-3xl lg:text-4xl text-[#c084fc] tracking-tight mb-2 font-mono"
+              >
+                {stat.value}{stat.suffix}
+              </span>
+              <span className="text-xs sm:text-sm font-medium text-[#94a3b8]">
+                {stat.label}
+              </span>
             </motion.div>
-          </div>
-
+          ))}
         </div>
 
       </div>
