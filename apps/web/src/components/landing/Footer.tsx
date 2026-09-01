@@ -67,50 +67,51 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Product Links */}
+          {/* Product Links (Matches Real Landing Sections & Features) */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
             <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">PRODUCT</h5>
-            <a href="#demo" onClick={(e) => { e.preventDefault(); scrollToSection('demo'); }} className="hover:text-white transition-colors">Live Scanner</a>
-            <a href="#engine" onClick={(e) => { e.preventDefault(); scrollToSection('engine'); }} className="hover:text-white transition-colors">Detection Engine</a>
-            <a href="#why" onClick={(e) => { e.preventDefault(); scrollToSection('why'); }} className="hover:text-white transition-colors">Why Tracehop</a>
-            <a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="hover:text-white transition-colors">Accuracy Stats</a>
+            <a href="#demo" onClick={(e) => { e.preventDefault(); scrollToSection('demo'); }} className="hover:text-white transition-colors">Live Token Scanner</a>
+            <a href="#engine" onClick={(e) => { e.preventDefault(); scrollToSection('engine'); }} className="hover:text-white transition-colors">10-Step Engine</a>
+            <a href="#why" onClick={(e) => { e.preventDefault(); scrollToSection('why'); }} className="hover:text-white transition-colors">Funding Graph</a>
+            <a href="/portfolio" className="hover:text-white transition-colors">Portfolio Scanner</a>
+            <a href="/embed" className="hover:text-white transition-colors">Embeddable Widget</a>
           </div>
 
-          {/* Developers */}
+          {/* Developers / APIs (Matches Actual App API Routes) */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
             <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">DEVELOPERS</h5>
-            <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">API Reference</a>
-            <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">MCP Server Docs</a>
-            <a href="https://github.com/sifaq00/tracehop" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Open Source Repo</a>
+            <a href="/api/v1/metrics/public" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-mono text-[11px]">/api/v1/metrics</a>
+            <a href="/api/v1/scan" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-mono text-[11px]">/api/v1/scan</a>
+            <a href="https://github.com/sifaq00/tracehop" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub Monorepo</a>
             <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[10px] w-fit mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>RPC Layer 99.9%</span>
+              <span>Engine Online</span>
             </div>
           </div>
 
-          {/* Resources */}
+          {/* Ecosystem / Chains (Real Tech Stack Integrations) */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
             <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">ECOSYSTEM</h5>
-            <a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Pump.fun Stream</a>
-            <a href="https://solana.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Solana Network</a>
-            <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Helius RPC Nodes</a>
-            <a href="https://birdeye.so" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Birdeye Terminal</a>
+            <a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Pump.fun Protocol</a>
+            <a href="https://solana.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Solana Mainnet</a>
+            <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Helius RPC Geyser</a>
+            <a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="hover:text-white transition-colors">Accuracy Metrics</a>
           </div>
 
           {/* Telegram Bot Action */}
           <div className="md:col-span-2 flex flex-col gap-3">
             <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">TELEGRAM BOT</h5>
-            <p className="text-[11px] text-[#94a3b8] leading-tight">
-              Instant scan bot for DMs and Telegram alpha caller groups.
+            <p className="text-[11px] text-[#94a3b8] leading-relaxed">
+              Scan token CA directly in DMs or add to your Telegram group chats.
             </p>
             <a
               href="https://t.me/TraceHopAgentBot"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#2AABEE]/20 to-[#7c3aed]/20 hover:from-[#2AABEE]/30 hover:to-[#7c3aed]/30 border border-[#2AABEE]/40 text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(42,171,238,0.2)]"
+              className="inline-flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl bg-gradient-to-r from-[#2AABEE]/20 to-[#7c3aed]/20 hover:from-[#2AABEE]/30 hover:to-[#7c3aed]/30 border border-[#2AABEE]/40 text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(42,171,238,0.2)] w-fit"
             >
               <FaTelegramPlane className="w-3.5 h-3.5 text-[#2AABEE]" />
-              <span>Launch Bot</span>
+              <span>@TraceHopAgentBot</span>
             </a>
           </div>
 
