@@ -40,12 +40,12 @@ export function Cta() {
         {/* Card Wrapper with exact bottom-full positioning for the mascot */}
         <div className="relative">
 
-          {/* ================= COOL SUNGLASSES RABBIT FLUSH ON TOP BORDER (0px overlap) ================= */}
-          <div className="hidden lg:flex absolute bottom-full right-10 xl:right-16 items-end z-20 select-none pointer-events-none mb-0">
+          {/* ================= COOL SUNGLASSES RABBIT FLUSH TO FAR RIGHT OF TOP BORDER ================= */}
+          <div className="hidden lg:flex absolute bottom-full right-2 xl:right-4 items-end z-20 select-none pointer-events-none mb-0">
             <div className="relative flex items-end">
               {/* Curved Dotted Trail behind Cool Rabbit */}
               <svg
-                className="absolute inset-0 w-48 h-48 overflow-visible pointer-events-none -left-10 -top-6"
+                className="absolute inset-0 w-56 h-56 overflow-visible pointer-events-none -left-12 -top-8"
                 viewBox="0 0 160 160"
                 fill="none"
               >
@@ -62,11 +62,11 @@ export function Cta() {
                 />
               </svg>
 
-              <SparkleStar x={-10} y={110} size={11} delay={0} />
-              <SparkleStar x={115} y={15} size={13} delay={0.4} />
-              <SparkleStar x={50} y={75} size={10} delay={0.8} />
+              <SparkleStar x={-12} y={120} size={12} delay={0} />
+              <SparkleStar x={125} y={15} size={14} delay={0.4} />
+              <SparkleStar x={55} y={80} size={11} delay={0.8} />
 
-              {/* Cool Sunglasses Mascot */}
+              {/* Cool Sunglasses Mascot (Enlarged) */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -77,7 +77,7 @@ export function Cta() {
                 <img
                   src="/assets/rabbit-cool.webp"
                   alt="Cool Detective Rabbit Mascot"
-                  className="w-32 xl:w-36 h-auto object-contain drop-shadow-[0_10px_30px_rgba(124,58,237,0.4)] drop-shadow-[0_0_20px_rgba(255,122,41,0.3)] block align-bottom mb-0 pb-0"
+                  className="w-40 sm:w-48 lg:w-52 xl:w-56 h-auto object-contain drop-shadow-[0_12px_36px_rgba(124,58,237,0.45)] drop-shadow-[0_0_25px_rgba(255,122,41,0.35)] block align-bottom mb-0 pb-0"
                 />
               </motion.div>
             </div>

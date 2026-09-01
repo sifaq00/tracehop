@@ -94,8 +94,8 @@ export function Stats() {
           </h2>
         </div>
 
-        {/* ================= 4 STAT CARDS ================= */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-5 relative z-10">
+        {/* ================= 4 STAT CARDS (Positioned to the left of the right mascot) ================= */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4 lg:mr-48 xl:mr-56 relative z-10">
           {STATS.map((stat, idx) => (
             <motion.div
               key={stat.label}
@@ -104,7 +104,7 @@ export function Stats() {
               viewport={{ once: true, amount: 0.25 }}
               transition={{ duration: 0.45, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ scale: 1.04, y: -3 }}
-              className="p-5 sm:p-7 rounded-2xl bg-[#0c0822]/90 border border-[#261c4a] hover:border-[#7c3aed]/50 shadow-xl text-center flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] transition-all"
+              className="p-4 sm:p-6 rounded-2xl bg-[#0c0822]/90 border border-[#261c4a] hover:border-[#7c3aed]/50 shadow-xl text-center flex flex-col items-center justify-center min-h-[135px] sm:min-h-[155px] transition-all"
             >
               <span
                 data-stat-value
