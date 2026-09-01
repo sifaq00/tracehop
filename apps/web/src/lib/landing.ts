@@ -200,17 +200,34 @@ export const NAV_LINKS = [
   { id: 'api', label: 'API', icon: Code2 },
 ];
 
+import { animate } from 'framer-motion';
+
+let activeScrollAnimation: { stop: () => void } | null = null;
+
 export function scrollToSection(id: string) {
-  if (id === 'top') {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    return;
+  if (typeof window === 'undefined') return;
+
+  if (activeScrollAnimation) {
+    activeScrollAnimation.stop();
   }
-  const elem = document.getElementById(id);
-  if (elem) {
-    const yOffset = -76;
-    const y = elem.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    window.scrollTo({ top: y, behavior: 'smooth' });
+
+  let targetY = 0;
+  if (id !== 'top') {
+    const elem = document.getElementById(id);
+    if (elem) {
+      const yOffset = -76;
+      targetY = elem.getBoundingClientRect().top + window.scrollY + yOffset;
+    }
   }
+
+  activeScrollAnimation = animate(window.scrollY, targetY, {
+    duration: 0.85,
+    ease: [0.22, 1, 0.36, 1], // Framer Motion smooth cubic-bezier easing
+    onUpdate: (latest) => window.scrollTo(0, latest),
+    onComplete: () => {
+      activeScrollAnimation = null;
+    },
+  });
 }
 
 export function triggerCelebration() {
