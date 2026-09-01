@@ -317,8 +317,8 @@ export function Why() {
               </a>
             </div>
 
-            {/* Right: Half Phone Mockup (Anchored to bottom, matching screenshot) */}
-            <div className="w-[280px] sm:w-[310px] h-[340px] sm:h-[370px] overflow-hidden relative shrink-0 select-none flex justify-center items-start">
+            {/* Right: Phone Mockup (Subtly anchored to bottom, full chat clearly visible) */}
+            <div className="w-[260px] sm:w-[290px] h-[460px] sm:h-[490px] overflow-hidden relative shrink-0 select-none flex justify-center items-start pt-1">
               <div className="relative aspect-[433/882] w-full shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)]">
                 
                 {/* Official Apple iPhone 15 Pro Vector Bezel Frame (Transparent Screen Area) */}
