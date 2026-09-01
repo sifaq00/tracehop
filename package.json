@@ -4,7 +4,7 @@
   "description": "TraceHop - Real-time Multi-chain Wallet Intelligence Layer",
   "private": true,
   "scripts": {
-    "build": "pnpm --filter @tracehop/models --filter @tracehop/db --filter @tracehop/core --filter @tracehop/engine --filter @tracehop/robinhood --filter @tracehop/solana build && pnpm --filter @tracehop/web build",
+    "build": "pnpm --filter @tracehop/web build",
     "dev": "pnpm --filter @tracehop/web dev",
     "db:migrate": "pnpm --filter @tracehop/db db:migrate",
     "db:seed": "pnpm --filter @tracehop/db db:seed",

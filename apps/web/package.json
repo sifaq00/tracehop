@@ -5,7 +5,7 @@
   "scripts": {
     "prebuild": "pnpm --filter @tracehop/models --filter @tracehop/db --filter @tracehop/core --filter @tracehop/engine --filter @tracehop/robinhood --filter @tracehop/solana build",
     "dev": "next dev",
-    "build": "pnpm --filter @tracehop/models --filter @tracehop/db --filter @tracehop/core --filter @tracehop/engine --filter @tracehop/robinhood --filter @tracehop/solana build && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
