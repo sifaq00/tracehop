@@ -292,98 +292,30 @@ export function Why() {
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-6 p-6 sm:p-8 rounded-3xl bg-[#0c0822]/90 border border-[#261c4a] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 hover:border-[#7c3aed]/40 transition-colors"
           >
-            {/* Left Copy & Interactive Highlights */}
-            <div className="flex-1 flex flex-col justify-between self-stretch py-2">
+            {/* Left Copy & CTA (Clean & Minimal matching screenshot) */}
+            <div className="flex-1 flex flex-col justify-between self-stretch py-3">
               <div>
-                <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#7c3aed]/15 border border-[#7c3aed]/30 text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-3">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>TELEGRAM INTEGRATION</span>
+                <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-3">
+                  TELEGRAM INTEGRATION
                 </div>
-                <h3 className="font-display font-extrabold text-2xl sm:text-3xl text-white tracking-tight mb-2.5">
-                  Scan <span className="italic text-[#38bdf8]">anywhere</span>, anytime.
+                <h3 className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight leading-tight mb-3">
+                  Scan anywhere,<br />anytime.
                 </h3>
-                <p className="text-xs sm:text-sm text-[#94a3b8] leading-relaxed mb-6">
-                  Paste any Solana token address in DMs or add the bot to your Alpha caller groups. Full multi-hop risk verdict delivered in seconds.
+                <p className="text-sm text-[#94a3b8] leading-relaxed mb-8 max-w-sm">
+                  Drop a token in Telegram.<br />Tracehop does the rest.
                 </p>
-
-                {/* Key Bot Capabilities Matrix */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
-                  <div className="p-2.5 rounded-xl bg-[#140e33]/80 border border-[#2c2054] flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#38bdf8]/15 text-[#38bdf8] flex items-center justify-center font-bold text-xs shrink-0">
-                      ⚡
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white leading-none">Sub-2s Verdict</div>
-                      <div className="text-[10px] text-[#94a3b8] mt-0.5">Real-time RPC tracing</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-[#140e33]/80 border border-[#2c2054] flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#ff7a29]/15 text-[#ff7a29] flex items-center justify-center font-bold text-xs shrink-0">
-                      🛡️
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white leading-none">Sybil Detection</div>
-                      <div className="text-[10px] text-[#94a3b8] mt-0.5">Wallet cluster mapping</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-[#140e33]/80 border border-[#2c2054] flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-[#a855f7]/15 text-[#a855f7] flex items-center justify-center font-bold text-xs shrink-0">
-                      👥
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white leading-none">Group Chat Mode</div>
-                      <div className="text-[10px] text-[#94a3b8] mt-0.5">Works in channels &amp; DMs</div>
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-[#140e33]/80 border border-[#2c2054] flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-400/15 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
-                      🔔
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-white leading-none">LP &amp; Rug Alert</div>
-                      <div className="text-[10px] text-[#94a3b8] mt-0.5">Dev unlock warnings</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Command Shortcuts Cheatsheet */}
-                <div className="p-3 rounded-2xl bg-[#090618] border border-[#261c4a] mb-6 font-mono text-[11px]">
-                  <div className="text-[10px] uppercase text-[#64748b] tracking-wider mb-2 font-bold flex items-center justify-between">
-                    <span>Quick Commands</span>
-                    <span className="text-[#a855f7]">@TraceHopAgentBot</span>
-                  </div>
-                  <div className="space-y-1.5 text-[#cbd5e1]">
-                    <div className="flex items-center justify-between">
-                      <code className="text-[#38bdf8] bg-[#38bdf8]/10 px-1.5 py-0.5 rounded text-[10px]">/scan [ca]</code>
-                      <span className="text-[10px] text-[#94a3b8]">Instant safety score</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <code className="text-[#a855f7] bg-[#a855f7]/10 px-1.5 py-0.5 rounded text-[10px]">/graph [ca]</code>
-                      <span className="text-[10px] text-[#94a3b8]">Visual funding links</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* Action Button & Live Status */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 pt-2">
+              <div>
                 <a
                   href="https://t.me/TraceHopAgentBot"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 h-11 px-6 rounded-xl bg-gradient-to-r from-[#2AABEE] to-[#229ED9] hover:from-[#38bdf8] hover:to-[#2AABEE] text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(42,171,238,0.35)] hover:shadow-[0_0_24px_rgba(42,171,238,0.5)] transition-all"
+                  className="inline-flex items-center gap-2.5 h-11 px-5 rounded-xl bg-[#140e30] hover:bg-[#7c3aed] text-white font-bold text-xs uppercase tracking-wider border border-[#7c3aed]/50 shadow-[0_0_14px_rgba(124,58,237,0.3)] transition-all w-fit"
                 >
                   <FaTelegramPlane className="w-4 h-4 text-white" />
                   <span>OPEN TELEGRAM BOT</span>
                 </a>
-
-                <span className="text-[11px] font-mono text-[#94a3b8] flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span>18,400+ scans completed today</span>
-                </span>
               </div>
             </div>
 
