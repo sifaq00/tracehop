@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { FaTelegramPlane, FaGithub, FaDiscord } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { scrollToSection } from '@/lib/landing';
@@ -7,7 +8,13 @@ import { scrollToSection } from '@/lib/landing';
 export function Footer() {
   return (
     <footer className="relative pt-16 pb-12 text-xs font-sans text-[#94a3b8] bg-[#050212] border-t border-[#1a1236]">
-      <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: false, amount: 0.15 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12"
+      >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 sm:gap-12 pb-12 border-b border-[#1f1642]/80">
           
           {/* Brand Column */}
@@ -146,7 +153,7 @@ export function Footer() {
             <a href="#" className="hover:text-white transition-colors">Disclaimer</a>
           </div>
         </div>
-      </div>
+      </motion.div>
     </footer>
   );
 }

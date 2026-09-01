@@ -89,9 +89,9 @@ export function Demo({ registerScanner }: DemoProps) {
           {/* Left Column: Detective Rabbit */}
           <motion.div
             data-demo-left
-            initial={{ opacity: 0, x: -40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
+            initial={{ opacity: 0, x: -50, scale: 0.95 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5 flex items-center justify-center relative select-none"
           >
@@ -108,9 +108,9 @@ export function Demo({ registerScanner }: DemoProps) {
           {/* Right Column: Demo UI */}
           <motion.div
             data-demo-right
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            whileInView={{ opacity: 1, x: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.2 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-7 flex flex-col items-start text-left"
           >

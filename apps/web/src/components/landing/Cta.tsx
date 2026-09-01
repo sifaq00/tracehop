@@ -53,7 +53,7 @@ export function Cta() {
                 <motion.path
                   initial={{ pathLength: 0, opacity: 0 }}
                   whileInView={{ pathLength: 1, opacity: 0.95 }}
-                  viewport={{ once: true }}
+                  viewport={{ once: false }}
                   transition={{ duration: 1.8, ease: 'easeOut' }}
                   d="M 10,130 C 40,155 90,140 130,90 C 160,50 175,10 135,15 C 95,20 60,70 100,120 C 140,170 190,140 225,120 C 245,110 260,135 280,180"
                   stroke="#ff7a29"
@@ -71,9 +71,9 @@ export function Cta() {
 
               {/* Cool Sunglasses Mascot (Enlarged) */}
               <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                initial={{ opacity: 0, y: 25, scale: 0.92 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: false }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10 flex items-end"
               >
@@ -86,7 +86,13 @@ export function Cta() {
             </div>
           </div>
 
-          <div className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 35, scale: 0.96 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.15 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors z-10"
+          >
           
           {/* ================= LEFT: LEAPING RABBIT WITH EXACT LOOP-DE-LOOP & STARS ================= */}
           <div className="relative w-56 sm:w-64 h-36 sm:h-40 shrink-0 flex items-center justify-center select-none">
@@ -100,7 +106,7 @@ export function Cta() {
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 whileInView={{ pathLength: 1, opacity: 0.95 }}
-                viewport={{ once: true }}
+                viewport={{ once: false }}
                 transition={{ duration: 1.8, ease: 'easeOut' }}
                 d="M 15,125 C 20,70 45,25 75,35 C 100,45 95,105 65,115 C 40,120 30,85 55,65 C 80,45 110,80 145,105 C 165,118 185,122 205,120"
                 stroke="#ff7a29"
@@ -179,7 +185,7 @@ export function Cta() {
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 whileInView={{ pathLength: 1, opacity: 0.95 }}
-                viewport={{ once: true }}
+                viewport={{ once: false }}
                 transition={{ duration: 1.8, ease: 'easeOut' }}
                 d="M -10,80 C 15,110 40,115 65,80 C 95,35 125,20 150,55 C 170,85 190,95 215,60"
                 stroke="#ff7a29"
@@ -193,7 +199,7 @@ export function Cta() {
             <SparkleStar x={195} y={55} size={11} delay={0.9} />
           </div>
 
-        </div>
+        </motion.div>
         </div>
       </div>
     </section>

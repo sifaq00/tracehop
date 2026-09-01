@@ -260,7 +260,13 @@ export function Engine() {
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
 
         {/* ================= HEADER ================= */}
-        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 relative z-10"
+        >
           <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-2.5">
             TRACEHOP ENGINE
           </div>
@@ -270,10 +276,16 @@ export function Engine() {
           <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed">
             Our engine analyzes 12+ dimensions to deliver one clear verdict.
           </p>
-        </div>
+        </motion.div>
 
         {/* ================= CARDS FLOW WRAPPER WITH FLOATING RABBIT & TRAIL ================= */}
-        <div className="relative mb-14">
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.15 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mb-14"
+        >
 
           {/* Independent Floating Leaping Rabbit & Sparkle Trail */}
           <div className="hidden lg:block absolute -top-20 left-0 pointer-events-none z-30 w-72 h-44">
@@ -420,10 +432,16 @@ export function Engine() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* ================= LIVE SCAN PROGRESS BAR (MATCHING PIPELINE WIDTH) ================= */}
-        <div className="w-full max-w-[1140px] mx-auto p-4 sm:p-4.5 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs relative z-10 hover:border-[#7c3aed]/40 transition-colors">
+        <motion.div
+          initial={{ opacity: 0, y: 25 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[1140px] mx-auto p-4 sm:p-4.5 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs relative z-10 hover:border-[#7c3aed]/40 transition-colors"
+        >
           {/* Left Status Area */}
           <div className="flex items-center gap-3 shrink-0">
             {/* Pulsing LIVE SCAN badge */}
@@ -480,7 +498,7 @@ export function Engine() {
               {progress}%
             </span>
           </div>
-        </div>
+        </motion.div>
 
       </div>
     </section>

@@ -13,7 +13,7 @@ const STATS = [
 function StatCounter({ value, decimals, suffix }: { value: number; decimals: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionVal = useMotionValue(0);
-  const isInView = useInView(ref, { once: true, amount: 0.3 });
+  const isInView = useInView(ref, { once: false, amount: 0.2 });
 
   useEffect(() => {
     if (isInView) {
@@ -31,6 +31,11 @@ function StatCounter({ value, decimals, suffix }: { value: number; decimals: num
         },
       });
       return () => controls.stop();
+    } else {
+      motionVal.set(0);
+      if (ref.current) {
+        ref.current.textContent = '0' + suffix;
+      }
     }
   }, [isInView, value, decimals, suffix, motionVal]);
 
@@ -51,9 +56,9 @@ export function Stats() {
 
         {/* ================= HEADER ================= */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 25 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
+          viewport={{ once: false, amount: 0.2 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 relative z-10"
         >
@@ -70,9 +75,9 @@ export function Stats() {
           {STATS.map((stat, idx) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.25 }}
+              initial={{ opacity: 0, y: 28, scale: 0.95 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: false, amount: 0.2 }}
               transition={{ duration: 0.5, delay: idx * 0.08, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ scale: 1.04, y: -3 }}
               className="p-4 sm:p-6 rounded-2xl bg-[#0c0822]/90 border border-[#261c4a] hover:border-[#7c3aed]/50 shadow-xl text-center flex flex-col items-center justify-center min-h-[135px] sm:min-h-[155px] transition-all"
