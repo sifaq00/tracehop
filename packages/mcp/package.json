@@ -9,7 +9,7 @@
     "start": "node ./dist/packages/mcp/src/server.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@modelcontextprotocol/sdk": "^0.6.1",
     "@tracehop/core": "workspace:*",
     "@tracehop/engine": "workspace:*",
     "@tracehop/robinhood": "workspace:*",
