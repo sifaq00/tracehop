@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "pnpm --filter @tracehop/models --filter @tracehop/db --filter @tracehop/core --filter @tracehop/engine --filter @tracehop/robinhood --filter @tracehop/solana build",
     "dev": "next dev",
-    "build": "next build",
+    "build": "pnpm --filter @tracehop/models --filter @tracehop/db --filter @tracehop/core --filter @tracehop/engine --filter @tracehop/robinhood --filter @tracehop/solana build && next build",
     "start": "next start",
     "lint": "eslint"
   },
