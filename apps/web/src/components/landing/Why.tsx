@@ -317,108 +317,152 @@ export function Why() {
               </a>
             </div>
 
-            {/* Right: Realistic iPhone 15 Pro Device Frame Mockup */}
-            <div className="w-[250px] sm:w-[275px] shrink-0 relative select-none">
-              {/* Outer Shadow & Titanium Shell */}
-              <div className="relative mx-auto rounded-[44px] p-[3px] bg-gradient-to-b from-[#4a3b75] via-[#231b47] to-[#120d2b] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_20px_rgba(124,58,237,0.25)] ring-1 ring-white/15">
-                
-                {/* Hardware Volume & Action Buttons on Left */}
-                <div className="absolute -left-[5px] top-[70px] w-[3px] h-[22px] bg-[#4a3b75] rounded-l-md" />
-                <div className="absolute -left-[5px] top-[102px] w-[3px] h-[34px] bg-[#4a3b75] rounded-l-md" />
-                <div className="absolute -left-[5px] top-[144px] w-[3px] h-[34px] bg-[#4a3b75] rounded-l-md" />
-                
-                {/* Hardware Power Button on Right */}
-                <div className="absolute -right-[5px] top-[95px] w-[3px] h-[48px] bg-[#4a3b75] rounded-r-md" />
+            {/* Right: Magic UI Official iPhone 15 Pro Device Mockup */}
+            <div className="w-[260px] sm:w-[280px] shrink-0 relative select-none">
+              <div className="relative aspect-[433/882] w-full drop-shadow-[0_25px_50px_rgba(0,0,0,0.9)]">
+                {/* Official Apple iPhone 15 Pro Vector Bezel Frame */}
+                <svg
+                  viewBox="0 0 433 882"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="pointer-events-none absolute inset-0 size-full z-30"
+                >
+                  <defs>
+                    <linearGradient id="iphoneChassis" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4c3d70" />
+                      <stop offset="50%" stopColor="#251c44" />
+                      <stop offset="100%" stopColor="#120c24" />
+                    </linearGradient>
+                    <linearGradient id="chassisBorder" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.8" />
+                      <stop offset="50%" stopColor="#3b2d66" stopOpacity="0.4" />
+                      <stop offset="100%" stopColor="#a855f7" stopOpacity="0.6" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Inner Bezel Border */}
-                <div className="rounded-[41px] p-[6px] bg-[#070514] border border-[#1b143a]">
-                  
-                  {/* Screen Container */}
-                  <div className="relative rounded-[35px] bg-[#090618] border border-white/5 p-3.5 font-sans overflow-hidden text-white shadow-inner">
-                    
-                    {/* Glass Specular Glare Reflection Overlay */}
-                    <div className="absolute top-0 right-0 w-3/4 h-full bg-gradient-to-bl from-white/[0.06] via-transparent to-transparent pointer-events-none rounded-tr-[35px]" />
+                  {/* Outer Titanium Rim */}
+                  <rect
+                    x="1.5"
+                    y="1.5"
+                    width="430"
+                    height="879"
+                    rx="66.5"
+                    stroke="url(#chassisBorder)"
+                    strokeWidth="3"
+                  />
+                  {/* Outer Chassis Body */}
+                  <rect
+                    x="6"
+                    y="6"
+                    width="421"
+                    height="870"
+                    rx="62"
+                    fill="url(#iphoneChassis)"
+                    stroke="#1c1633"
+                    strokeWidth="2"
+                  />
+                  {/* Black Screen Inner Bezel */}
+                  <rect
+                    x="16"
+                    y="16"
+                    width="401"
+                    height="850"
+                    rx="52"
+                    fill="#000000"
+                  />
+                  {/* Dynamic Island Housing */}
+                  <path
+                    d="M172 38C172 30.268 178.268 24 186 24H247C254.732 24 261 30.268 261 38C261 45.732 254.732 52 247 52H186C178.268 52 172 45.732 172 38Z"
+                    fill="#000000"
+                  />
+                  {/* Front Camera Lens */}
+                  <circle cx="242" cy="38" r="5" fill="#090d16" />
+                  <circle cx="242" cy="38" r="2" fill="#1e293b" />
+                  {/* Speaker Ear Slit */}
+                  <line x1="198" y1="20" x2="235" y2="20" stroke="#332a52" strokeWidth="1.5" strokeLinecap="round" />
 
-                    {/* Top Status Bar with Dynamic Island */}
-                    <div className="relative z-10 flex items-center justify-between text-[9px] text-[#94a3b8] px-1 mb-2">
-                      <span className="font-bold text-white tracking-tight">9:41</span>
-                      
-                      {/* Dynamic Island with Camera Lens */}
-                      <div className="w-[72px] h-[14px] bg-black rounded-full mx-auto flex items-center justify-end px-1.5 border border-white/10 shadow-sm">
-                        <div className="w-2 h-2 rounded-full bg-[#0a0a20] border border-blue-950/80 flex items-center justify-center">
-                          <div className="w-1 h-1 rounded-full bg-[#1e293b]" />
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-1 text-[8px]">
-                        <span>5G</span>
-                        <div className="w-3 h-1.5 border border-white/70 rounded-xs p-[1px] flex items-center">
-                          <div className="w-1.5 h-full bg-white rounded-2xs" />
-                        </div>
+                  {/* Hardware Buttons */}
+                  <path d="M0 160V135C0 133.895 0.89543 133 2 133H3V162H2C0.89543 162 0 161.105 0 160Z" fill="#584880" />
+                  <path d="M0 230V185C0 183.895 0.89543 183 2 183H3V232H2C0.89543 232 0 231.105 0 230Z" fill="#584880" />
+                  <path d="M0 295V250C0 248.895 0.89543 248 2 248H3V297H2C0.89543 297 0 296.105 0 295Z" fill="#584880" />
+                  <path d="M433 205V150C433 148.895 432.105 148 431 148H430V207H431C432.105 207 433 206.105 433 205Z" fill="#584880" />
+                </svg>
+
+                {/* Screen Content Container (Inside exact Apple Bezel coordinates) */}
+                <div className="absolute inset-[4.2%] z-20 overflow-hidden rounded-[46px] bg-[#0c0822] p-3 sm:p-3.5 flex flex-col justify-between">
+                  {/* Specular glass reflection */}
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.04] via-transparent to-transparent pointer-events-none" />
+
+                  {/* Top Status Bar */}
+                  <div className="relative z-10 flex items-center justify-between text-[10px] text-[#94a3b8] px-2 pt-1 mb-2">
+                    <span className="font-bold text-white">9:41</span>
+                    <div className="flex items-center gap-1 text-[9px]">
+                      <span>5G</span>
+                      <div className="w-3.5 h-2 border border-white/70 rounded-xs p-[1px] flex items-center">
+                        <div className="w-2 h-full bg-white rounded-2xs" />
                       </div>
                     </div>
-
-                    {/* Telegram Bot Header */}
-                    <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-[#a855f7] font-bold">&lt;</span>
-                        <div>
-                          <div className="text-[11px] font-bold leading-none">Tracehop Bot</div>
-                          <div className="text-[8px] text-emerald-400 font-mono">bot (online)</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* User Command Bubble */}
-                    <div className="relative z-10 flex justify-end mb-2">
-                      <div className="px-2.5 py-1 rounded-xl rounded-br-xs bg-[#2563eb] text-white text-[10px] font-mono shadow-sm">
-                        /scan So111...1112
-                      </div>
-                    </div>
-
-                    {/* Bot Response Bubble Card */}
-                    <div className="relative z-10 p-2.5 rounded-2xl rounded-tl-xs bg-[#130e2e]/95 border border-[#2e215c] text-[10px] font-mono shadow-md">
-                      <div className="text-[#a855f7] font-bold text-[10px] mb-1.5 flex items-center justify-between">
-                        <span>Analyzing token:</span>
-                        <span className="text-white">So111...1112</span>
-                      </div>
-
-                      {/* Step Checklist */}
-                      <div className="space-y-1 my-1.5 text-[9px] text-[#cbd5e1]">
-                        {[
-                          'Deployer Located',
-                          'Funding Graph',
-                          'Risk Patterns',
-                          'LP Lock Check',
-                          'Honeypot Check',
-                          'Known Entity Match',
-                          'Verdict',
-                        ].map((item) => (
-                          <div key={item} className="flex items-center justify-between">
-                            <span>{item}</span>
-                            <span className="text-emerald-400 font-bold text-[10px]">✓</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Caution Badge */}
-                      <div className="mt-2 p-1.5 rounded-xl bg-[#2a1708] border border-[#ff7a29]/40 text-[#ffb347]">
-                        <div className="flex items-center gap-1 font-bold text-[9px] text-[#ff7a29] uppercase">
-                          <AlertTriangle className="w-3 h-3 shrink-0" />
-                          <span>CAUTION</span>
-                        </div>
-                        <p className="text-[8px] text-[#fde047]/90 leading-tight mt-0.5">
-                          High cluster concentration &amp; dev wallet activity.
-                        </p>
-                      </div>
-
-                      <span className="text-[8px] text-[#64748b] block text-right mt-1">12:30</span>
-                    </div>
-
-                    {/* Bottom iOS Home Indicator Bar */}
-                    <div className="w-20 h-1 bg-white/30 rounded-full mx-auto mt-2 relative z-10" />
-
                   </div>
+
+                  {/* Telegram Header */}
+                  <div className="relative z-10 flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-[#a855f7] font-bold">&lt;</span>
+                      <div>
+                        <div className="text-xs font-bold text-white leading-none">Tracehop Bot</div>
+                        <div className="text-[9px] text-emerald-400 font-mono mt-0.5">bot (online)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Command Bubble */}
+                  <div className="relative z-10 flex justify-end mb-2">
+                    <div className="px-3 py-1 rounded-2xl rounded-br-xs bg-[#2563eb] text-white text-[11px] font-mono shadow-sm">
+                      /scan So111...1112
+                    </div>
+                  </div>
+
+                  {/* Bot Response Bubble Card */}
+                  <div className="relative z-10 p-3 rounded-2xl rounded-tl-xs bg-[#140e33] border border-[#2e215c] text-[10px] font-mono shadow-lg">
+                    <div className="text-[#a855f7] font-bold text-[11px] mb-2 flex items-center justify-between">
+                      <span>Analyzing token:</span>
+                      <span className="text-white">So111...1112</span>
+                    </div>
+
+                    {/* Step Checklist */}
+                    <div className="space-y-1.5 my-2 text-[10px] text-[#cbd5e1]">
+                      {[
+                        'Deployer Located',
+                        'Funding Graph',
+                        'Risk Patterns',
+                        'LP Lock Check',
+                        'Honeypot Check',
+                        'Known Entity Match',
+                        'Verdict',
+                      ].map((item) => (
+                        <div key={item} className="flex items-center justify-between">
+                          <span>{item}</span>
+                          <span className="text-emerald-400 font-bold">✓</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Caution Badge */}
+                    <div className="mt-2.5 p-2 rounded-xl bg-[#2a1708] border border-[#ff7a29]/40 text-[#ffb347]">
+                      <div className="flex items-center gap-1 font-bold text-[10px] text-[#ff7a29] uppercase">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                        <span>CAUTION</span>
+                      </div>
+                      <p className="text-[9px] text-[#fde047]/90 leading-tight mt-0.5">
+                        High cluster concentration &amp; dev wallet activity.
+                      </p>
+                    </div>
+
+                    <span className="text-[9px] text-[#64748b] block text-right mt-1.5">12:30</span>
+                  </div>
+
+                  {/* iOS Home Bar */}
+                  <div className="w-24 h-1 bg-white/40 rounded-full mx-auto mt-2 relative z-10" />
                 </div>
               </div>
             </div>
