@@ -51,7 +51,15 @@ function SparkleStar({ x, y, size = 10, delay = 0 }: { x: number; y: number; siz
   );
 }
 
-function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: number }) {
+function EngineStepUnit({
+  step,
+  index,
+  isLast,
+}: {
+  step: typeof STEPS[number];
+  index: number;
+  isLast: boolean;
+}) {
   const IconComp = step.icon;
   return (
     <motion.div
@@ -59,111 +67,110 @@ function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: nu
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.45, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
-      className="w-[84px] sm:w-[92px] lg:w-[96px] flex flex-col items-center group shrink-0"
+      className="flex items-start shrink-0"
     >
-      {/* Top Card Box - Strictly Uniform Dimensions */}
-      <motion.div
-        whileHover={{ scale: 1.08, y: -4 }}
-        transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-        className={`relative w-[78px] sm:w-[86px] lg:w-[90px] h-[78px] sm:h-[86px] lg:h-[90px] shrink-0 aspect-square rounded-2xl flex items-center justify-center border transition-all duration-300 ${
-          step.isHighlight
-            ? 'bg-gradient-to-b from-[#25150a] via-[#1a0f07] to-[#120a05] border-[#ff7a29] shadow-[0_0_18px_rgba(255,122,41,0.35)]'
-            : 'bg-[#0d0926]/90 border-[#261c4a] hover:border-[#9333ea]/70 hover:shadow-[0_0_14px_rgba(147,51,234,0.25)]'
-        }`}
-      >
-        {/* Glow overlay */}
-        <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300 ${
-          step.isHighlight
-            ? 'bg-[radial-gradient(ellipse_at_center,rgba(255,122,41,0.2)_0%,transparent_70%)]'
-            : 'group-hover:bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.18)_0%,transparent_70%)]'
-        }`} />
-
-        {/* Animated Icon */}
+      {/* Step Column: Card Box + Badge + Title */}
+      <div className="w-[78px] sm:w-[86px] lg:w-[90px] flex flex-col items-center group shrink-0">
+        {/* Top Card Box */}
         <motion.div
-          animate={step.isHighlight ? { scale: [1, 1.06, 1] } : undefined}
-          transition={step.isHighlight ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
-          className="relative z-10 flex items-center justify-center"
-        >
-          {step.isHighlight ? (
-            <div className="relative">
-              <Shield className="w-8 sm:w-9 h-8 sm:h-9 text-[#ff7a29] stroke-[1.75] drop-shadow-[0_0_8px_rgba(255,122,41,0.6)]" />
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-[#ff7a29]">
-                ★
-              </span>
-            </div>
-          ) : (
-            <IconComp
-              className="w-7 sm:w-8 h-7 sm:h-8 text-[#d8b4fe] group-hover:text-white stroke-[1.65] drop-shadow-[0_0_6px_rgba(192,132,252,0.4)] transition-colors duration-200"
-            />
-          )}
-        </motion.div>
-      </motion.div>
-
-      {/* Number Badge */}
-      <div className="my-2.5 shrink-0">
-        <div
-          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold tracking-tight shadow-md border ${
+          whileHover={{ scale: 1.08, y: -4 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+          className={`relative w-[78px] sm:w-[86px] lg:w-[90px] h-[78px] sm:h-[86px] lg:h-[90px] shrink-0 aspect-square rounded-2xl flex items-center justify-center border transition-all duration-300 ${
             step.isHighlight
-              ? 'bg-[#ff7a29] text-white border-[#ff9e58] shadow-[0_0_8px_rgba(255,122,41,0.5)]'
-              : 'bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-[#f8fafc] border-[#a855f7]/50 shadow-[0_0_6px_rgba(124,58,237,0.3)]'
+              ? 'bg-gradient-to-b from-[#25150a] via-[#1a0f07] to-[#120a05] border-[#ff7a29] shadow-[0_0_18px_rgba(255,122,41,0.35)]'
+              : 'bg-[#0d0926]/90 border-[#261c4a] hover:border-[#9333ea]/70 hover:shadow-[0_0_14px_rgba(147,51,234,0.25)]'
           }`}
         >
-          {step.num}
+          {/* Glow overlay */}
+          <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300 ${
+            step.isHighlight
+              ? 'bg-[radial-gradient(ellipse_at_center,rgba(255,122,41,0.2)_0%,transparent_70%)]'
+              : 'group-hover:bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.18)_0%,transparent_70%)]'
+          }`} />
+
+          {/* Animated Icon */}
+          <motion.div
+            animate={step.isHighlight ? { scale: [1, 1.06, 1] } : undefined}
+            transition={step.isHighlight ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
+            className="relative z-10 flex items-center justify-center"
+          >
+            {step.isHighlight ? (
+              <div className="relative">
+                <Shield className="w-8 sm:w-9 h-8 sm:h-9 text-[#ff7a29] stroke-[1.75] drop-shadow-[0_0_8px_rgba(255,122,41,0.6)]" />
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-[#ff7a29]">
+                  ★
+                </span>
+              </div>
+            ) : (
+              <IconComp
+                className="w-7 sm:w-8 h-7 sm:h-8 text-[#d8b4fe] group-hover:text-white stroke-[1.65] drop-shadow-[0_0_6px_rgba(192,132,252,0.4)] transition-colors duration-200"
+              />
+            )}
+          </motion.div>
+        </motion.div>
+
+        {/* Number Badge */}
+        <div className="my-2.5 shrink-0">
+          <div
+            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold tracking-tight shadow-md border ${
+              step.isHighlight
+                ? 'bg-[#ff7a29] text-white border-[#ff9e58] shadow-[0_0_8px_rgba(255,122,41,0.5)]'
+                : 'bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-[#f8fafc] border-[#a855f7]/50 shadow-[0_0_6px_rgba(124,58,237,0.3)]'
+            }`}
+          >
+            {step.num}
+          </div>
+        </div>
+
+        {/* Step Title */}
+        <div className="h-9 sm:h-10 flex items-start justify-center text-center w-full">
+          <span
+            className={`text-[11px] sm:text-xs text-center leading-tight line-clamp-2 select-none ${
+              step.isHighlight
+                ? 'font-bold text-white'
+                : 'font-medium text-[#cbd5e1] group-hover:text-white transition-colors duration-200'
+            }`}
+          >
+            {step.title}
+          </span>
         </div>
       </div>
 
-      {/* Step Title - Fixed Height Area for Perfect Alignment */}
-      <div className="h-9 sm:h-10 flex items-start justify-center text-center w-full px-0.5">
-        <span
-          className={`text-[11px] sm:text-xs text-center leading-tight line-clamp-2 select-none ${
-            step.isHighlight
-              ? 'font-bold text-white'
-              : 'font-medium text-[#cbd5e1] group-hover:text-white transition-colors duration-200'
-          }`}
-        >
-          {step.title}
-        </span>
-      </div>
+      {/* Dotted Arrow Connector - Centered strictly to the Card Box height */}
+      {!isLast && (
+        <div className="h-[78px] sm:h-[86px] lg:h-[90px] w-4 sm:w-5 lg:w-6 flex items-center justify-center shrink-0 select-none pointer-events-none">
+          <motion.svg
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.35, delay: index * 0.05 + 0.03 }}
+            className="w-full h-4 overflow-visible"
+            viewBox="0 0 24 12"
+            fill="none"
+          >
+            <line
+              x1="0"
+              y1="6"
+              x2="18"
+              y2="6"
+              stroke="#ff7a29"
+              strokeWidth="1.5"
+              strokeDasharray="2.5 2.5"
+              strokeLinecap="round"
+              className="opacity-80"
+            />
+            <path
+              d="M16 3L21 6L16 9"
+              stroke="#ff7a29"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="opacity-90"
+            />
+          </motion.svg>
+        </div>
+      )}
     </motion.div>
-  );
-}
-
-// Dotted Arrow between Cards - Aligned to exact vertical center of Card Box
-function DottedConnector({ index }: { index: number }) {
-  return (
-    <div className="flex items-center justify-center w-4 sm:w-5 lg:w-6 shrink-0 self-start mt-[31px] sm:[mt-35px] lg:mt-[37px] select-none pointer-events-none">
-      <motion.svg
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.35, delay: index * 0.05 + 0.03 }}
-        className="w-full h-4 overflow-visible"
-        viewBox="0 0 24 12"
-        fill="none"
-      >
-        {/* Dotted line */}
-        <line
-          x1="0"
-          y1="6"
-          x2="18"
-          y2="6"
-          stroke="#ff7a29"
-          strokeWidth="1.5"
-          strokeDasharray="2.5 2.5"
-          strokeLinecap="round"
-          className="opacity-80"
-        />
-        {/* Arrow head */}
-        <path
-          d="M16 3L21 6L16 9"
-          stroke="#ff7a29"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="opacity-90"
-        />
-      </motion.svg>
-    </div>
   );
 }
 
@@ -301,9 +308,9 @@ export function Engine() {
 
           {/* Cards Pipeline: 10 connected steps */}
           <div ref={flowRef} className="w-full overflow-x-auto pb-4 pt-6 px-2 scrollbar-none">
-            <div className="flex items-center justify-start lg:justify-center min-w-max mx-auto gap-0">
+            <div className="flex items-start justify-start lg:justify-center min-w-max mx-auto gap-0">
               {/* Entry arrow from rabbit trail on larger screens */}
-              <div className="hidden lg:flex items-center -mt-14 mr-1.5 opacity-80">
+              <div className="hidden lg:flex items-center h-[78px] sm:h-[86px] lg:h-[90px] mr-1.5 opacity-80 shrink-0 select-none pointer-events-none">
                 <motion.svg
                   initial={{ opacity: 0, x: -6 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -318,10 +325,12 @@ export function Engine() {
               </div>
 
               {STEPS.map((step, idx) => (
-                <div key={step.num} className="flex items-center shrink-0">
-                  <EngineStepUnit step={step} index={idx} />
-                  {idx < STEPS.length - 1 && <DottedConnector index={idx} />}
-                </div>
+                <EngineStepUnit
+                  key={step.num}
+                  step={step}
+                  index={idx}
+                  isLast={idx === STEPS.length - 1}
+                />
               ))}
             </div>
           </div>
