@@ -189,6 +189,7 @@ export function Cta() {
           </div>
 
         </div>
+        </div>
       </div>
     </section>
   );
