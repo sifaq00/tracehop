@@ -1,0 +1,17 @@
+{
+  "name": "@tracehop/robinhood",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/chains/robinhood/index.js",
+  "types": "./dist/chains/robinhood/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@tracehop/core": "workspace:*",
+    "@tracehop/models": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

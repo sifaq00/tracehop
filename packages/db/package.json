@@ -1,0 +1,23 @@
+{
+  "name": "@tracehop/db",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/client.js",
+  "types": "./dist/client.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "db:generate": "drizzle-kit generate:pg",
+    "db:migrate": "tsc && node dist/migrate.js",
+    "db:seed": "tsc && node dist/seed.js",
+    "check-db": "tsc && node dist/check-db.js"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.29.3",
+    "pg": "^8.11.3",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.20.14",
+    "@types/pg": "^8.11.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "paths": {
+      "@tracehop/models": ["./models/index.ts"],
+      "@tracehop/solana": ["./chains/solana/index.ts"],
+      "@tracehop/core": ["./packages/core/src/index.ts"],
+      "@tracehop/engine": ["./engine/index.ts"],
+      "@tracehop/robinhood": ["./chains/robinhood/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

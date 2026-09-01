@@ -1,0 +1,16 @@
+{
+  "name": "@tracehop/engine",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/engine/index.js",
+  "types": "./dist/engine/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@tracehop/models": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

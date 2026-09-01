@@ -1,0 +1,22 @@
+{
+  "name": "@tracehop/mcp",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/packages/mcp/src/server.js",
+  "types": "./dist/packages/mcp/src/server.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node ./dist/packages/mcp/src/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@tracehop/core": "workspace:*",
+    "@tracehop/engine": "workspace:*",
+    "@tracehop/robinhood": "workspace:*",
+    "@tracehop/solana": "workspace:*",
+    "@tracehop/models": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0"
+  }
+}

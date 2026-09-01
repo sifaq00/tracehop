@@ -1,0 +1,27 @@
+{
+  "version": "5",
+  "dialect": "pg",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1783666028456,
+      "tag": "0000_lucky_gideon",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1783763277769,
+      "tag": "0001_cultured_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1784016499404,
+      "tag": "0002_high_mac_gargan",
+      "breakpoints": true
+    }
+  ]
+}
