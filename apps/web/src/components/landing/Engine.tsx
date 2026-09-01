@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import {
   Crosshair, Users, Network, Layers, ShieldAlert, Lock,
-  FileCheck, UserCheck, History, ShieldCheck, ArrowRight,
+  FileCheck, UserCheck, History, Shield,
 } from 'lucide-react';
 import { gsap } from '@/lib/gsap';
 
@@ -18,50 +18,150 @@ const STEPS = [
   { num: '07', title: 'Honeypot Check', icon: FileCheck },
   { num: '08', title: 'Known Entity Match', icon: UserCheck },
   { num: '09', title: 'Similar Token History', icon: History },
-  { num: '10', title: 'Verdict Generated', icon: ShieldCheck, isHighlight: true },
+  { num: '10', title: 'Verdict Generated', icon: Shield, isHighlight: true },
 ];
 
-function EngineCard({ step, index }: { step: typeof STEPS[number]; index: number }) {
+// Sparkle Star Component
+function SparkleStar({ x, y, size = 10, delay = 0 }: { x: number; y: number; size?: number; delay?: number }) {
+  return (
+    <motion.svg
+      className="absolute pointer-events-none overflow-visible"
+      style={{ left: x, top: y, width: size, height: size }}
+      viewBox="0 0 24 24"
+      fill="none"
+      initial={{ scale: 0.6, opacity: 0.3 }}
+      animate={{
+        scale: [0.6, 1.25, 0.6],
+        opacity: [0.3, 1, 0.3],
+        rotate: [0, 90, 180],
+      }}
+      transition={{
+        duration: 2.2,
+        repeat: Infinity,
+        delay,
+        ease: 'easeInOut',
+      }}
+    >
+      <path
+        d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z"
+        fill="#ffb347"
+        className="drop-shadow-[0_0_6px_rgba(255,179,71,0.8)]"
+      />
+    </motion.svg>
+  );
+}
+
+function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: number }) {
   const IconComp = step.icon;
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 22 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.4, delay: index * 0.06, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ scale: 1.06, y: -4 }}
-      className={`relative p-3 sm:p-3.5 rounded-xl flex flex-col items-center text-center justify-between min-h-[130px] w-[110px] sm:w-[120px] border transition-colors ${
-        step.isHighlight
-          ? 'bg-gradient-to-b from-[#2a1a0f] to-[#1a100a] border-[#ff7a29] shadow-[0_0_8px_rgba(255,122,41,0.2)]'
-          : 'bg-[#0f0b24]/90 border-[#2c2054] hover:border-[#7c3aed]/50'
-      }`}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
+      className="flex flex-col items-center group shrink-0"
     >
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${
-        step.isHighlight ? 'bg-[#ff7a29]/15' : 'bg-white/5'
-      }`}>
-        <IconComp className={`w-4 h-4 ${step.isHighlight ? 'text-[#ff7a29]' : 'text-[#c4b5fd]'}`} />
+      {/* Top Card Box */}
+      <motion.div
+        whileHover={{ scale: 1.08, y: -4 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+        className={`relative w-[78px] sm:w-[88px] lg:w-[94px] h-[78px] sm:h-[88px] lg:h-[94px] rounded-2xl flex items-center justify-center border transition-all duration-300 ${
+          step.isHighlight
+            ? 'bg-gradient-to-b from-[#25150a] via-[#1a0f07] to-[#120a05] border-[#ff7a29] shadow-[0_0_18px_rgba(255,122,41,0.35)]'
+            : 'bg-[#0d0926]/90 border-[#261c4a] hover:border-[#9333ea]/70 hover:shadow-[0_0_14px_rgba(147,51,234,0.25)]'
+        }`}
+      >
+        {/* Glow overlay */}
+        <div className={`absolute inset-0 rounded-2xl pointer-events-none transition-opacity duration-300 ${
+          step.isHighlight
+            ? 'bg-[radial-gradient(ellipse_at_center,rgba(255,122,41,0.2)_0%,transparent_70%)]'
+            : 'group-hover:bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.18)_0%,transparent_70%)]'
+        }`} />
+
+        {/* Animated Icon */}
+        <motion.div
+          animate={step.isHighlight ? { scale: [1, 1.06, 1] } : undefined}
+          transition={step.isHighlight ? { duration: 2.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
+          className="relative z-10 flex items-center justify-center"
+        >
+          {step.isHighlight ? (
+            <div className="relative">
+              <Shield className="w-8 sm:w-9 h-8 sm:h-9 text-[#ff7a29] stroke-[1.75] drop-shadow-[0_0_8px_rgba(255,122,41,0.6)]" />
+              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-[#ff7a29]">
+                ★
+              </span>
+            </div>
+          ) : (
+            <IconComp
+              className="w-7 sm:w-8 h-7 sm:h-8 text-[#d8b4fe] group-hover:text-white stroke-[1.65] drop-shadow-[0_0_6px_rgba(192,132,252,0.4)] transition-colors duration-200"
+            />
+          )}
+        </motion.div>
+      </motion.div>
+
+      {/* Number Badge */}
+      <div className="my-2.5">
+        <div
+          className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold tracking-tight shadow-md border ${
+            step.isHighlight
+              ? 'bg-[#ff7a29] text-white border-[#ff9e58] shadow-[0_0_8px_rgba(255,122,41,0.5)]'
+              : 'bg-gradient-to-b from-[#7c3aed] to-[#4c1d95] text-[#f8fafc] border-[#a855f7]/50 shadow-[0_0_6px_rgba(124,58,237,0.3)]'
+          }`}
+        >
+          {step.num}
+        </div>
       </div>
-      <span className="text-[11px] font-bold text-white leading-snug line-clamp-2">
+
+      {/* Step Title */}
+      <span
+        className={`text-[11px] sm:text-xs text-center leading-snug w-[78px] sm:w-[88px] lg:w-[94px] line-clamp-2 select-none ${
+          step.isHighlight
+            ? 'font-bold text-white'
+            : 'font-medium text-[#cbd5e1] group-hover:text-white transition-colors duration-200'
+        }`}
+      >
         {step.title}
-      </span>
-      <span className={`text-[10px] font-mono font-bold mt-2 ${step.isHighlight ? 'text-[#ff7a29]' : 'text-[#64748b]'}`}>
-        {step.num}
       </span>
     </motion.div>
   );
 }
 
-function EngineArrow({ index }: { index: number }) {
+// Dotted Arrow between Cards
+function DottedConnector({ index }: { index: number }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -4 }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.3, delay: index * 0.06 + 0.04, ease: 'easeOut' }}
-      className="flex items-center justify-center w-5 sm:w-7 shrink-0"
-    >
-      <ArrowRight className="w-3 h-3 text-[#7c3aed]/60" />
-    </motion.div>
+    <div className="flex items-center justify-center w-5 sm:w-6 lg:w-7 shrink-0 -mt-14 select-none pointer-events-none">
+      <motion.svg
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.35, delay: index * 0.05 + 0.03 }}
+        className="w-full h-4 overflow-visible"
+        viewBox="0 0 28 12"
+        fill="none"
+      >
+        {/* Dotted line */}
+        <line
+          x1="0"
+          y1="6"
+          x2="22"
+          y2="6"
+          stroke="#ff7a29"
+          strokeWidth="1.5"
+          strokeDasharray="2.5 2.5"
+          strokeLinecap="round"
+          className="opacity-80"
+        />
+        {/* Arrow head */}
+        <path
+          d="M20 3L25 6L20 9"
+          stroke="#ff7a29"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="opacity-90"
+        />
+      </motion.svg>
+    </div>
   );
 }
 
@@ -70,25 +170,34 @@ export function Engine() {
   const barRef = useRef<HTMLDivElement>(null);
   const barLabelRef = useRef<HTMLSpanElement>(null);
   const flowRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(flowRef, { once: true, amount: 0.3 });
+  const isInView = useInView(flowRef, { once: true, amount: 0.25 });
 
-  // Progress bar GSAP scrub (only reliable GSAP use case)
+  // Progress bar GSAP scrub
   useEffect(() => {
     if (!isInView) return;
     const mm = gsap.matchMedia();
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const ctx = gsap.context(() => {
-        gsap.fromTo(barRef.current, { width: '20%' }, {
-          width: '100%', ease: 'none', duration: 1,
-          scrollTrigger: {
-            trigger: sectionRef.current, start: 'top 60%', end: 'center 40%', scrub: true,
-            onUpdate: (self) => {
-              if (barLabelRef.current) {
-                barLabelRef.current.textContent = `${Math.round(20 + self.progress * 80)}%`;
-              }
+        gsap.fromTo(
+          barRef.current,
+          { width: '20%' },
+          {
+            width: '100%',
+            ease: 'none',
+            duration: 1,
+            scrollTrigger: {
+              trigger: sectionRef.current,
+              start: 'top 65%',
+              end: 'center 35%',
+              scrub: true,
+              onUpdate: (self) => {
+                if (barLabelRef.current) {
+                  barLabelRef.current.textContent = `${Math.round(20 + self.progress * 80)}%`;
+                }
+              },
             },
-          },
-        });
+          }
+        );
       }, sectionRef);
       return () => ctx.revert();
     });
@@ -96,31 +205,12 @@ export function Engine() {
   }, [isInView]);
 
   return (
-    <section ref={sectionRef} id="engine" className="relative py-20 sm:py-28">
-      <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 relative">
-        {/* Rabbit mascot */}
-        <div className="relative mb-4">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-3"
-          >
-            <img
-              src="/assets/rabbit-minimal.webp"
-              alt="Tracehop Mascot"
-              className="w-11 h-11 object-contain drop-shadow-[0_0_8px_rgba(255,122,41,0.3)]"
-            />
-            <svg className="w-28 h-6 overflow-visible pointer-events-none hidden sm:block" viewBox="0 0 100 24" fill="none">
-              <path d="M5 18 C30 2, 70 24, 95 6" stroke="#ff7a29" strokeWidth="1.5" strokeDasharray="3 3" strokeLinecap="round" />
-              <circle cx="95" cy="6" r="2" fill="#ff7a29" className="animate-pulse" />
-            </svg>
-          </motion.div>
-        </div>
+    <section ref={sectionRef} id="engine" className="relative py-20 sm:py-28 overflow-hidden">
+      <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
 
-        {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-14">
-          <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#ff7a29] mb-2.5">
+        {/* ================= HEADER ================= */}
+        <div className="text-center max-w-2xl mx-auto mb-16 relative z-10">
+          <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-2.5">
             TRACEHOP ENGINE
           </div>
           <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-3">
@@ -131,25 +221,117 @@ export function Engine() {
           </p>
         </div>
 
-        {/* Flow: Cards + Arrows — py-4 gives room for hover scale */}
-        <div ref={flowRef} className="flex items-center justify-center py-4 px-2 mb-10">
-          <div className="flex items-center overflow-x-auto gap-0 scrollbar-none">
-            {STEPS.map((step, idx) => (
-              <div key={idx} className="flex items-center shrink-0">
-                <EngineCard step={step} index={idx} />
-                {idx < STEPS.length - 1 && <EngineArrow index={idx} />}
+        {/* ================= CARDS FLOW WRAPPER WITH FLOATING RABBIT & TRAIL ================= */}
+        <div className="relative mb-14">
+
+          {/* Independent Floating Leaping Rabbit & Sparkle Trail */}
+          <div className="hidden lg:block absolute -top-28 left-0 pointer-events-none z-30 w-72 h-44">
+            {/* Curved Dotted Trail SVG */}
+            <svg
+              className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+              viewBox="0 0 280 180"
+              fill="none"
+            >
+              <defs>
+                <filter id="engineStarGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="2.5" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+
+              {/* Looping trajectory behind the rabbit connecting to Card 01 */}
+              <motion.path
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 0.95 }}
+                transition={{ duration: 1.4, ease: 'easeOut' }}
+                d="M 12 110 C 10 70, 48 30, 85 42 C 120 54, 88 128, 48 118 C 24 112, 18 84, 52 70 C 95 52, 138 98, 160 148 C 172 174, 186 195, 204 202"
+                stroke="#ff7a29"
+                strokeWidth="1.8"
+                strokeDasharray="4 4"
+                strokeLinecap="round"
+              />
+
+              {/* Connecting entry arrow pointing to card 01 */}
+              <path
+                d="M 198 198 L 208 202 L 202 208"
+                stroke="#ff7a29"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            {/* Twinkling Sparkles along trail */}
+            <SparkleStar x={20} y={90} size={11} delay={0} />
+            <SparkleStar x={56} y={34} size={13} delay={0.4} />
+            <SparkleStar x={88} y={115} size={10} delay={0.8} />
+            <SparkleStar x={126} y={78} size={14} delay={0.2} />
+            <SparkleStar x={165} y={150} size={12} delay={0.6} />
+
+            {/* The Floating Leaping Rabbit */}
+            <motion.div
+              className="absolute left-10 top-0 select-none cursor-pointer pointer-events-auto"
+              animate={{
+                y: [-5, 5, -5],
+                rotate: [-1, 2, -1],
+              }}
+              transition={{
+                duration: 3.6,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              whileHover={{
+                scale: 1.1,
+                rotate: 5,
+                transition: { duration: 0.25 },
+              }}
+            >
+              <img
+                src="/assets/rabbit-leaping.webp"
+                alt="Tracehop Leaping Rabbit Mascot"
+                className="w-24 h-auto object-contain drop-shadow-[0_0_16px_rgba(255,122,41,0.4)] drop-shadow-[0_0_30px_rgba(124,58,237,0.3)] select-none"
+              />
+            </motion.div>
+          </div>
+
+          {/* Cards Pipeline: 10 connected steps */}
+          <div ref={flowRef} className="w-full overflow-x-auto pb-4 pt-6 px-2 scrollbar-none">
+            <div className="flex items-center justify-start lg:justify-center min-w-max mx-auto gap-0">
+              {/* Entry arrow from rabbit trail on larger screens */}
+              <div className="hidden lg:flex items-center -mt-14 mr-1.5 opacity-80">
+                <motion.svg
+                  initial={{ opacity: 0, x: -6 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  className="w-5 h-4 overflow-visible"
+                  viewBox="0 0 20 12"
+                  fill="none"
+                >
+                  <line x1="0" y1="6" x2="16" y2="6" stroke="#ff7a29" strokeWidth="1.5" strokeDasharray="2.5 2.5" strokeLinecap="round" />
+                  <path d="M14 3L18 6L14 9" stroke="#ff7a29" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </motion.svg>
               </div>
-            ))}
+
+              {STEPS.map((step, idx) => (
+                <div key={step.num} className="flex items-center shrink-0">
+                  <EngineStepUnit step={step} index={idx} />
+                  {idx < STEPS.length - 1 && <DottedConnector index={idx} />}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="max-w-4xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-[#0e0a22]/90 border border-[#2c2054] shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+        {/* ================= LIVE SCAN PROGRESS BAR ================= */}
+        <div className="max-w-4xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs relative z-10">
           <div className="flex items-center gap-3 shrink-0">
-            <span className="px-2.5 py-1 rounded bg-[#7c3aed] text-white font-bold text-[10px] uppercase tracking-wider">
+            <span className="px-2.5 py-1 rounded bg-[#7c3aed] text-white font-bold text-[10px] uppercase tracking-wider shadow-[0_0_8px_rgba(124,58,237,0.4)]">
               LIVE SCAN
             </span>
-            <span className="text-[#cbd5e1]">Building funding graph...</span>
+            <span className="text-[#cbd5e1] font-medium">Building funding graph...</span>
           </div>
 
           <div className="w-full sm:w-1/2 flex items-center gap-3">
@@ -157,13 +339,15 @@ export function Engine() {
               <div
                 ref={barRef}
                 style={{ width: '62%' }}
-                className="h-full bg-gradient-to-r from-[#7c3aed] to-[#ff7a29] rounded-full"
+                className="h-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ff7a29] rounded-full shadow-[0_0_8px_rgba(255,122,41,0.4)]"
               />
             </div>
             <span ref={barLabelRef} className="text-white font-bold text-xs shrink-0">62%</span>
           </div>
         </div>
+
       </div>
     </section>
   );
 }
+
