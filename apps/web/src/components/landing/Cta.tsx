@@ -40,21 +40,22 @@ export function Cta() {
         {/* Card Wrapper with exact bottom-full positioning for the mascot */}
         <div className="relative">
 
-          {/* ================= COOL SUNGLASSES RABBIT FLUSH TO FAR RIGHT OF TOP BORDER ================= */}
+          {/* ================= COOL SUNGLASSES RABBIT WITH EXACT LOOPING TRAIL ================= */}
           <div className="hidden lg:flex absolute bottom-full -right-2 lg:-right-4 xl:-right-6 items-end z-20 select-none pointer-events-none mb-0">
             <div className="relative flex items-end">
-              {/* Curved Dotted Trail behind Cool Rabbit */}
+              {/* Curved Dotted Trail looping behind Cool Rabbit */}
               <svg
-                className="absolute inset-0 w-56 h-56 overflow-visible pointer-events-none -left-12 -top-8"
-                viewBox="0 0 160 160"
+                className="absolute inset-0 w-72 h-64 overflow-visible pointer-events-none -left-28 -top-12"
+                viewBox="0 0 240 200"
                 fill="none"
               >
+                {/* Looping trail around Cool Rabbit */}
                 <motion.path
                   initial={{ pathLength: 0, opacity: 0 }}
                   whileInView={{ pathLength: 1, opacity: 0.95 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 1.6, ease: 'easeOut' }}
-                  d="M -20 120 C 20 150, 70 140, 110 100 C 145 70, 155 20, 120 10 C 85 0, 45 35, 75 80 C 105 125, 140 140, 160 190"
+                  transition={{ duration: 1.8, ease: 'easeOut' }}
+                  d="M 10,130 C 40,155 90,140 130,90 C 160,50 175,10 135,15 C 95,20 60,70 100,120 C 140,170 190,140 225,120 C 245,110 260,135 280,180"
                   stroke="#ff7a29"
                   strokeWidth="1.8"
                   strokeDasharray="4 4"
@@ -62,9 +63,11 @@ export function Cta() {
                 />
               </svg>
 
-              <SparkleStar x={-12} y={120} size={12} delay={0} />
-              <SparkleStar x={125} y={15} size={14} delay={0.4} />
-              <SparkleStar x={55} y={80} size={11} delay={0.8} />
+              {/* Sparkle Stars along the Cool Rabbit's trail */}
+              <SparkleStar x={-30} y={120} size={11} delay={0} />
+              <SparkleStar x={105} y={15} size={14} delay={0.4} />
+              <SparkleStar x={65} y={80} size={11} delay={0.8} />
+              <SparkleStar x={185} y={115} size={13} delay={0.2} />
 
               {/* Cool Sunglasses Mascot (Enlarged) */}
               <motion.div
@@ -85,21 +88,21 @@ export function Cta() {
 
           <div className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors z-10">
           
-          {/* ================= LEFT: LEAPING RABBIT WITH SPIRAL DOTTED TRAIL & STARS ================= */}
-          <div className="relative w-48 sm:w-56 h-36 sm:h-40 shrink-0 flex items-center justify-center select-none">
-            {/* Spiral Dotted SVG Loop */}
+          {/* ================= LEFT: LEAPING RABBIT WITH EXACT LOOP-DE-LOOP & STARS ================= */}
+          <div className="relative w-56 sm:w-64 h-36 sm:h-40 shrink-0 flex items-center justify-center select-none">
+            {/* Exact Loop-de-loop Dotted SVG */}
             <svg
               className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
-              viewBox="0 0 200 160"
+              viewBox="0 0 220 160"
               fill="none"
             >
-              {/* Looping Spiral */}
+              {/* Loop-de-loop curve exactly matching screenshot */}
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 whileInView={{ pathLength: 1, opacity: 0.95 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1.6, ease: 'easeOut' }}
-                d="M 15 130 C 5 70, 50 20, 85 40 C 115 55, 95 125, 60 115 C 30 105, 35 70, 70 65 C 105 60, 140 100, 175 120"
+                transition={{ duration: 1.8, ease: 'easeOut' }}
+                d="M 15,125 C 20,70 45,25 75,35 C 100,45 95,105 65,115 C 40,120 30,85 55,65 C 80,45 110,80 145,105 C 165,118 185,122 205,120"
                 stroke="#ff7a29"
                 strokeWidth="1.8"
                 strokeDasharray="4 4"
@@ -107,11 +110,12 @@ export function Cta() {
               />
             </svg>
 
-            {/* Twinkling Stars */}
-            <SparkleStar x={12} y={85} size={11} delay={0} />
-            <SparkleStar x={60} y={25} size={13} delay={0.4} />
-            <SparkleStar x={85} y={110} size={10} delay={0.8} />
-            <SparkleStar x={135} y={75} size={12} delay={0.2} />
+            {/* Twinkling Diamond Stars positioned on the loop */}
+            <SparkleStar x={18} y={80} size={11} delay={0} />
+            <SparkleStar x={65} y={25} size={13} delay={0.4} />
+            <SparkleStar x={75} y={115} size={11} delay={0.8} />
+            <SparkleStar x={125} y={85} size={12} delay={0.2} />
+            <SparkleStar x={180} y={115} size={10} delay={0.6} />
 
             {/* Leaping Rabbit Image */}
             <motion.div
@@ -125,7 +129,7 @@ export function Cta() {
                 ease: 'easeInOut',
               }}
               whileHover={{ scale: 1.1, rotate: 4 }}
-              className="relative z-10 cursor-pointer"
+              className="relative z-10 cursor-pointer ml-12 sm:ml-16"
             >
               <img
                 src="/assets/rabbit-leaping.webp"
@@ -164,28 +168,29 @@ export function Cta() {
             </div>
           </div>
 
-          {/* ================= RIGHT: WAVING DOTTED TRAIL WITH SPARKLES ================= */}
-          <div className="hidden lg:block relative w-36 h-28 shrink-0 pointer-events-none select-none">
+          {/* ================= RIGHT: CONTINUOUS WAVING DOTTED TRAIL WITH SPARKLES ================= */}
+          <div className="hidden lg:block relative w-48 h-32 shrink-0 pointer-events-none select-none">
             <svg
               className="w-full h-full overflow-visible"
-              viewBox="0 0 150 120"
+              viewBox="0 0 200 120"
               fill="none"
             >
+              {/* Waving sinusoidal trail looping across the right side */}
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
-                whileInView={{ pathLength: 1, opacity: 0.85 }}
+                whileInView={{ pathLength: 1, opacity: 0.95 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1.6, ease: 'easeOut' }}
-                d="M 10 90 C 35 15, 75 110, 110 30 C 130 -10, 150 50, 160 80"
+                transition={{ duration: 1.8, ease: 'easeOut' }}
+                d="M -10,80 C 15,110 40,115 65,80 C 95,35 125,20 150,55 C 170,85 190,95 215,60"
                 stroke="#ff7a29"
-                strokeWidth="1.6"
+                strokeWidth="1.8"
                 strokeDasharray="4 4"
                 strokeLinecap="round"
               />
             </svg>
-            <SparkleStar x={30} y={40} size={12} delay={0.2} />
-            <SparkleStar x={95} y={15} size={14} delay={0.6} />
-            <SparkleStar x={135} y={65} size={10} delay={0.9} />
+            <SparkleStar x={55} y={75} size={12} delay={0.2} />
+            <SparkleStar x={135} y={25} size={14} delay={0.6} />
+            <SparkleStar x={195} y={55} size={11} delay={0.9} />
           </div>
 
         </div>
