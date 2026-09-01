@@ -59,13 +59,13 @@ function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: nu
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.45, delay: index * 0.05, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col items-center group shrink-0"
+      className="w-[84px] sm:w-[92px] lg:w-[96px] flex flex-col items-center group shrink-0"
     >
-      {/* Top Card Box */}
+      {/* Top Card Box - Strictly Uniform Dimensions */}
       <motion.div
         whileHover={{ scale: 1.08, y: -4 }}
         transition={{ type: 'spring', stiffness: 350, damping: 20 }}
-        className={`relative w-[78px] sm:w-[88px] lg:w-[94px] h-[78px] sm:h-[88px] lg:h-[94px] rounded-2xl flex items-center justify-center border transition-all duration-300 ${
+        className={`relative w-[78px] sm:w-[86px] lg:w-[90px] h-[78px] sm:h-[86px] lg:h-[90px] shrink-0 aspect-square rounded-2xl flex items-center justify-center border transition-all duration-300 ${
           step.isHighlight
             ? 'bg-gradient-to-b from-[#25150a] via-[#1a0f07] to-[#120a05] border-[#ff7a29] shadow-[0_0_18px_rgba(255,122,41,0.35)]'
             : 'bg-[#0d0926]/90 border-[#261c4a] hover:border-[#9333ea]/70 hover:shadow-[0_0_14px_rgba(147,51,234,0.25)]'
@@ -100,7 +100,7 @@ function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: nu
       </motion.div>
 
       {/* Number Badge */}
-      <div className="my-2.5">
+      <div className="my-2.5 shrink-0">
         <div
           className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold tracking-tight shadow-md border ${
             step.isHighlight
@@ -112,38 +112,40 @@ function EngineStepUnit({ step, index }: { step: typeof STEPS[number]; index: nu
         </div>
       </div>
 
-      {/* Step Title */}
-      <span
-        className={`text-[11px] sm:text-xs text-center leading-snug w-[78px] sm:w-[88px] lg:w-[94px] line-clamp-2 select-none ${
-          step.isHighlight
-            ? 'font-bold text-white'
-            : 'font-medium text-[#cbd5e1] group-hover:text-white transition-colors duration-200'
-        }`}
-      >
-        {step.title}
-      </span>
+      {/* Step Title - Fixed Height Area for Perfect Alignment */}
+      <div className="h-9 sm:h-10 flex items-start justify-center text-center w-full px-0.5">
+        <span
+          className={`text-[11px] sm:text-xs text-center leading-tight line-clamp-2 select-none ${
+            step.isHighlight
+              ? 'font-bold text-white'
+              : 'font-medium text-[#cbd5e1] group-hover:text-white transition-colors duration-200'
+          }`}
+        >
+          {step.title}
+        </span>
+      </div>
     </motion.div>
   );
 }
 
-// Dotted Arrow between Cards
+// Dotted Arrow between Cards - Aligned to exact vertical center of Card Box
 function DottedConnector({ index }: { index: number }) {
   return (
-    <div className="flex items-center justify-center w-5 sm:w-6 lg:w-7 shrink-0 -mt-14 select-none pointer-events-none">
+    <div className="flex items-center justify-center w-4 sm:w-5 lg:w-6 shrink-0 self-start mt-[31px] sm:[mt-35px] lg:mt-[37px] select-none pointer-events-none">
       <motion.svg
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true, amount: 0.3 }}
         transition={{ duration: 0.35, delay: index * 0.05 + 0.03 }}
         className="w-full h-4 overflow-visible"
-        viewBox="0 0 28 12"
+        viewBox="0 0 24 12"
         fill="none"
       >
         {/* Dotted line */}
         <line
           x1="0"
           y1="6"
-          x2="22"
+          x2="18"
           y2="6"
           stroke="#ff7a29"
           strokeWidth="1.5"
@@ -153,7 +155,7 @@ function DottedConnector({ index }: { index: number }) {
         />
         {/* Arrow head */}
         <path
-          d="M20 3L25 6L20 9"
+          d="M16 3L21 6L16 9"
           stroke="#ff7a29"
           strokeWidth="1.5"
           strokeLinecap="round"
