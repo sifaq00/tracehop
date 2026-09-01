@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { FaTelegramPlane } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Zap } from 'lucide-react';
 import { WalletButton } from '@/components/WalletButton';
 import { NAV_LINKS, scrollToSection, triggerCelebration } from '@/lib/landing';
 
@@ -142,6 +142,21 @@ export function Navbar() {
           >
             <FaTelegramPlane className="w-4 h-4 text-[#2AABEE] shrink-0 drop-shadow-[0_0_4px_rgba(42,171,238,0.3)]" />
             <span>Telegram</span>
+          </motion.a>
+
+          {/* Get API Access Button */}
+          <motion.a
+            whileHover={{ scale: 1.04, y: -1 }}
+            whileTap={{ scale: 0.96 }}
+            href="#api"
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('api');
+            }}
+            className="hidden lg:inline-flex items-center gap-1.5 h-[38px] px-4 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#9333ea] hover:to-[#7c3aed] text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(124,58,237,0.4)] cursor-pointer"
+          >
+            <Zap className="w-3.5 h-3.5 fill-current" />
+            <span>Get API Access</span>
           </motion.a>
 
           {/* X (Twitter) Icon Button */}

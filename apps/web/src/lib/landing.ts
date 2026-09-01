@@ -192,13 +192,11 @@ export const PRESET_TOKENS: PresetToken[] = [
 ];
 
 export const NAV_LINKS = [
-  { id: 'top', label: 'Home', icon: HomeIcon },
   { id: 'demo', label: 'Live Demo', icon: Terminal },
-  { id: 'engine', label: 'Engine', icon: Network },
-  { id: 'why', label: 'Why Tracehop', icon: Sparkles },
-  { id: 'features', label: 'Features', icon: FaTelegramPlane },
-  { id: 'stats', label: 'Stats', icon: Flame },
+  { id: 'engine', label: 'Features', icon: Network },
   { id: 'api', label: 'API', icon: Code2 },
+  { id: 'why', label: 'Why Tracehop', icon: Sparkles },
+  { id: 'stats', label: 'Docs', icon: Flame },
 ];
 
 export function scrollToSection(id: string) {
