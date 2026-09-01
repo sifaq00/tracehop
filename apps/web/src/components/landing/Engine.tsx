@@ -136,7 +136,7 @@ function EngineStepUnit({
         </div>
       </div>
 
-      {/* Dotted Arrow Connector - Centered strictly to the Card Box height */}
+      {/* Dotted Arrow Connector - Centered strictly to the Card Box height with flowing loop animation */}
       {!isLast && (
         <div className="h-[78px] sm:h-[86px] lg:h-[90px] w-4 sm:w-5 lg:w-6 flex items-center justify-center shrink-0 select-none pointer-events-none">
           <motion.svg
@@ -148,7 +148,8 @@ function EngineStepUnit({
             viewBox="0 0 24 12"
             fill="none"
           >
-            <line
+            {/* Flowing dotted line animation */}
+            <motion.line
               x1="0"
               y1="6"
               x2="18"
@@ -157,15 +158,46 @@ function EngineStepUnit({
               strokeWidth="1.5"
               strokeDasharray="2.5 2.5"
               strokeLinecap="round"
-              className="opacity-80"
+              animate={{ strokeDashoffset: [0, -10] }}
+              transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+              className="opacity-75"
             />
-            <path
+            {/* Traveling glowing pulse bead from left to right */}
+            <motion.circle
+              r="1.8"
+              cy="6"
+              fill="#ffffff"
+              className="drop-shadow-[0_0_5px_#ff7a29]"
+              animate={{
+                cx: [0, 18],
+                opacity: [0, 1, 0.8, 0],
+                scale: [0.7, 1.2, 0.7],
+              }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                delay: (index * 0.12) % 1.4,
+                ease: 'easeInOut',
+              }}
+            />
+            {/* Pulsing Arrow head */}
+            <motion.path
               d="M16 3L21 6L16 9"
               stroke="#ff7a29"
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="opacity-90"
+              animate={{
+                opacity: [0.75, 1, 0.75],
+                scale: [1, 1.12, 1],
+              }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                delay: (index * 0.12 + 0.6) % 1.4,
+                ease: 'easeInOut',
+              }}
+              style={{ transformOrigin: '21px 6px' }}
             />
           </motion.svg>
         </div>
@@ -310,7 +342,7 @@ export function Engine() {
           <div ref={flowRef} className="w-full overflow-x-auto pb-4 pt-6 px-2 scrollbar-none">
             <div className="flex items-start justify-start lg:justify-center min-w-max mx-auto gap-0">
               {/* Entry arrow from rabbit trail on larger screens */}
-              <div className="hidden lg:flex items-center h-[78px] sm:h-[86px] lg:h-[90px] mr-1.5 opacity-80 shrink-0 select-none pointer-events-none">
+              <div className="hidden lg:flex items-center h-[78px] sm:h-[86px] lg:h-[90px] mr-1.5 opacity-85 shrink-0 select-none pointer-events-none">
                 <motion.svg
                   initial={{ opacity: 0, x: -6 }}
                   whileInView={{ opacity: 1, x: 0 }}
@@ -319,8 +351,52 @@ export function Engine() {
                   viewBox="0 0 20 12"
                   fill="none"
                 >
-                  <line x1="0" y1="6" x2="16" y2="6" stroke="#ff7a29" strokeWidth="1.5" strokeDasharray="2.5 2.5" strokeLinecap="round" />
-                  <path d="M14 3L18 6L14 9" stroke="#ff7a29" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <motion.line
+                    x1="0"
+                    y1="6"
+                    x2="16"
+                    y2="6"
+                    stroke="#ff7a29"
+                    strokeWidth="1.5"
+                    strokeDasharray="2.5 2.5"
+                    strokeLinecap="round"
+                    animate={{ strokeDashoffset: [0, -10] }}
+                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                  />
+                  <motion.circle
+                    r="1.8"
+                    cy="6"
+                    fill="#ffffff"
+                    className="drop-shadow-[0_0_5px_#ff7a29]"
+                    animate={{
+                      cx: [0, 16],
+                      opacity: [0, 1, 0.8, 0],
+                      scale: [0.7, 1.2, 0.7],
+                    }}
+                    transition={{
+                      duration: 1.4,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  />
+                  <motion.path
+                    d="M14 3L18 6L14 9"
+                    stroke="#ff7a29"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    animate={{
+                      opacity: [0.75, 1, 0.75],
+                      scale: [1, 1.12, 1],
+                    }}
+                    transition={{
+                      duration: 1.4,
+                      repeat: Infinity,
+                      delay: 0.5,
+                      ease: 'easeInOut',
+                    }}
+                    style={{ transformOrigin: '18px 6px' }}
+                  />
                 </motion.svg>
               </div>
 
