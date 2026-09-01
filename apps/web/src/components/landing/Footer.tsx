@@ -6,9 +6,9 @@ import { scrollToSection } from '@/lib/landing';
 
 export function Footer() {
   return (
-    <footer className="relative pt-16 pb-12 text-xs font-sans text-[#94a3b8] border-t border-[#1e153d]/80 bg-[#070414]/90 backdrop-blur-md">
+    <footer className="relative pt-16 pb-12 text-xs font-sans text-[#94a3b8] bg-[#050212] border-t border-[#1a1236]">
       <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 sm:gap-12 pb-12 border-b border-[#1f1642]">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 sm:gap-12 pb-12 border-b border-[#1f1642]/80">
           
           {/* Brand Column */}
           <div className="md:col-span-4 flex flex-col items-start">
@@ -16,114 +16,117 @@ export function Footer() {
               <img
                 src="/assets/rabbit-minimal.webp"
                 alt="Tracehop Logo"
-                className="w-8 h-8 object-contain drop-shadow-[0_0_8px_rgba(255,122,41,0.4)]"
+                className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(255,122,41,0.4)]"
               />
               <span className="font-display font-extrabold text-2xl text-white tracking-tight">
                 Trace<span className="text-[#ff7a29]">hop</span>
               </span>
             </div>
-            <p className="text-[#94a3b8] leading-relaxed max-w-sm mb-5 text-xs sm:text-sm">
-              Real-time multi-hop wallet intelligence layer. Revealing hidden funding clusters, deployer syndicates, and wash trading before you ape.
+            <p className="text-[#94a3b8] leading-relaxed max-w-sm mb-5 text-xs">
+              Onchain intelligence engine that reveals the truth behind every token.
             </p>
 
-            {/* Social Links */}
+            {/* Social Icons */}
             <div className="flex items-center gap-2 text-white">
               <a
                 href="https://t.me/TraceHopAgentBot"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Telegram Bot"
-                className="w-9 h-9 rounded-xl bg-[#120d2b] hover:bg-[#2AABEE]/20 hover:border-[#2AABEE]/50 hover:text-[#2AABEE] flex items-center justify-center transition-all border border-[#2c2054] shadow-sm"
+                aria-label="Telegram"
+                className="w-8 h-8 rounded-lg bg-[#0e0a22] hover:bg-[#7c3aed] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all border border-[#251c47]"
               >
-                <FaTelegramPlane className="w-4 h-4 text-[#2AABEE]" />
+                <FaTelegramPlane className="w-3.5 h-3.5" />
               </a>
               <a
                 href="https://x.com/TraceHop"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="X (Twitter)"
-                className="w-9 h-9 rounded-xl bg-[#120d2b] hover:bg-[#7c3aed]/20 hover:border-[#7c3aed]/50 hover:text-[#c084fc] flex items-center justify-center transition-all border border-[#2c2054] shadow-sm"
+                className="w-8 h-8 rounded-lg bg-[#0e0a22] hover:bg-[#7c3aed] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all border border-[#251c47]"
               >
-                <FaXTwitter className="w-3.5 h-3.5" />
+                <FaXTwitter className="w-3 h-3" />
               </a>
               <a
                 href="https://github.com/sifaq00/tracehop"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="GitHub Repository"
-                className="w-9 h-9 rounded-xl bg-[#120d2b] hover:bg-[#7c3aed]/20 hover:border-[#7c3aed]/50 hover:text-[#c084fc] flex items-center justify-center transition-all border border-[#2c2054] shadow-sm"
+                aria-label="GitHub"
+                className="w-8 h-8 rounded-lg bg-[#0e0a22] hover:bg-[#7c3aed] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all border border-[#251c47]"
               >
-                <FaGithub className="w-4 h-4" />
+                <FaGithub className="w-3.5 h-3.5" />
               </a>
               <a
                 href="https://discord.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Discord Community"
-                className="w-9 h-9 rounded-xl bg-[#120d2b] hover:bg-[#5865F2]/20 hover:border-[#5865F2]/50 hover:text-[#5865F2] flex items-center justify-center transition-all border border-[#2c2054] shadow-sm"
+                aria-label="Discord"
+                className="w-8 h-8 rounded-lg bg-[#0e0a22] hover:bg-[#7c3aed] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all border border-[#251c47]"
               >
-                <FaDiscord className="w-4 h-4" />
+                <FaDiscord className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>
 
-          {/* Product Links (Matches Real Landing Sections & Features) */}
+          {/* Product Links */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
-            <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">PRODUCT</h5>
-            <a href="#demo" onClick={(e) => { e.preventDefault(); scrollToSection('demo'); }} className="hover:text-white transition-colors">Live Token Scanner</a>
-            <a href="#engine" onClick={(e) => { e.preventDefault(); scrollToSection('engine'); }} className="hover:text-white transition-colors">10-Step Engine</a>
-            <a href="#why" onClick={(e) => { e.preventDefault(); scrollToSection('why'); }} className="hover:text-white transition-colors">Funding Graph</a>
-            <a href="/portfolio" className="hover:text-white transition-colors">Portfolio Scanner</a>
-            <a href="/embed" className="hover:text-white transition-colors">Embeddable Widget</a>
+            <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">PRODUCT</h5>
+            <a href="#demo" onClick={(e) => { e.preventDefault(); scrollToSection('demo'); }} className="hover:text-white transition-colors">Live Demo</a>
+            <a href="#engine" onClick={(e) => { e.preventDefault(); scrollToSection('engine'); }} className="hover:text-white transition-colors">Features</a>
+            <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">API</a>
+            <a href="#why" onClick={(e) => { e.preventDefault(); scrollToSection('why'); }} className="hover:text-white transition-colors">Docs</a>
           </div>
 
-          {/* Developers / APIs (Matches Actual App API Routes) */}
+          {/* Developers */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
-            <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">DEVELOPERS</h5>
-            <a href="/api/v1/metrics/public" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-mono text-[11px]">/api/v1/metrics</a>
-            <a href="/api/v1/scan" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-mono text-[11px]">/api/v1/scan</a>
-            <a href="https://github.com/sifaq00/tracehop" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub Monorepo</a>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono text-[10px] w-fit mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Engine Online</span>
+            <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">DEVELOPERS</h5>
+            <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">API Reference</a>
+            <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">Integration Guide</a>
+            <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] mt-0.5">
+              <span>API Status</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             </div>
           </div>
 
-          {/* Ecosystem / Chains (Real Tech Stack Integrations) */}
+          {/* Resources */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
-            <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">ECOSYSTEM</h5>
-            <a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Pump.fun Protocol</a>
-            <a href="https://solana.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Solana Mainnet</a>
-            <a href="https://helius.dev" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Helius RPC Geyser</a>
-            <a href="#stats" onClick={(e) => { e.preventDefault(); scrollToSection('stats'); }} className="hover:text-white transition-colors">Accuracy Metrics</a>
+            <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">RESOURCES</h5>
+            <a href="#" className="hover:text-white transition-colors">Blog</a>
+            <a href="#" className="hover:text-white transition-colors">Support</a>
+            <a href="#" className="hover:text-white transition-colors">Changelog</a>
           </div>
 
-          {/* Telegram Bot Action */}
-          <div className="md:col-span-2 flex flex-col gap-3">
-            <h5 className="font-bold text-[#a855f7] font-mono text-xs uppercase tracking-wider mb-1">TELEGRAM BOT</h5>
-            <p className="text-[11px] text-[#94a3b8] leading-relaxed">
-              Scan token CA directly in DMs or add to your Telegram group chats.
-            </p>
+          {/* Join the Movement */}
+          <div className="md:col-span-2 flex flex-col gap-2.5">
+            <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">JOIN THE MOVEMENT</h5>
             <a
               href="https://t.me/TraceHopAgentBot"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl bg-gradient-to-r from-[#2AABEE]/20 to-[#7c3aed]/20 hover:from-[#2AABEE]/30 hover:to-[#7c3aed]/30 border border-[#2AABEE]/40 text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(42,171,238,0.2)] w-fit"
+              className="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#0e0a22] hover:bg-[#181138] border border-[#251c47] text-white text-xs font-medium transition-all"
             >
               <FaTelegramPlane className="w-3.5 h-3.5 text-[#2AABEE]" />
-              <span>@TraceHopAgentBot</span>
+              <span>Telegram Community</span>
+            </a>
+            <a
+              href="https://x.com/TraceHop"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#0e0a22] hover:bg-[#181138] border border-[#251c47] text-white text-xs font-medium transition-all"
+            >
+              <FaXTwitter className="w-3.5 h-3.5 text-white" />
+              <span>Follow on X</span>
             </a>
           </div>
 
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#64748b] text-[11px] font-mono">
-          <p>&copy; 2026 Tracehop Labs. Know before you ape.</p>
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#64748b] text-[11px]">
+          <p>&copy; 2024 Tracehop. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Security Disclosures</a>
+            <a href="#" className="hover:text-white transition-colors">Terms</a>
+            <a href="#" className="hover:text-white transition-colors">Privacy</a>
+            <a href="#" className="hover:text-white transition-colors">Disclaimer</a>
           </div>
         </div>
       </div>
