@@ -12,16 +12,33 @@ export function Footer() {
           
           {/* Brand Column */}
           <div className="md:col-span-4 flex flex-col items-start">
-            <div className="flex items-center gap-2.5 mb-3.5 select-none">
+            <a
+              href="#top"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection('top');
+              }}
+              className="group flex items-center gap-3 select-none mb-3.5 transition-transform duration-200 hover:scale-105"
+            >
               <img
                 src="/assets/rabbit-minimal.webp"
-                alt="Tracehop Logo"
-                className="w-7 h-7 object-contain drop-shadow-[0_0_8px_rgba(255,122,41,0.4)]"
+                alt="Tracehop Logo Mascot"
+                width={32}
+                height={32}
+                className="w-[32px] h-[32px] object-contain shrink-0 drop-shadow-[0_0_8px_rgba(124,58,237,0.35)]"
               />
-              <span className="font-display font-extrabold text-2xl text-white tracking-tight">
-                Trace<span className="text-[#ff7a29]">hop</span>
-              </span>
-            </div>
+              <div className="relative inline-flex items-baseline font-display font-extrabold text-[24px] sm:text-[26px] tracking-tight leading-none">
+                <span className="text-white">Trace</span>
+                <span className="bg-gradient-to-br from-[#ff9548] to-[#ff601c] bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,120,40,0.4)] group-hover:drop-shadow-[0_0_12px_rgba(255,120,40,0.6)] transition-all">
+                  hop
+                </span>
+                {/* Micro dotted animated trail matching Navbar */}
+                <svg className="absolute -bottom-1 -right-1.5 w-7 h-2.5 overflow-visible pointer-events-none" viewBox="0 0 24 8" fill="none">
+                  <path d="M1 2 C6 6, 14 6, 20 2" stroke="#ff7a29" strokeWidth="1.3" strokeDasharray="2 2" strokeLinecap="round" className="animate-flowTrail opacity-90" />
+                  <circle cx="20" cy="2" r="1.3" fill="#ff7a29" className="animate-pulseDot drop-shadow-[0_0_5px_#ff7a29]" />
+                </svg>
+              </div>
+            </a>
             <p className="text-[#94a3b8] leading-relaxed max-w-sm mb-5 text-xs">
               Onchain intelligence engine that reveals the truth behind every token.
             </p>
