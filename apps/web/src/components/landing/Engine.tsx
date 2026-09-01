@@ -412,24 +412,64 @@ export function Engine() {
           </div>
         </div>
 
-        {/* ================= LIVE SCAN PROGRESS BAR ================= */}
-        <div className="max-w-4xl mx-auto p-3.5 sm:p-4 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs relative z-10">
+        {/* ================= LIVE SCAN PROGRESS BAR (MATCHING PIPELINE WIDTH) ================= */}
+        <div className="w-full max-w-[1140px] mx-auto p-4 sm:p-4.5 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs relative z-10 hover:border-[#7c3aed]/40 transition-colors">
+          {/* Left Status Area */}
           <div className="flex items-center gap-3 shrink-0">
-            <span className="px-2.5 py-1 rounded bg-[#7c3aed] text-white font-bold text-[10px] uppercase tracking-wider shadow-[0_0_8px_rgba(124,58,237,0.4)]">
-              LIVE SCAN
-            </span>
-            <span className="text-[#cbd5e1] font-medium">Building funding graph...</span>
+            {/* Pulsing LIVE SCAN badge */}
+            <motion.div
+              animate={{
+                boxShadow: [
+                  '0 0 8px rgba(124,58,237,0.4)',
+                  '0 0 16px rgba(168,85,247,0.75)',
+                  '0 0 8px rgba(124,58,237,0.4)',
+                ],
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white font-bold text-[10px] uppercase tracking-wider select-none shrink-0"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>LIVE SCAN</span>
+            </motion.div>
+
+            {/* Status text with animated terminal pulse */}
+            <div className="flex items-center gap-1.5 text-[#cbd5e1] font-medium">
+              <span>Building funding graph...</span>
+              <motion.span
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ duration: 0.9, repeat: Infinity }}
+                className="w-1.5 h-3 bg-[#ff7a29] inline-block"
+              />
+            </div>
           </div>
 
-          <div className="w-full sm:w-1/2 flex items-center gap-3">
-            <div className="w-full h-1.5 bg-[#1b143f] rounded-full overflow-hidden">
+          {/* Right Progress Bar Area */}
+          <div className="w-full sm:w-1/2 flex items-center gap-3.5">
+            <div className="relative w-full h-2 bg-[#1b143f] rounded-full overflow-hidden">
+              {/* Main Progress Fill */}
               <div
                 ref={barRef}
                 style={{ width: '62%' }}
-                className="h-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ff7a29] rounded-full shadow-[0_0_8px_rgba(255,122,41,0.4)]"
-              />
+                className="relative h-full bg-gradient-to-r from-[#7c3aed] via-[#a855f7] to-[#ff7a29] rounded-full shadow-[0_0_10px_rgba(255,122,41,0.5)] overflow-hidden"
+              >
+                {/* Continuous Looping Laser Shimmer */}
+                <motion.div
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg]"
+                />
+              </div>
             </div>
-            <span ref={barLabelRef} className="text-white font-bold text-xs shrink-0">62%</span>
+
+            {/* Percentage Label with glowing aura */}
+            <motion.span
+              ref={barLabelRef}
+              animate={{ opacity: [0.85, 1, 0.85] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="text-white font-bold text-xs shrink-0 font-mono tracking-tight"
+            >
+              62%
+            </motion.span>
           </div>
         </div>
 
