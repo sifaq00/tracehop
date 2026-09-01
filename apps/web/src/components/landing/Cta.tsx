@@ -34,7 +34,7 @@ function SparkleStar({ x, y, size = 11, delay = 0 }: { x: number; y: number; siz
 
 export function Cta() {
   return (
-    <section id="api" className="relative pt-24 pb-20 sm:pt-28 sm:pb-28 overflow-visible">
+    <section id="api" className="relative pt-3 pb-20 sm:pt-4 sm:pb-28 overflow-visible">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
         
         {/* Card Wrapper with exact bottom-full positioning for the mascot */}

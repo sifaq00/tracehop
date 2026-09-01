@@ -81,7 +81,7 @@ export function Stats() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="stats" className="relative pt-20 pb-10 sm:pt-28 sm:pb-14 overflow-hidden">
+    <section ref={sectionRef} id="stats" className="relative pt-20 pb-2 sm:pt-28 sm:pb-3 overflow-hidden">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
 
         {/* ================= HEADER ================= */}
