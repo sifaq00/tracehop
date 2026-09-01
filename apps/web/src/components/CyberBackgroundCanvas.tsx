@@ -10,7 +10,7 @@ export function CyberBackgroundCanvas() {
     const container = containerRef.current;
     if (!container) return;
 
-    // 1. Scene, Camera, Renderer
+    // 1. Scene, Camera, Renderer (Optimized for low-end GPUs)
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       60,
@@ -23,19 +23,20 @@ export function CyberBackgroundCanvas() {
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
+      antialias: false, // Huge performance boost on low-end Intel HD Graphics
       powerPreference: 'high-performance',
+      precision: 'mediump', // Low memory bandwidth
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(1); // Standard 1x DPR prevents GPU fillrate throttling on Celeron
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    // 2. Pure, Sleek 3D Undulating Cyber Wave Grid (Smooth Continuous Wireframe)
+    // 2. Optimized 3D Undulating Cyber Wave Grid
     const gridWidth = 200;
     const gridDepth = 140;
-    const gridSegmentsX = 75;
-    const gridSegmentsY = 55;
+    const gridSegmentsX = 36; // Optimized vertex density for high FPS
+    const gridSegmentsY = 26;
     const planeGeometry = new THREE.PlaneGeometry(
       gridWidth,
       gridDepth,
@@ -54,10 +55,10 @@ export function CyberBackgroundCanvas() {
       uniforms: {
         uTime: { value: 0 },
         uMouse: { value: new THREE.Vector2(0, 0) },
-        uColorDeep: { value: new THREE.Color('#4c1d95') }, // Deep purple
-        uColorVibrant: { value: new THREE.Color('#9333ea') }, // Neon violet
-        uColorCyan: { value: new THREE.Color('#38bdf8') }, // Cyber cyan crest
-        uColorAmber: { value: new THREE.Color('#ff7a29') }, // Warm amber highlight
+        uColorDeep: { value: new THREE.Color('#4c1d95') },
+        uColorVibrant: { value: new THREE.Color('#9333ea') },
+        uColorCyan: { value: new THREE.Color('#38bdf8') },
+        uColorAmber: { value: new THREE.Color('#ff7a29') },
       },
       vertexShader: `
         uniform float uTime;
@@ -67,21 +68,12 @@ export function CyberBackgroundCanvas() {
 
         void main() {
           vec3 pos = position;
-
-          // Rolling multi-frequency sine wave
           float wave1 = sin(pos.x * 0.06 + uTime * 0.8) * cos(pos.z * 0.05 + uTime * 0.6) * 3.2;
           float wave2 = sin(pos.x * 0.12 - uTime * 1.0 + pos.z * 0.08) * 1.6;
-          float wave3 = cos(pos.x * 0.03 + pos.z * 0.04 + uTime * 0.4) * 2.0;
-
-          // Mouse ripple elevation
-          float mouseDist = length(pos.xz - uMouse * vec2(40.0, 30.0));
-          float mouseWave = sin(mouseDist * 0.18 - uTime * 2.0) * exp(-mouseDist * 0.04) * 3.5;
-
-          pos.y += wave1 + wave2 + wave3 + mouseWave;
+          pos.y += wave1 + wave2;
 
           vElevation = pos.y;
           vDist = length(position.xz);
-
           gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
         }
       `,
@@ -94,22 +86,16 @@ export function CyberBackgroundCanvas() {
         varying float vDist;
 
         void main() {
-          // Radial fade out towards boundary edges
           float edgeAlpha = smoothstep(95.0, 20.0, vDist);
-
-          // Elevation color gradient
           float heightFactor = smoothstep(-3.0, 4.0, vElevation);
           vec3 baseColor = mix(uColorDeep, uColorVibrant, heightFactor);
 
-          // Peak crest highlights (cyan and amber)
           float cyanCrest = smoothstep(2.0, 4.5, vElevation);
           float amberCrest = smoothstep(3.5, 6.0, vElevation);
           vec3 finalColor = mix(baseColor, uColorCyan, cyanCrest * 0.6);
           finalColor = mix(finalColor, uColorAmber, amberCrest * 0.7);
 
-          // Visible yet elegant transparency (0.16 to 0.44)
           float alpha = (0.16 + heightFactor * 0.28) * edgeAlpha;
-
           gl_FragColor = vec4(finalColor, alpha);
         }
       `,
@@ -118,18 +104,24 @@ export function CyberBackgroundCanvas() {
     const waveMesh = new THREE.Mesh(planeGeometry, waveMaterial);
     scene.add(waveMesh);
 
-    // 3. Mouse Parallax Handler
+    // 3. Mouse Parallax Handler (Throttled)
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
     let targetY = 0;
+    let isVisible = true;
 
     const handleMouseMove = (e: MouseEvent) => {
       mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       mouseY = -(e.clientY / window.innerHeight - 0.5) * 2;
     };
 
+    const handleVisibilityChange = () => {
+      isVisible = !document.hidden;
+    };
+
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // 4. Resize Handler
     const handleResize = () => {
@@ -140,37 +132,42 @@ export function CyberBackgroundCanvas() {
 
     window.addEventListener('resize', handleResize);
 
-    // 5. Animation Loop with High-Precision performance.now()
+    // 5. Animation Loop with Visibility Check
     let animId: number;
     const startTime = performance.now();
+    let lastRenderTime = 0;
 
-    const animate = () => {
+    const animate = (currentTime: number) => {
       animId = requestAnimationFrame(animate);
 
-      const elapsed = (performance.now() - startTime) * 0.001;
+      if (!isVisible) return; // Pause rendering completely when tab is in background
 
-      // Smooth mouse follow
-      targetX += (mouseX - targetX) * 0.04;
-      targetY += (mouseY - targetY) * 0.04;
+      // Cap render rate to ~40-60fps to prevent Celeron CPU spikes
+      if (currentTime - lastRenderTime < 16) return;
+      lastRenderTime = currentTime;
 
-      // Update shader uniforms
+      const elapsed = (currentTime - startTime) * 0.0008;
+
+      targetX += (mouseX - targetX) * 0.05;
+      targetY += (mouseY - targetY) * 0.05;
+
       waveMaterial.uniforms.uTime.value = elapsed;
       waveMaterial.uniforms.uMouse.value.set(targetX, targetY);
 
-      // Camera tilt parallax
-      camera.position.x = targetX * 4.5;
-      camera.position.y = 12 + targetY * 2.5;
+      camera.position.x = targetX * 3.5;
+      camera.position.y = 12 + targetY * 2.0;
       camera.lookAt(0, -2, -15);
 
       renderer.render(scene, camera);
     };
 
-    animate();
+    animId = requestAnimationFrame(animate);
 
     // 6. Cleanup
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);

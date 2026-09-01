@@ -36,6 +36,9 @@
 .spotlight-card {
   position: relative;
   overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: paint layout;
 }
 
 .spotlight-card::before {
@@ -54,4 +57,16 @@
 
 .spotlight-card:hover::before {
   opacity: 1;
+}
+
+/* Hardware composite layering for butter smooth scrolling on Intel Celeron */
+[data-hero],
+[data-demo-left],
+[data-demo-right] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+img {
+  content-visibility: auto;
 }
