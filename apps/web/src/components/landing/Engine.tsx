@@ -218,7 +218,7 @@ export function Engine() {
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
 
         {/* ================= HEADER ================= */}
-        <div className="text-center max-w-2xl mx-auto mb-16 relative z-10">
+        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-8 relative z-10">
           <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-2.5">
             TRACEHOP ENGINE
           </div>
@@ -234,7 +234,7 @@ export function Engine() {
         <div className="relative mb-14">
 
           {/* Independent Floating Leaping Rabbit & Sparkle Trail */}
-          <div className="hidden lg:block absolute -top-28 left-0 pointer-events-none z-30 w-72 h-44">
+          <div className="hidden lg:block absolute -top-20 left-0 pointer-events-none z-30 w-72 h-44">
             {/* Curved Dotted Trail SVG */}
             <svg
               className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
