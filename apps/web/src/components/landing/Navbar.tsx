@@ -9,7 +9,7 @@ import { WalletButton } from '@/components/WalletButton';
 import { NAV_LINKS, scrollToSection, triggerCelebration } from '@/lib/landing';
 
 export function Navbar() {
-  const [activeNav, setActiveNav] = useState('demo');
+  const [activeNav, setActiveNav] = useState('top');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isManualScrollingRef = useRef(false);
   const manualScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -25,6 +25,12 @@ export function Navbar() {
     const sectionIds = ['demo', 'engine', 'why', 'stats', 'api'];
     const handleScroll = () => {
       if (isManualScrollingRef.current) return;
+
+      if (window.scrollY < 260) {
+        setActiveNav('top');
+        return;
+      }
+
       const scrollPosition = window.scrollY + 200;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {

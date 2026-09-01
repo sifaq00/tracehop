@@ -192,6 +192,7 @@ export const PRESET_TOKENS: PresetToken[] = [
 ];
 
 export const NAV_LINKS = [
+  { id: 'top', label: 'Home', icon: HomeIcon },
   { id: 'demo', label: 'Live Demo', icon: Terminal },
   { id: 'engine', label: 'Features', icon: Network },
   { id: 'why', label: 'Why Tracehop', icon: Sparkles },
