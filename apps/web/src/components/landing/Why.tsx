@@ -319,8 +319,14 @@ export function Why() {
               </div>
             </div>
 
-            {/* Right: Phone Mockup (Flush & Anchored to the exact bottom border) */}
-            <div className="w-[260px] sm:w-[290px] h-[400px] sm:h-[420px] overflow-hidden relative shrink-0 select-none flex justify-center items-start self-end pt-1 -mb-[1px]">
+            {/* Right: Phone Mockup (Smooth Slide-Up Animation from Bottom) */}
+            <motion.div
+              initial={{ opacity: 0, y: 90 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.85, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="w-[260px] sm:w-[290px] h-[400px] sm:h-[420px] overflow-hidden relative shrink-0 select-none flex justify-center items-start self-end pt-1 -mb-[1px]"
+            >
               <div className="relative aspect-[433/882] w-full shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)]">
                 
                 {/* Official Apple iPhone 15 Pro Vector Bezel Frame (Transparent Screen Area) */}
@@ -468,7 +474,7 @@ export function Why() {
 
                 </div>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* RIGHT: FUNDING GRAPH PREVIEW WITH INTERACTIVE CANVAS GRAPH */}
