@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { SmoothScroll } from '@/components/SmoothScroll';
 import { CyberBackgroundCanvas } from '@/components/CyberBackgroundCanvas';
 import { Navbar } from '@/components/landing/Navbar';
 import { Hero } from '@/components/landing/Hero';
@@ -22,18 +23,20 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-hidden font-sans">
-      <CyberBackgroundCanvas />
-      <Navbar />
-      <main id="top" className="relative z-10 flex flex-col">
-        <Hero onStartDemo={startDemo} />
-        <Demo registerScanner={(fn) => { scannerRef.current = fn; }} />
-        <Engine />
-        <Why />
-        <Stats />
-        <Cta />
-        <Footer />
-      </main>
-    </div>
+    <SmoothScroll>
+      <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-hidden font-sans">
+        <CyberBackgroundCanvas />
+        <Navbar />
+        <main id="top" className="relative z-10 flex flex-col">
+          <Hero onStartDemo={startDemo} />
+          <Demo registerScanner={(fn) => { scannerRef.current = fn; }} />
+          <Engine />
+          <Why />
+          <Stats />
+          <Cta />
+          <Footer />
+        </main>
+      </div>
+    </SmoothScroll>
   );
 }

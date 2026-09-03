@@ -207,6 +207,21 @@ let activeScrollAnimation: { stop: () => void } | null = null;
 export function scrollToSection(id: string) {
   if (typeof window === 'undefined') return;
 
+  // Use Lenis if initialized for smooth unified inertia
+  const lenis = (window as unknown as { __lenis?: { scrollTo: (target: string | number | HTMLElement, options?: Record<string, unknown>) => void } }).__lenis;
+  if (lenis) {
+    if (id === 'top') {
+      lenis.scrollTo(0, { duration: 1.0 });
+    } else {
+      const elem = document.getElementById(id);
+      if (elem) {
+        lenis.scrollTo(elem, { offset: -76, duration: 1.0 });
+      }
+    }
+    return;
+  }
+
+  // Fallback to Framer Motion animate if Lenis is not available
   if (activeScrollAnimation) {
     activeScrollAnimation.stop();
   }
@@ -222,7 +237,7 @@ export function scrollToSection(id: string) {
 
   activeScrollAnimation = animate(window.scrollY, targetY, {
     duration: 0.85,
-    ease: [0.22, 1, 0.36, 1], // Framer Motion smooth cubic-bezier easing
+    ease: [0.22, 1, 0.36, 1],
     onUpdate: (latest) => window.scrollTo(0, latest),
     onComplete: () => {
       activeScrollAnimation = null;

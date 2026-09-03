@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Chakra_Petch, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import 'lenis/dist/lenis.css';
 import './globals.css';
 
 const chakraPetch = Chakra_Petch({
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full scroll-smooth ${chakraPetch.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={`h-full ${chakraPetch.variable} ${plusJakarta.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen flex flex-col antialiased bg-[#06040d] text-white">
         {children}
       </body>
