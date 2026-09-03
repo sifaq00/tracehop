@@ -149,13 +149,27 @@ export function CyberBackgroundCanvas() {
 
     window.addEventListener('scroll', onScroll, { passive: true });
 
+    // IntersectionObserver to pause rendering when scrolled out of view (matching Pounce-Daemo)
+    let isIntersecting = true;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        isIntersecting = entries[0]?.isIntersecting ?? true;
+        if (isIntersecting) {
+          cancelAnimationFrame(animId);
+          animId = requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.05 }
+    );
+    observer.observe(container);
+
     const animate = (currentTime: number) => {
       animId = requestAnimationFrame(animate);
 
-      // 1. Pause completely when tab is hidden or when scrolled past hero
-      if (!isVisible || window.scrollY > 900) return;
+      // 1. Pause completely when tab is hidden or when scrolled out of hero view
+      if (!isVisible || !isIntersecting) return;
 
-      // 2. Pause during active scroll motion to free 100% GPU for smooth 60fps scrolling
+      // 2. Pause during active scroll motion to free 100% GPU for smooth scrolling
       if (isScrolling) return;
 
       // Cap render rate to ~40fps to keep CPU/GPU cold
@@ -186,6 +200,7 @@ export function CyberBackgroundCanvas() {
       window.removeEventListener('scroll', onScroll);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
+      observer.disconnect();
       if (scrollTimeout) clearTimeout(scrollTimeout);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
@@ -199,7 +214,7 @@ export function CyberBackgroundCanvas() {
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      className="absolute top-0 left-0 right-0 h-[1050px] pointer-events-none z-0 overflow-hidden"
       aria-hidden="true"
     />
   );

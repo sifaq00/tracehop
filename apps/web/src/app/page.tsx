@@ -23,20 +23,19 @@ export default function Home() {
   };
 
   return (
-    <SmoothScroll>
-      <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-hidden font-sans">
-        <CyberBackgroundCanvas />
-        <Navbar />
-        <main id="top" className="relative z-10 flex flex-col">
-          <Hero onStartDemo={startDemo} />
-          <Demo registerScanner={(fn) => { scannerRef.current = fn; }} />
-          <Engine />
-          <Why />
-          <Stats />
-          <Cta />
-          <Footer />
-        </main>
-      </div>
-    </SmoothScroll>
+    <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-hidden font-sans">
+      <SmoothScroll />
+      <CyberBackgroundCanvas />
+      <Navbar />
+      <main id="top" className="relative z-10 flex flex-col">
+        <Hero onStartDemo={startDemo} />
+        <Demo registerScanner={(fn) => { scannerRef.current = fn; }} />
+        <Engine />
+        <Why />
+        <Stats />
+        <Cta />
+        <Footer />
+      </main>
+    </div>
   );
 }

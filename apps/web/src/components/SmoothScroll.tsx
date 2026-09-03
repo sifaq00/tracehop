@@ -3,35 +3,39 @@
 import { useEffect } from 'react';
 import Lenis from 'lenis';
 
-export function SmoothScroll({ children }: { children: React.ReactNode }) {
+export function SmoothScroll() {
   useEffect(() => {
-    // Initialize Lenis smooth scroll with responsive lerp
+    if (typeof window === 'undefined') return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    // High-performance snappy Lenis configuration matching Sisy
     const lenis = new Lenis({
-      lerp: 0.14, // Swift, responsive smoothing without floaty drag
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
+      lerp: 0.14,
+      wheelMultiplier: 1.15,
+      touchMultiplier: 1.0,
       smoothWheel: true,
-      wheelMultiplier: 1.35, // Light, effortless scroll feel per wheel tick
-      touchMultiplier: 1.2,
-      syncTouch: false, // native touch on mobile for optimal battery & performance
     });
 
-    // Attach to window for global access (e.g. scrollToSection)
     (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
-    let animId: number;
+    let animationFrameId: number;
+
     function raf(time: number) {
       lenis.raf(time);
-      animId = requestAnimationFrame(raf);
+      animationFrameId = requestAnimationFrame(raf);
     }
-    animId = requestAnimationFrame(raf);
+
+    animationFrameId = requestAnimationFrame(raf);
 
     return () => {
-      cancelAnimationFrame(animId);
+      cancelAnimationFrame(animationFrameId);
       lenis.destroy();
       delete (window as unknown as { __lenis?: Lenis }).__lenis;
     };
   }, []);
 
-  return <>{children}</>;
+  return null;
 }

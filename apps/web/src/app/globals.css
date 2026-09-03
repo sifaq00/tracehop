@@ -59,7 +59,7 @@
   opacity: 1;
 }
 
-/* Hardware composite layering for butter smooth scrolling on Intel Celeron */
+/* Hardware composite layering for butter smooth scrolling */
 [data-hero],
 [data-demo-left],
 [data-demo-right] {
@@ -69,4 +69,53 @@
 
 img {
   content-visibility: auto;
+}
+
+/* Sisy-style Lenis integration */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Sisy-style content-visibility optimizations:
+   Skips DOM layout calculation and GPU rendering for off-screen sections until scrolled into view */
+#demo {
+  content-visibility: auto;
+  contain-intrinsic-size: 700px;
+}
+
+#engine {
+  content-visibility: auto;
+  contain-intrinsic-size: 750px;
+}
+
+#why {
+  content-visibility: auto;
+  contain-intrinsic-size: 850px;
+}
+
+#stats {
+  content-visibility: auto;
+  contain-intrinsic-size: 400px;
+}
+
+#api {
+  content-visibility: auto;
+  contain-intrinsic-size: 450px;
+}
+
+footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 350px;
 }
