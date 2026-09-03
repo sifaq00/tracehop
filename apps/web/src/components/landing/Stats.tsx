@@ -13,12 +13,12 @@ const STATS = [
 function StatCounter({ value, decimals, suffix }: { value: number; decimals: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionVal = useMotionValue(0);
-  const isInView = useInView(ref, { once: false, amount: 0.2 });
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
 
   useEffect(() => {
     if (isInView) {
       const controls = animate(motionVal, value, {
-        duration: 1.6,
+        duration: 1.4,
         ease: [0.25, 1, 0.5, 1],
         onUpdate: (latest) => {
           if (ref.current) {
@@ -31,11 +31,6 @@ function StatCounter({ value, decimals, suffix }: { value: number; decimals: num
         },
       });
       return () => controls.stop();
-    } else {
-      motionVal.set(0);
-      if (ref.current) {
-        ref.current.textContent = '0' + suffix;
-      }
     }
   }, [isInView, value, decimals, suffix, motionVal]);
 

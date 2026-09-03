@@ -14,40 +14,58 @@ export function Navbar() {
   const isManualScrollingRef = useRef(false);
   const manualScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scroll-spy active section detection
+  // Scroll-spy active section detection with RAF throttling & cached offsets
   useEffect(() => {
+    const sectionIds = ['demo', 'engine', 'why', 'stats', 'api'];
+    let cachedOffsets: { id: string; top: number }[] = [];
+
+    const updateOffsets = () => {
+      cachedOffsets = sectionIds
+        .map((id) => {
+          const el = document.getElementById(id);
+          return el ? { id, top: el.offsetTop } : null;
+        })
+        .filter((item): item is { id: string; top: number } => item !== null);
+    };
+
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setMobileMenuOpen(false);
       }
+      updateOffsets();
     };
 
-    const sectionIds = ['demo', 'engine', 'why', 'stats', 'api'];
+    updateOffsets();
+
+    let isTicking = false;
     const handleScroll = () => {
       if (isManualScrollingRef.current) return;
 
-      if (window.scrollY < 260) {
-        setActiveNav('top');
-        return;
-      }
-
-      const scrollPosition = window.scrollY + 200;
-
-      for (let i = sectionIds.length - 1; i >= 0; i--) {
-        const section = document.getElementById(sectionIds[i]);
-        if (section) {
-          const top = section.offsetTop;
-          if (scrollPosition >= top) {
-            setActiveNav(sectionIds[i]);
-            break;
+      if (!isTicking) {
+        requestAnimationFrame(() => {
+          const scrollY = window.scrollY;
+          if (scrollY < 260) {
+            setActiveNav('top');
+            isTicking = false;
+            return;
           }
-        }
+
+          const scrollPosition = scrollY + 200;
+          for (let i = cachedOffsets.length - 1; i >= 0; i--) {
+            const item = cachedOffsets[i];
+            if (item && scrollPosition >= item.top) {
+              setActiveNav(item.id);
+              break;
+            }
+          }
+          isTicking = false;
+        });
+        isTicking = true;
       }
     };
 
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
     window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -68,7 +86,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-[#06040d]/90 border-b border-[#7c3aed]/15 shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all duration-300">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#06040d]/96 border-b border-[#7c3aed]/20 shadow-[0_4px_24px_rgba(0,0,0,0.6)] backdrop-blur-sm transition-all duration-200 will-change-transform">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 h-[72px] flex items-center justify-between gap-3">
         {/* Brand Logo & Live Network Status */}
         <div className="flex items-center gap-3 shrink-0">
