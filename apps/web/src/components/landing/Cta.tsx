@@ -87,9 +87,9 @@ export function Cta() {
           </div>
 
           <motion.div
-            initial={{ opacity: 0, y: 35, scale: 0.96 }}
+            initial={{ opacity: 0, y: 30, scale: 0.96 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.15 }}
+            viewport={{ once: true, amount: 0.15 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="relative p-8 sm:p-12 lg:p-14 rounded-3xl bg-[#09061a]/95 border border-[#261c4a] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row items-center justify-between gap-8 sm:gap-10 overflow-hidden group hover:border-[#7c3aed]/40 transition-colors z-10"
           >

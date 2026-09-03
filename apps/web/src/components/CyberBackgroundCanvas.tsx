@@ -132,18 +132,34 @@ export function CyberBackgroundCanvas() {
 
     window.addEventListener('resize', handleResize);
 
-    // 5. Animation Loop with Visibility Check
+    // 5. Animation Loop with Visibility & Scroll Culling
     let animId: number;
     const startTime = performance.now();
     let lastRenderTime = 0;
+    let isScrolling = false;
+    let scrollTimeout: NodeJS.Timeout | null = null;
+
+    const onScroll = () => {
+      isScrolling = true;
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        isScrolling = false;
+      }, 80);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
 
     const animate = (currentTime: number) => {
       animId = requestAnimationFrame(animate);
 
-      if (!isVisible) return; // Pause rendering completely when tab is in background
+      // 1. Pause completely when tab is hidden or when scrolled past hero
+      if (!isVisible || window.scrollY > 900) return;
 
-      // Cap render rate to ~40-60fps to prevent Celeron CPU spikes
-      if (currentTime - lastRenderTime < 16) return;
+      // 2. Pause during active scroll motion to free 100% GPU for smooth 60fps scrolling
+      if (isScrolling) return;
+
+      // Cap render rate to ~40fps to keep CPU/GPU cold
+      if (currentTime - lastRenderTime < 24) return;
       lastRenderTime = currentTime;
 
       const elapsed = (currentTime - startTime) * 0.0008;
@@ -167,8 +183,10 @@ export function CyberBackgroundCanvas() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', onScroll);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
       }

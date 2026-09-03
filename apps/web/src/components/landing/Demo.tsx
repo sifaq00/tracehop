@@ -89,10 +89,10 @@ export function Demo({ registerScanner }: DemoProps) {
           {/* Left Column: Detective Rabbit */}
           <motion.div
             data-demo-left
-            initial={{ opacity: 0, x: -50, scale: 0.95 }}
+            initial={{ opacity: 0, x: -40, scale: 0.96 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5 flex items-center justify-center relative select-none"
           >
             <div className="absolute inset-0 bg-[#7c3aed]/10 rounded-full blur-[60px] pointer-events-none" />
@@ -108,10 +108,10 @@ export function Demo({ registerScanner }: DemoProps) {
           {/* Right Column: Demo UI */}
           <motion.div
             data-demo-right
-            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            initial={{ opacity: 0, x: 40, scale: 0.96 }}
             whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-7 flex flex-col items-start text-left"
           >
             <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#a855f7] mb-2.5">

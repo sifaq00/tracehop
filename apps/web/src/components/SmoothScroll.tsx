@@ -7,11 +7,11 @@ export function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initialize Lenis smooth scroll with responsive lerp
     const lenis = new Lenis({
-      lerp: 0.1, // Ultra-responsive linear interpolation, prevents floaty lag
+      lerp: 0.14, // Swift, responsive smoothing without floaty drag
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 1.0,
+      wheelMultiplier: 1.35, // Light, effortless scroll feel per wheel tick
       touchMultiplier: 1.2,
       syncTouch: false, // native touch on mobile for optimal battery & performance
     });

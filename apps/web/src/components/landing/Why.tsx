@@ -253,12 +253,11 @@ export function Why() {
               return (
                 <motion.div
                   key={card.title}
-                  initial={{ opacity: 0, y: 28, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 24, scale: 0.96 }}
                   whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                  viewport={{ once: false, amount: 0.15 }}
+                  viewport={{ once: true, amount: 0.15 }}
                   transition={{ duration: 0.5, delay: idx * 0.05, ease: [0.22, 1, 0.36, 1] }}
                   whileHover={{ scale: 1.04, y: -4 }}
-                  onMouseMove={handleSpotlight}
                   className="spotlight-card relative p-5 rounded-2xl bg-[#0d0924]/90 border border-[#261c4a] hover:border-[#9333ea]/60 shadow-xl flex flex-col items-center text-center justify-between min-h-[195px] transition-all duration-200 group"
                 >
                   {/* Icon Area with Glow */}
@@ -286,9 +285,9 @@ export function Why() {
 
           {/* LEFT: TELEGRAM INTEGRATION WITH REALISTIC SMARTPHONE MOCKUP */}
           <motion.div
-            initial={{ opacity: 0, y: 35, scale: 0.97 }}
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.2 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-6 p-6 sm:p-8 pb-0 sm:pb-0 rounded-3xl bg-[#0c0822]/90 border border-[#261c4a] shadow-2xl flex flex-col md:flex-row items-end justify-between gap-6 hover:border-[#7c3aed]/40 transition-colors overflow-hidden"
           >
@@ -321,10 +320,10 @@ export function Why() {
 
             {/* Right: Phone Mockup (Smooth Slide-Up Animation from Bottom) */}
             <motion.div
-              initial={{ opacity: 0, y: 90 }}
+              initial={{ opacity: 0, y: 80 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: false, amount: 0.2 }}
-              transition={{ duration: 0.85, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
               className="w-[260px] sm:w-[290px] h-[400px] sm:h-[420px] overflow-hidden relative shrink-0 select-none flex justify-center items-start self-end pt-1 -mb-[1px]"
             >
               <div className="relative aspect-[433/882] w-full shrink-0 drop-shadow-[0_20px_40px_rgba(0,0,0,0.95)]">
@@ -479,9 +478,9 @@ export function Why() {
 
           {/* RIGHT: FUNDING GRAPH PREVIEW WITH INTERACTIVE CANVAS GRAPH */}
           <motion.div
-            initial={{ opacity: 0, y: 35, scale: 0.97 }}
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.2 }}
+            viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-6 p-6 sm:p-8 rounded-3xl bg-[#0c0822]/90 border border-[#261c4a] shadow-2xl flex flex-col justify-between hover:border-[#7c3aed]/40 transition-colors"
           >
