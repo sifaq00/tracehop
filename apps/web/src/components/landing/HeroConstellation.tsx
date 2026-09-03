@@ -20,18 +20,9 @@ export function HeroConstellation({ rabbitMoveX, rabbitMoveY }: HeroConstellatio
                 {/* Interactive SVG Constellation Network & Looping Hop Trail Matching Screenshot 2026-08-22 200606.png */}
                 <svg className="absolute inset-0 w-full h-full overflow-visible pointer-events-none" viewBox="0 0 860 460" preserveAspectRatio="none" fill="none">
                   <defs>
-                    {/* Glowing Filters for Moving Light Particles */}
-                    <filter id="glowLight" x="-100%" y="-100%" width="300%" height="300%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur1" />
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur2" />
-                      <feMerge>
-                        <feMergeNode in="blur2" />
-                        <feMergeNode in="blur1" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                    <filter id="portalBlur" x="-50%" y="-50%" width="200%" height="200%">
-                      <feGaussianBlur in="SourceGraphic" stdDeviation="18" />
+                    {/* Glowing Filter for Moving Light Particles */}
+                    <filter id="glowLight" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
                     </filter>
                     <linearGradient id="amberLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#ff7a29" stopOpacity="0.85" />
@@ -39,9 +30,9 @@ export function HeroConstellation({ rabbitMoveX, rabbitMoveY }: HeroConstellatio
                       <stop offset="100%" stopColor="#c084fc" stopOpacity="0.9" />
                     </linearGradient>
                     <radialGradient id="portalGlowGrad" cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor="#ff7a29" stopOpacity="0.55" />
-                      <stop offset="45%" stopColor="#7c3aed" stopOpacity="0.38" />
-                      <stop offset="85%" stopColor="#38bdf8" stopOpacity="0.15" />
+                      <stop offset="0%" stopColor="#ff7a29" stopOpacity="0.5" />
+                      <stop offset="45%" stopColor="#7c3aed" stopOpacity="0.3" />
+                      <stop offset="85%" stopColor="#38bdf8" stopOpacity="0.1" />
                       <stop offset="100%" stopColor="#06040d" stopOpacity="0" />
                     </radialGradient>
                     <radialGradient id="portalCoreGrad" cx="50%" cy="50%" r="50%">
@@ -69,7 +60,7 @@ export function HeroConstellation({ rabbitMoveX, rabbitMoveY }: HeroConstellatio
                   {/* ===== 1. WARP PORTAL & COSMIC AURA BEHIND RABBIT ===== */}
                   <g id="rabbitPortalAura">
                     {/* Deep Cosmic Aura Halo */}
-                    <ellipse cx="180" cy="235" rx="170" ry="110" fill="url(#portalGlowGrad)" filter="url(#portalBlur)" />
+                    <ellipse cx="180" cy="235" rx="170" ry="110" fill="url(#portalGlowGrad)" />
 
                     {/* Orbiting Tech Warp Rings */}
                     <ellipse cx="175" cy="240" rx="125" ry="68" fill="none" stroke="#ff7a29" strokeWidth="1.6" strokeDasharray="5 7" strokeOpacity="0.65" transform="rotate(-18 175 240)">

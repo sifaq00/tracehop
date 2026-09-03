@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import {
   Zap,
@@ -11,7 +11,6 @@ import {
 import { PRESET_TOKENS, scrollToSection } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
 import { HeroConstellation } from './HeroConstellation';
-import { gsap } from '@/lib/gsap';
 
 interface HeroProps {
   onStartDemo: (token?: PresetToken) => void;
@@ -43,30 +42,6 @@ export function Hero({ onStartDemo }: HeroProps) {
     mouseX.set(0);
     mouseY.set(0);
   };
-
-  // Scroll-out parallax
-  useEffect(() => {
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: no-preference)', () => {
-      const ctx = gsap.context(() => {
-        gsap.to('[data-hero="copy"]', {
-          yPercent: -8,
-          opacity: 0.45,
-          ease: 'none',
-          scrollTrigger: { trigger: heroRef.current, start: 'top top', end: 'bottom top', scrub: true },
-        });
-        gsap.to('[data-hero="visual"]', {
-          yPercent: 10,
-          opacity: 0.35,
-          scale: 0.96,
-          ease: 'none',
-          scrollTrigger: { trigger: heroRef.current, start: 'top top', end: 'bottom top', scrub: true },
-        });
-      }, heroRef);
-      return () => ctx.revert();
-    });
-    return () => mm.revert();
-  }, []);
 
   return (
     <>
