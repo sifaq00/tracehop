@@ -6,6 +6,7 @@ import { Zap, RefreshCw, ShieldAlert, ShieldCheck, Wallet } from 'lucide-react';
 import { PRESET_TOKENS } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
 import { playClick } from '@/lib/sound-fx';
+import { ScanReport } from './ScanReport';
 import { WalletModal } from '../WalletModal';
 import type { WalletOption } from '../WalletModal';
 
@@ -581,6 +582,7 @@ export function Demo({ registerScanner }: DemoProps) {
 
                   {/* PROMINENT FINAL VERDICT HERO BANNER */}
                   {showVerdict && liveResult && (
+                    <>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95, y: -6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -643,6 +645,8 @@ export function Demo({ registerScanner }: DemoProps) {
                         </div>
                       )}
                     </motion.div>
+                    <ScanReport uaim={(liveResult as any).uaim} trades={(liveResult as any).trades ?? []} meta={(liveResult as any).meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
+                    </>
                   )}
 
                   {/* Error */}
