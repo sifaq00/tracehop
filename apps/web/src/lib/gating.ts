@@ -30,19 +30,45 @@ export interface GatingDecision {
   used?: number;
 }
 
+export const HOLD_CONFIG = {
+  get threshold(): number {
+    return Number(process.env.HOLD_THRESHOLD ?? 50000);
+  },
+  get tokenSymbol(): string {
+    return process.env.HOLD_TOKEN_SYMBOL ?? 'ARDRILL';
+  },
+  get chainName(): string {
+    return process.env.HOOD_CHAIN_NAME ?? 'Robinhood';
+  },
+  get tokenAddress(): string {
+    return (
+      process.env.HOLD_TOKEN_ADDRESS ||
+      process.env.TRCHP_TOKEN_ADDRESS ||
+      '0x901fc7e22b7bc7353c66f0344a521e6533bf665f'
+    );
+  },
+  get decimals(): number {
+    return Number(process.env.HOLD_TOKEN_DECIMALS ?? 18);
+  },
+  get freeLimit(): number {
+    return Number(process.env.FREE_ANON_SCANS ?? 3);
+  },
+};
+
+export const HOLD_THRESHOLD = 50000;
+export const HOLD_TOKEN_SYMBOL = 'ARDRILL';
+export const HOOD_CHAIN_NAME = 'Robinhood';
+
 function getConfig() {
   const rpcUrl =
     process.env.HOOD_RPC_URL ||
     process.env.HOOD_MAINNET_RPC ||
     'https://robinhood-sepolia-rpc.publicnode.com';
-  const tokenAddress =
-    process.env.HOLD_TOKEN_ADDRESS ||
-    process.env.TRCHP_TOKEN_ADDRESS ||
-    '0x901fc7e22b7bc7353c66f0344a521e6533bf665f';
-  const decimals = Number(process.env.HOLD_TOKEN_DECIMALS ?? 18);
-  const threshold = BigInt(process.env.HOLD_THRESHOLD ?? '50000');
+  const tokenAddress = HOLD_CONFIG.tokenAddress;
+  const decimals = HOLD_CONFIG.decimals;
+  const threshold = BigInt(HOLD_CONFIG.threshold);
   const thresholdRaw = threshold * (BigInt(10) ** BigInt(decimals));
-  const freeLimit = Number(process.env.FREE_ANON_SCANS ?? 3);
+  const freeLimit = HOLD_CONFIG.freeLimit;
   const supabaseUrl =
     process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey =
