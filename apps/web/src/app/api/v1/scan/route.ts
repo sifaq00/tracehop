@@ -220,9 +220,18 @@ async function performInlineScan(
         new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3000)),
       ]);
 
+      // Blockscout v2 returns from/to as objects {hash} or plain strings — normalize first
+      const addrOf = (v: unknown): string => (typeof v === 'string' ? v : (v as { hash?: string } | null)?.hash ?? '');
+      const parsedTxs = txs
+        .map((t, i) => ({
+          trader: addrOf(t.from) || addrOf(t.to),
+          solAmount: Number(t.value ?? 0) / 1e18,
+          slot: Number(t.block_number ?? i),
+        }))
+        .filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase());
       // Determine buyers list (use mock list if empty, or slice to first 20)
-      const evmBuyers = txs.length > 0
-        ? Array.from(new Set(txs.map(t => t.from || t.to).filter(addr => addr && addr.toLowerCase() !== creator.toLowerCase()))).slice(0, 20)
+      const evmBuyers = parsedTxs.length > 0
+        ? Array.from(new Set(parsedTxs.map((t) => t.trader))).slice(0, 20)
         : [
           '0x3mVcA71pWqFvNuXyL7zK9aA719xUwL4sKmZrT5eYp',
           '0xFh2sA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71',
@@ -407,20 +416,17 @@ async function performInlineScan(
         console.error('[EVM Scan] Failed to save prediction to DB:', dbErr);
       }
 
-      const txValueByAddr = new Map<string, number>();
-      for (const t of txs as any[]) {
-        const addr = (t.from || t.to) as string | undefined;
-        if (!addr) continue;
-        const v = Number((t as any).value ?? 0);
-        if (!txValueByAddr.has(addr.toLowerCase()) && Number.isFinite(v) && v > 0) {
-          txValueByAddr.set(addr.toLowerCase(), v);
-        }
-      }
-      const evmTrades = evmBuyers.slice(0, 20).map((trader, i) => ({
-        trader,
-        solAmount: txValueByAddr.get(trader.toLowerCase()) ?? 0.1,
-        slot: i,
-      }));
+      // One bar per on-chain tx (max 20) so the chart mirrors real varied sizes like Solana
+      const evmTrades = (parsedTxs.length > 0
+        ? parsedTxs
+        : evmBuyers.map((trader, i) => ({ trader, solAmount: 0, slot: i }))
+      )
+        .slice(0, 20)
+        .map((t) => ({
+          trader: t.trader,
+          solAmount: t.solAmount > 0 ? t.solAmount : 0.0001,
+          slot: t.slot,
+        }));
 
       await writer.write(encoder.encode(`event: verdict\ndata: ${JSON.stringify({
         step: 'verdict',
