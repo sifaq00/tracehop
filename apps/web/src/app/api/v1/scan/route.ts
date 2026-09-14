@@ -154,6 +154,21 @@ async function traceFundingParent(address: string, creator: string): Promise<{ f
   return { funder: '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW', funderType: 'cex' };
 }
 
+// ponytail: creator real = fee payer tx tertua mint, bukan seed hardcoded
+async function resolveMintCreator(mint: string): Promise<string> {
+  const fallback = '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71';
+  try {
+    const connection = new Connection(RPC_ENDPOINT);
+    const sigs = await connection.getSignaturesForAddress(new PublicKey(mint), { limit: 100 });
+    if (sigs.length === 0) return fallback;
+    const oldest = sigs[sigs.length - 1].signature;
+    const tx = await connection.getParsedTransaction(oldest, { maxSupportedTransactionVersion: 0 });
+    return tx?.transaction.message.accountKeys[0].pubkey.toBase58() || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 async function performInlineScan(
   mint: string,
   creator: string,
@@ -911,7 +926,7 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
     const encoder = new TextEncoder();
 
     // Trigger inline scan asynchronously
-    performInlineScan(mint, '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', true, userWallet, writer, encoder);
+    performInlineScan(mint, await resolveMintCreator(mint), true, userWallet, writer, encoder);
 
     return new Response(responseStream.readable, {
       headers: {
@@ -926,7 +941,7 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
     const writer = responseStream.writable.getWriter();
     const encoder = new TextEncoder();
 
-    performInlineScan(mint, '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', true, userWallet, writer, encoder);
+    performInlineScan(mint, await resolveMintCreator(mint), true, userWallet, writer, encoder);
 
     // Read from stream to find the verdict event
     const reader = responseStream.readable.getReader();
