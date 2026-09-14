@@ -81,6 +81,8 @@ const MAIN_KEYBOARD = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    // ponytail: base URL dari host request, env localhost tak berlaku di prod
+    const appUrl = `https://${request.headers.get('host')}` || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // --- 1. Handle Callback Queries (Button Clicks) ---
     if (body.callback_query) {
@@ -169,7 +171,6 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (!dbSession || !dbSession.wallet) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const connectKeyboard = {
           inline_keyboard: [
             [{ text: '🔌 Connect Phantom Wallet', url: `${appUrl}/?tg_chat_id=${chatId}` }]
@@ -360,7 +361,6 @@ export async function POST(request: NextRequest) {
         );
 
         try {
-          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
           const res = await fetch(`${appUrl}/api/v1/wallet/${targetAddress}`);
           const data = await res.json();
           
