@@ -217,9 +217,9 @@ async function performInlineScan(
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
         ]),
       ]);
-      const creator = realCreator || '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
-      const creatorSource = realCreator ? 'blockscout-creator' : 'mock';
-      const tokenDecimals = Number(tokenInfo?.decimals ?? 18);
+      let creator = realCreator || '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
+      let creatorSource = realCreator ? 'blockscout-creator' : 'mock';
+      let tokenDecimals = Number(tokenInfo?.decimals ?? 18);
       const tokenSymbol = typeof tokenInfo?.symbol === 'string' && tokenInfo.symbol ? tokenInfo.symbol : 'NVDA';
       const tokenName = typeof tokenInfo?.name === 'string' && tokenInfo.name ? tokenInfo.name : 'NVIDIA Stock Token';
       console.log(`[STEP 5] Resolving wallet creation age and profiles for creator: ${creator} (${creatorSource})`);
@@ -266,7 +266,66 @@ async function performInlineScan(
           slot: Number(t.block_number ?? i),
         }))
         .filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase());
-      const tradesSource = transferTxs.length > 0 ? 'blockscout-token-transfers' : parsedTxs.length > 0 ? 'blockscout-native-value' : 'mock';
+      let tradesSource = transferTxs.length > 0 ? 'blockscout-token-transfers' : parsedTxs.length > 0 ? 'blockscout-native-value' : 'mock';
+
+      // RPC fallback: Blockscout unreachable — trace real ERC-20 Transfer logs directly
+      const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+      const padAddr = (a: string): string => '0x' + a.toLowerCase().replace(/^0x/, '').padStart(64, '0');
+      const unpadAddr = (t: string): string => '0x' + t.slice(-40);
+      let rpcLogs: Array<Record<string, unknown>> = [];
+      if (parsedTxs.length === 0) {
+        try {
+          await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 40, log: '[RPC] Blockscout down — pulling Transfer logs from chain...' })}\n\n`));
+          const rpc = new RobinhoodChainClient();
+          const [dec, head] = await Promise.all([
+            tokenInfo ? Promise.resolve(Number(tokenInfo.decimals ?? 18)) : rpc.getTokenDecimals(mint),
+            rpc.getBlockNumber(),
+          ]);
+          if (!tokenInfo) tokenDecimals = dec;
+          // Node caps range at 50k blocks — page backwards, keep oldest 20 of what we find
+          const collected: Array<Record<string, unknown>> = [];
+          const STEP = 45000;
+          let to = head;
+          for (let page = 0; page < 40 && to > 0 && collected.length < 200; page++) {
+            const from = Math.max(0, to - STEP);
+            const toHex = '0x' + to.toString(16);
+            const fromHex = '0x' + from.toString(16);
+            const chunk = await Promise.race([
+              rpc.getLogs({ address: mint, topics: [TRANSFER_TOPIC], fromBlock: fromHex, toBlock: toHex }),
+              new Promise<Array<Record<string, unknown>>>((resolve) => setTimeout(() => resolve([]), 12000)),
+            ]);
+            collected.push(...chunk);
+            if (from === 0) break;
+            to = from - 1;
+          }
+          rpcLogs = collected.slice(-60);
+          if (rpcLogs.length > 0) {
+            const firstTx = rpcLogs[0].transactionHash as string;
+            const sender = firstTx ? await rpc.getTransactionSender(firstTx) : null;
+            if (sender && creatorSource === 'mock') {
+              creator = sender;
+              creatorSource = 'rpc-first-tx';
+            }
+            const rpcTrades = rpcLogs.slice(0, 20).map((l) => {
+              const topics = (l.topics ?? []) as string[];
+              const data = (l.data ?? '0x0') as string;
+              const blockNumber = (l.blockNumber ?? 0) as string | number;
+              return {
+                trader: unpadAddr(topics[2] ?? ''),
+                solAmount: Number(BigInt(data)) / 10 ** tokenDecimals,
+                slot: Number(blockNumber),
+              };
+            }).filter((t) => t.trader && t.trader !== '0x0000000000000000000000000000000000000000' && t.trader.toLowerCase() !== creator.toLowerCase());
+            if (rpcTrades.length > 0) {
+              parsedTxs.length = 0;
+              parsedTxs.push(...rpcTrades);
+              tradesSource = 'rpc-getLogs';
+            }
+          }
+        } catch (e) {
+          console.warn('[EVM Scan] RPC log fallback failed:', (e as Error).message);
+        }
+      }
       // Determine buyers list (use mock list if empty, or slice to first 20)
       const evmBuyers = parsedTxs.length > 0
         ? Array.from(new Set(parsedTxs.map((t) => t.trader))).slice(0, 20)
@@ -317,7 +376,7 @@ async function performInlineScan(
               funderType: funder.toLowerCase() === creator.toLowerCase() ? 'deployer' : 'unknown',
             };
           } else {
-            fundingSources[trader] = { funder: creator, funderType: 'unknown' };
+            fundingSources[trader] = { funder: 'unknown', funderType: 'unknown' };
           }
         });
       }
@@ -346,7 +405,7 @@ async function performInlineScan(
       const parentGroups: Record<string, string[]> = {};
       for (const trader of evmBuyers) {
         const parent = fundingSources[trader]?.funder;
-        if (parent) {
+        if (parent && parent !== 'unknown') {
           if (!parentGroups[parent]) parentGroups[parent] = [];
           parentGroups[parent].push(trader);
         }
@@ -423,6 +482,7 @@ async function performInlineScan(
       const fundingNodes: { address: string; type: 'cex' | 'eoa' }[] = [];
       const fundingEdges: { from: string; to: string; amount: number; timestamp: number }[] = [];
       for (const [addr, src] of Object.entries(fundingSources)) {
+        if (src.funder === 'unknown') continue;
         fundingNodes.push({
           address: addr,
           type: src.funderType === 'cex' ? 'cex' : 'eoa',
@@ -544,11 +604,20 @@ async function performInlineScan(
       const oldestSigs = sigInfos.map(s => s.signature).reverse().slice(0, 25);
 
       if (oldestSigs.length > 0) {
-        // High-speed batch parsed transactions in a single request
-        const parsedTxs = await Promise.race([
-          connection.getParsedTransactions(oldestSigs, { maxSupportedTransactionVersion: 0 }),
-          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('batch_tx_timeout')), 4500)),
-        ]);
+        // Chunked parsed fetch (5 per batch) — single 25-tx batch times out on free RPC tiers
+        const parsedTxs: any[] = [];
+        for (let c = 0; c < oldestSigs.length; c += 5) {
+          const chunk = oldestSigs.slice(c, c + 5);
+          try {
+            const part = await Promise.race([
+              connection.getParsedTransactions(chunk, { maxSupportedTransactionVersion: 0 }),
+              new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('batch_tx_timeout')), 8000)),
+            ]);
+            parsedTxs.push(...part);
+          } catch (e) {
+            console.warn(`[Inline Scan] Parsed chunk ${c / 5 + 1} skipped:`, (e as Error).message);
+          }
+        }
 
         const resolvedBuyers = new Set<string>();
         const parsedTrades = [];

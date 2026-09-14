@@ -4,8 +4,56 @@ export class RobinhoodChainClient implements ChainClientAdapter {
   chainId = '4663';
   private rpcUrl: string;
 
-  constructor() {
-    this.rpcUrl = process.env.ALCHEMY_ROBINHOOD_RPC_URL || process.env.HOOD_MAINNET_RPC || 'https://rpc.mainnet.chain.robinhood.com';
+  constructor(rpcUrl?: string) {
+    this.rpcUrl = rpcUrl || process.env.HOOD_RPC_URL || process.env.ALCHEMY_ROBINHOOD_RPC_URL || process.env.HOOD_MAINNET_RPC || 'https://robinhood-sepolia-rpc.publicnode.com';
+  }
+
+  private async rpc(method: string, params: unknown[]): Promise<any> {
+    const res = await fetch(this.rpcUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 }),
+    });
+    const json = await res.json() as any;
+    if (json.error) throw new Error(json.error.message || `RPC ${method} failed`);
+    return json.result;
+  }
+
+  async getLogs(filter: { address?: string; topics?: (string | string[] | null)[]; fromBlock?: string; toBlock?: string }): Promise<any[]> {
+    try {
+      const result = await this.rpc('eth_getLogs', [filter]);
+      return Array.isArray(result) ? result : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async getBlockNumber(): Promise<number> {
+    try {
+      const res = await this.rpc('eth_blockNumber', []);
+      return parseInt(res, 16) || 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getTransactionSender(txHash: string): Promise<string | null> {
+    try {
+      const tx = await this.rpc('eth_getTransactionByHash', [txHash]);
+      return typeof tx?.from === 'string' ? tx.from : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async getTokenDecimals(token: string): Promise<number> {
+    try {
+      const res = await this.rpc('eth_call', [{ to: token, data: '0x313ce567' }, 'latest']);
+      const n = parseInt(res, 16);
+      return Number.isFinite(n) && n >= 0 && n <= 36 ? n : 18;
+    } catch {
+      return 18;
+    }
   }
 
   async fetchTransaction(signature: string): Promise<any> {
