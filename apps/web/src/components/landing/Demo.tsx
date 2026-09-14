@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, RefreshCw, ShieldAlert, Wallet } from 'lucide-react';
+import { Zap, RefreshCw, ShieldAlert, ShieldCheck, Wallet } from 'lucide-react';
 import { PRESET_TOKENS } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
 import { playClick } from '@/lib/sound-fx';
@@ -377,19 +377,33 @@ export function Demo({ registerScanner }: DemoProps) {
               <>
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: [0.9, 1.25, 0.9], opacity: [0.2, 0.5, 0.2] }}
+                  animate={{ scale: [0.9, 1.25, 0.9], opacity: [0.15, 0.45, 0.15] }}
                   transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-                  className="absolute w-72 h-72 rounded-full border border-[#ff7a29]/40 bg-[#ff7a29]/5 pointer-events-none"
+                  className="absolute w-72 h-72 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/5 pointer-events-none"
                 />
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute -top-4 px-3 py-1 rounded-full bg-[#120d2b]/95 border border-[#ff7a29]/50 shadow-[0_0_15px_rgba(255,122,41,0.4)] flex items-center gap-2 font-mono text-[10px] font-bold text-[#ffb347] z-10 select-none"
+                  className="absolute -top-4 px-3.5 py-1 rounded-full bg-[#120d2b]/95 border border-[#7c3aed]/50 shadow-[0_0_15px_rgba(124,58,237,0.3)] flex items-center gap-2 font-mono text-[10.5px] font-bold text-[#c4b5fd] z-10 select-none"
                 >
-                  <span className="w-2 h-2 rounded-full bg-[#ff7a29] animate-ping" />
-                  <span>INTERROGATING BLOCKCHAIN</span>
+                  <span className="w-2 h-2 rounded-full bg-[#a855f7] animate-ping" />
+                  <span>INTERROGATING ON-CHAIN</span>
                 </motion.div>
               </>
+            )}
+            {!isScanning && showVerdict && liveResult && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                className={`absolute -top-4 px-3.5 py-1 rounded-full border z-10 select-none flex items-center gap-2 font-mono text-[10.5px] font-bold ${
+                  liveResult.verdict === 'CAP'
+                    ? 'bg-rose-950/90 border-rose-500/60 text-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.35)]'
+                    : 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.35)]'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${liveResult.verdict === 'CAP' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                <span>{liveResult.verdict === 'CAP' ? 'THREAT CONFIRMED' : 'CONTRACT VERIFIED'}</span>
+              </motion.div>
             )}
             <motion.img
               animate={isScanning ? { y: [0, -3, 0], rotate: [-1, 1, -1] } : { y: [0, -6, 0] }}
@@ -521,17 +535,20 @@ export function Demo({ registerScanner }: DemoProps) {
                   exit={{ opacity: 0, height: 0 }}
                   className="w-full mt-3 overflow-hidden"
                 >
-                  <div className="flex items-center justify-between text-[10px] font-mono text-[#94a3b8] mb-1.5">
-                    <span>Tracing funding graph...</span>
-                    <span className="text-[#7c3aed] font-bold">{scanProgress}%</span>
+                  <div className="flex items-center justify-between text-[10.5px] font-mono text-[#94a3b8] mb-1.5">
+                    <span className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7] animate-ping" />
+                      <span>Investigating on-chain telemetry...</span>
+                    </span>
+                    <span className="text-[#c4b5fd] font-bold">{scanProgress}%</span>
                   </div>
-                  <div className="w-full h-1 bg-[#1b143f] rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-[#170f38] rounded-full overflow-hidden">
                     <motion.div
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: scanProgress / 100 }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
                       style={{ transformOrigin: 'left' }}
-                      className="h-full w-full bg-gradient-to-r from-[#7c3aed] to-[#ff7a29] rounded-full"
+                      className="h-full w-full bg-gradient-to-r from-[#7c3aed] to-[#a855f7] rounded-full"
                     />
                   </div>
                 </motion.div>
@@ -547,44 +564,84 @@ export function Demo({ registerScanner }: DemoProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.97 }}
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#0a0718] border border-[#2c2054] p-4 sm:p-5 shadow-2xl font-mono text-xs flex flex-col max-h-[420px] overflow-hidden"
+                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#090616] border border-[#241a45] p-4 sm:p-5 shadow-2xl font-mono text-xs flex flex-col max-h-[500px] overflow-hidden"
                 >
                   {/* Terminal header */}
-                  <div className="shrink-0 flex items-center justify-between pb-3 mb-3 border-b border-[#2c2054]">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'animate-pulse' : ''} ${liveResult ? (liveResult.verdict === 'CAP' ? 'bg-rose-400' : 'bg-emerald-400') : selectedToken.type === 'SAFE' ? 'bg-emerald-400' : selectedToken.type === 'WARN' ? 'bg-amber-400' : 'bg-rose-400'}`} />
-                      <span className="font-bold text-white uppercase">{selectedToken.name} ({selectedToken.ticker})</span>
+                  <div className="shrink-0 flex items-center justify-between pb-3 mb-3 border-b border-[#241a45]">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'animate-pulse bg-[#a855f7]' : liveResult ? (liveResult.verdict === 'CAP' ? 'bg-rose-500' : 'bg-emerald-500') : selectedToken.type === 'SAFE' ? 'bg-emerald-500' : selectedToken.type === 'WARN' ? 'bg-amber-400' : 'bg-rose-500'}`} />
+                      <span className="font-bold text-white uppercase tracking-wide">{selectedToken.name}</span>
+                      <span className="font-mono text-[#94a3b8] text-[11px]">({selectedToken.ticker})</span>
                     </div>
-                    {showVerdict && liveResult && (
-                      <motion.span
-                        initial={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 20 }}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          liveResult.verdict === 'CAP'
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                        }`}
-                      >
-                        {liveResult.verdict} · {Math.round((liveResult.confidence || 0) * 100)}/100
-                      </motion.span>
-                    )}
+                    <div className="flex items-center gap-2 font-mono text-[10px]">
+                      <span className="text-[#64748b]">NETWORK:</span>
+                      <span className="text-[#c4b5fd] font-semibold uppercase">{gateStatus?.chain || 'MULTI-CHAIN'}</span>
+                    </div>
                   </div>
 
-                  {/* Summary */}
+                  {/* PROMINENT FINAL VERDICT HERO BANNER */}
                   {showVerdict && liveResult && (
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1 }}
-                      className="shrink-0 mb-3 space-y-1.5"
+                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                      className={`shrink-0 mb-3.5 p-4 rounded-xl border relative overflow-hidden ${
+                        liveResult.verdict === 'CAP'
+                          ? 'bg-gradient-to-b from-rose-950/60 to-[#140b18] border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.25)]'
+                          : 'bg-gradient-to-b from-emerald-950/60 to-[#0b1614] border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]'
+                      }`}
                     >
-                      <p className="text-[#cbd5e1] text-[11px] leading-relaxed">
-                        Pattern: <span className="text-white font-semibold">{liveResult.subclass}</span>
-                      </p>
-                      {liveResult.reasons.slice(0, 3).map((r, i) => (
-                        <p key={i} className="text-[#94a3b8] text-[11px] leading-relaxed">• {r.text}</p>
-                      ))}
+                      {/* Top Row: Verdict Headline & Confidence */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
+                        <div className="flex items-center gap-3">
+                          {liveResult.verdict === 'CAP' ? (
+                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
+                              <ShieldAlert className="w-5 h-5 text-rose-400" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-[10px] font-mono uppercase tracking-wider text-[#94a3b8]">AUDIT VERDICT</span>
+                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                                liveResult.verdict === 'CAP' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              }`}>
+                                {liveResult.subclass || 'UNKNOWN PATTERN'}
+                              </span>
+                            </div>
+                            <h3 className={`text-base sm:text-lg font-black tracking-tight font-sans ${
+                              liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'
+                            }`}>
+                              {liveResult.verdict === 'CAP' ? 'CAP DETECTED · HIGH RISK FRAUD' : 'NO CAP · VERIFIED ORGANIC'}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {/* Confidence Metric */}
+                        <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 font-mono text-xs">
+                          <span className="text-[#94a3b8] text-[10.5px]">CONFIDENCE:</span>
+                          <span className={`font-black text-sm ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                            {Math.round((liveResult.confidence || 0) * 100)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Primary Reasons Breakdown */}
+                      {liveResult.reasons && liveResult.reasons.length > 0 && (
+                        <div className="space-y-1.5 pt-2 border-t border-white/10">
+                          {liveResult.reasons.slice(0, 3).map((r, i) => (
+                            <div key={i} className="flex items-start gap-2 text-[11.5px] leading-snug font-sans">
+                              <span className={`shrink-0 font-bold ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                                {liveResult.verdict === 'CAP' ? '✕' : '✓'}
+                              </span>
+                              <span className="text-[#e2e8f0]">{r.text}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </motion.div>
                   )}
 
@@ -639,45 +696,41 @@ export function Demo({ registerScanner }: DemoProps) {
                     </div>
                   )}
 
+                  {/* Clean Forensic Streaming Logs Header */}
+                  <div className="shrink-0 flex items-center justify-between pt-1 pb-2 font-mono text-[10px] text-[#64748b] border-t border-white/5">
+                    <span>FORENSIC TELEMETRY LOG</span>
+                    <span>{visibleLogs.length} EVENTS</span>
+                  </div>
+
                   {/* Streaming logs */}
                   <div
                     ref={terminalRef}
                     data-lenis-prevent
-                    className="space-y-1.5 text-[11px] overflow-y-auto overscroll-contain pr-1.5 flex-1 min-h-[140px] max-h-[260px] [scrollbar-width:thin] [scrollbar-color:rgba(255,122,41,0.4)_transparent]"
+                    className="space-y-1.5 text-[11px] overflow-y-auto overscroll-contain pr-1.5 flex-1 min-h-[120px] max-h-[220px] [scrollbar-width:thin] [scrollbar-color:rgba(124,58,237,0.3)_transparent]"
                   >
                     {visibleLogs.map((log, idx) => {
                       const isLast = idx === visibleLogs.length - 1 && isScanning;
-                      let textColor = 'text-[#94a3b8]';
-                      if (log.includes('VERDICT')) {
-                        textColor = log.includes('CAP') ? 'text-rose-400 font-extrabold' : 'text-emerald-400 font-extrabold';
+                      let textColor = 'text-[#cbd5e1]';
+                      let tagColor = 'text-[#7c3aed]';
+
+                      if (log.includes('FINAL VERDICT') || log.includes('VERDICT:')) {
+                        textColor = log.includes('CAP') ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold';
+                        tagColor = log.includes('CAP') ? 'text-rose-500' : 'text-emerald-500';
                       } else if (log.includes('CLUSTER') || log.includes('🚨')) {
-                        textColor = 'text-amber-400 font-bold';
-                      } else if (log.includes('DEPLOYER')) {
-                        textColor = 'text-cyan-400 font-medium';
-                      } else if (log.includes('BLOCKCHAIN') || log.includes('TRADES')) {
-                        textColor = 'text-purple-400 font-medium';
-                      } else if (log.includes('FUNDING')) {
-                        textColor = 'text-blue-400 font-medium';
-                      } else if (log.includes('REGIME')) {
-                        textColor = 'text-violet-300 font-medium';
+                        textColor = 'text-amber-300 font-semibold';
+                        tagColor = 'text-amber-500';
                       }
 
                       return (
-                        <motion.div
-                          key={idx}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.18 }}
-                          className="flex items-start gap-2"
-                        >
-                          <span className="text-[#ff7a29] shrink-0 font-mono font-bold">&gt;</span>
-                          <span className={`${textColor} leading-relaxed font-mono`}>
+                        <div key={idx} className="flex items-start gap-2 select-text font-mono">
+                          <span className={`${tagColor} shrink-0 font-bold`}>&gt;</span>
+                          <span className={`${textColor} leading-relaxed`}>
                             {log}
                             {isLast && (
-                              <span className="inline-block w-1.5 h-3 bg-[#ff7a29] ml-1 animate-pulse" />
+                              <span className="inline-block w-1.5 h-3 bg-[#a855f7] ml-1 animate-pulse align-middle" />
                             )}
                           </span>
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
