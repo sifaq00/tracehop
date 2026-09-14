@@ -210,11 +210,11 @@ async function performInlineScan(
       const [realCreator, tokenInfo] = await Promise.all([
         Promise.race([
           explorer.getContractCreator(mint),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
         ]),
         Promise.race([
           explorer.getTokenInfo(mint),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
         ]),
       ]);
       let creator = realCreator || '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
