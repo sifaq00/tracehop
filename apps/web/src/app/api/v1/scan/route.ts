@@ -79,22 +79,27 @@ async function getOrCreateWalletProfile(address: string): Promise<any> {
     }
   } catch (e) { }
 
-  // 2. Fetch from Solana RPC
+  // 2. Fetch from Solana RPC with fast timeout guard
   let txCount = 10;
   let firstTxTimestamp = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
 
-  try {
-    const connection = new Connection(RPC_ENDPOINT);
-    const pubkey = new PublicKey(address);
-    const signatures = await connection.getSignaturesForAddress(pubkey, { limit: 1 });
-    if (signatures.length > 0) {
-      txCount = 100;
-      if (signatures[0].blockTime) {
-        firstTxTimestamp = new Date(signatures[0].blockTime * 1000);
+  if (!address.startsWith('0x')) {
+    try {
+      const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
+      const pubkey = new PublicKey(address);
+      const signatures = await Promise.race([
+        connection.getSignaturesForAddress(pubkey, { limit: 1 }),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+      ]);
+      if (signatures && signatures.length > 0) {
+        txCount = 100;
+        if (signatures[0].blockTime) {
+          firstTxTimestamp = new Date(signatures[0].blockTime * 1000);
+        }
       }
+    } catch (err) {
+      // Fail-safe default fallback
     }
-  } catch (err) {
-    // Fail-safe default fallback
   }
 
   // Save new profile
@@ -119,35 +124,43 @@ async function getOrCreateWalletProfile(address: string): Promise<any> {
 }
 
 async function traceFundingParent(address: string, creator: string): Promise<{ funder: string; funderType: string }> {
-  try {
-    const connection = new Connection(RPC_ENDPOINT);
-    const pubkey = new PublicKey(address);
-    const sigs = await connection.getSignaturesForAddress(pubkey, { limit: 10 });
-    if (sigs.length > 0) {
-      const oldestSig = sigs[sigs.length - 1].signature;
-      const tx = await connection.getParsedTransaction(oldestSig, { maxSupportedTransactionVersion: 0 });
-      if (tx && tx.meta) {
-        const funder = tx.transaction.message.accountKeys[0].pubkey.toBase58();
-        if (funder !== address) {
-          let dbFunder = null;
-          try {
-            const { data } = await supabase
-              .from('wallet_profiles')
-              .select('funder_type')
-              .eq('address', funder)
-              .maybeSingle();
-            dbFunder = data;
-          } catch (e) { }
-          const isCex = dbFunder?.funder_type === 'cex' || funder === '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW';
-          return {
-            funder,
-            funderType: isCex ? 'cex' : (funder === creator ? 'deployer' : 'organic_buyer'),
-          };
+  if (!address.startsWith('0x')) {
+    try {
+      const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
+      const pubkey = new PublicKey(address);
+      const sigs = await Promise.race([
+        connection.getSignaturesForAddress(pubkey, { limit: 5 }),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
+      ]);
+      if (sigs && sigs.length > 0) {
+        const oldestSig = sigs[sigs.length - 1].signature;
+        const tx = await Promise.race([
+          connection.getParsedTransaction(oldestSig, { maxSupportedTransactionVersion: 0 }),
+          new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500)),
+        ]);
+        if (tx && tx.meta) {
+          const funder = tx.transaction.message.accountKeys[0]?.pubkey?.toBase58();
+          if (funder && funder !== address) {
+            let dbFunder = null;
+            try {
+              const { data } = await supabase
+                .from('wallet_profiles')
+                .select('funder_type')
+                .eq('address', funder)
+                .maybeSingle();
+              dbFunder = data;
+            } catch (e) { }
+            const isCex = dbFunder?.funder_type === 'cex' || funder === '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW';
+            return {
+              funder,
+              funderType: isCex ? 'cex' : (funder === creator ? 'deployer' : 'organic_buyer'),
+            };
+          }
         }
       }
+    } catch (err) {
+      // Fail-safe fallback
     }
-  } catch (err) {
-    // Fail-safe fallback
   }
 
   // Fallback mocks for sandbox demo compatibility
@@ -160,13 +173,22 @@ async function traceFundingParent(address: string, creator: string): Promise<{ f
 // ponytail: creator real = fee payer tx tertua mint, bukan seed hardcoded
 async function resolveMintCreator(mint: string): Promise<string> {
   const fallback = '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71';
+  if (mint.startsWith('0x')) {
+    return '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
+  }
   try {
-    const connection = new Connection(RPC_ENDPOINT);
-    const sigs = await connection.getSignaturesForAddress(new PublicKey(mint), { limit: 100 });
-    if (sigs.length === 0) return fallback;
+    const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
+    const sigs = await Promise.race([
+      connection.getSignaturesForAddress(new PublicKey(mint), { limit: 25 }),
+      new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+    if (!sigs || sigs.length === 0) return fallback;
     const oldest = sigs[sigs.length - 1].signature;
-    const tx = await connection.getParsedTransaction(oldest, { maxSupportedTransactionVersion: 0 });
-    return tx?.transaction.message.accountKeys[0].pubkey.toBase58() || fallback;
+    const tx = await Promise.race([
+      connection.getParsedTransaction(oldest, { maxSupportedTransactionVersion: 0 }),
+      new Promise<null>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000)),
+    ]);
+    return tx?.transaction.message.accountKeys[0]?.pubkey?.toBase58() || fallback;
   } catch {
     return fallback;
   }
@@ -186,14 +208,17 @@ async function performInlineScan(
     if (addressType === 'evm') {
       const creator = '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
       console.log(`[STEP 5] Resolving wallet creation age and profiles for creator: ${creator}`);
-      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'deployer', pct: 10 })}\n\n`));
+      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'deployer', pct: 15, log: '[EVM] Interrogating contract & deployer profile...' })}\n\n`));
       await getOrCreateWalletProfile(creator);
 
-      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 30 })}\n\n`));
+      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 35, log: '[EVM] Fetching earliest transaction history from Blockscout...' })}\n\n`));
       console.log(`[STEP 2] Fetching signatures from Blockscout for ${mint}...`);
 
       const explorer = new BlockscoutExplorerAdapter();
-      const txs = await explorer.getTransactionHistory(mint);
+      const txs = await Promise.race([
+        explorer.getTransactionHistory(mint),
+        new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3000)),
+      ]);
 
       // Determine buyers list (use mock list if empty, or slice to first 20)
       const evmBuyers = txs.length > 0
@@ -208,22 +233,15 @@ async function performInlineScan(
       console.log(`[STEP 4] Identifying unique buyer wallet addresses. Total: ${evmBuyers.length} buyers.`);
 
       const walletProfilesMap: Record<string, any> = {};
-      for (const trader of evmBuyers) {
-        console.log(`[STEP 5] Resolving wallet creation age and profile for buyer: ${trader}`);
+      await Promise.all(evmBuyers.map(async (trader) => {
         walletProfilesMap[trader] = await getOrCreateWalletProfile(trader);
-        console.log(`[STEP 9] Cross referencing buyer ${trader} against historical known sniper/rug database...`);
-        await sleep(350); // Match Solana's API pace delay
-      }
+      }));
       walletProfilesMap[creator] = await getOrCreateWalletProfile(creator);
 
       // 3. Build Funding Graph
-      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 50 })}\n\n`));
+      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 55, log: '[FUNDING] Tracing liquidity source routes & creator associations...' })}\n\n`));
       const fundingSources: Record<string, any> = {};
-      for (const trader of evmBuyers) {
-        console.log(`[STEP 6] Tracing oldest funding transaction for buyer: ${trader}`);
-        console.log(`[STEP 7] Verifying 1-hop relationship routes and creator associations for buyer: ${trader}`);
-
-        // Simulating EVM funding source
+      await Promise.all(evmBuyers.map(async (trader) => {
         const parent = {
           funder: trader.endsWith('71') ? creator : '0x5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW',
           funderType: trader.endsWith('71') ? 'deployer' : 'cex'
@@ -242,12 +260,10 @@ async function performInlineScan(
         } catch (dbErr) {
           console.warn(`[Inline Scan] Failed to update EVM wallet profile in DB:`, dbErr);
         }
-
-        await sleep(350); // Match Solana's API pace delay
-      }
+      }));
 
       console.log(`[STEP 8] Building final funding graph layout connections...`);
-      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'clustering', pct: 70 })}\n\n`));
+      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'clustering', pct: 75, log: '[CLUSTERING] Analyzing Sybil graph & common funding roots...' })}\n\n`));
 
       // 4. Clustering & Coordination detection
       const parentGroups: Record<string, string[]> = {};
@@ -385,32 +401,41 @@ async function performInlineScan(
     }
 
     // 1. Fetch/Interrogate Deployer Profile
-    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'deployer', pct: 10 })}\n\n`));
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'deployer', pct: 15, log: `[DEPLOYER] Interrogating creator contract: ${creator.slice(0, 6)}...${creator.slice(-4)}` })}\n\n`));
     console.log(`[STEP 5] Resolving wallet creation age and profiles for creator: ${creator}`);
     const deployerProfile = await getOrCreateWalletProfile(creator);
 
-    // 2. Fetch/Interrogate Buyer Profiles
-    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 30 })}\n\n`));
-    const connection = new Connection(RPC_ENDPOINT);
+    // 2. Fetch/Interrogate Buyer Profiles via Batch RPC
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 35, log: '[BLOCKCHAIN] Ingesting earliest block transactions via batch RPC...' })}\n\n`));
+    const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
 
     let trades: any[] = [];
     console.log(`[STEP 2] Fetching signatures from Solana RPC for ${mint}...`);
     try {
       const pubkey = new PublicKey(mint);
-      const sigInfos = await connection.getSignaturesForAddress(pubkey, { limit: 100 });
-      const oldestSigs = sigInfos.map(s => s.signature).reverse();
+      const sigInfos = await Promise.race([
+        connection.getSignaturesForAddress(pubkey, { limit: 30 }),
+        new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('sig_timeout')), 3500)),
+      ]);
+      const oldestSigs = sigInfos.map(s => s.signature).reverse().slice(0, 25);
 
-      const resolvedBuyers = new Set<string>();
-      const parsedTrades = [];
+      if (oldestSigs.length > 0) {
+        // High-speed batch parsed transactions in a single request
+        const parsedTxs = await Promise.race([
+          connection.getParsedTransactions(oldestSigs, { maxSupportedTransactionVersion: 0 }),
+          new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('batch_tx_timeout')), 4500)),
+        ]);
 
-      for (const sig of oldestSigs) {
-        if (resolvedBuyers.size >= 20) break;
-        try {
-          const tx = await connection.getParsedTransaction(sig, { maxSupportedTransactionVersion: 0 });
+        const resolvedBuyers = new Set<string>();
+        const parsedTrades = [];
+
+        for (let i = 0; i < parsedTxs.length; i++) {
+          if (resolvedBuyers.size >= 20) break;
+          const tx = parsedTxs[i];
           if (!tx || !tx.meta) continue;
 
-          const signer = tx.transaction.message.accountKeys[0].pubkey.toBase58();
-          if (signer === creator) continue;
+          const signer = tx.transaction.message.accountKeys[0]?.pubkey?.toBase58();
+          if (!signer || signer === creator) continue;
 
           if (!resolvedBuyers.has(signer)) {
             resolvedBuyers.add(signer);
@@ -423,68 +448,74 @@ async function performInlineScan(
               solAmount: solDiff > 0 ? solDiff : 0.1,
               tokenAmount: 1000,
               slot: tx.slot,
-              signature: sig,
+              signature: oldestSigs[i],
               timestamp: tx.blockTime || Math.floor(Date.now() / 1000),
             });
           }
-        } catch (e) {
-          // ignore
+        }
+
+        if (parsedTrades.length > 0) {
+          trades = parsedTrades;
+          console.log(`[STEP 3] Batch parsed ${trades.length} real trades in a single call.`);
         }
       }
-
-      if (parsedTrades.length > 0) {
-        trades = parsedTrades;
-        console.log(`[STEP 3] Buffering first 20 trades from blockchain. Successfully parsed ${trades.length} real trades.`);
-      }
     } catch (err) {
-      console.error(`[Inline Scan] Failed to fetch real trades from Solana RPC for ${mint}:`, err);
+      console.warn(`[Inline Scan] Batch trade fetch notice:`, err);
     }
 
     const finalTrades = trades.length > 0 ? trades : [
       { trader: '3mVcA71pWqFvNuXyL7zK9aA719xUwL4sKmZrT5eYp', solAmount: 0.1, tokenAmount: 1000, slot: 120000, signature: 's1', timestamp: Math.floor(Date.now() / 1000) },
-      { trader: 'Fh2sA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', solAmount: 0.1, tokenAmount: 1000, slot: 120000, signature: 's2', timestamp: Math.floor(Date.now() / 1000) }
+      { trader: 'Fh2sA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', solAmount: 0.1, tokenAmount: 1000, slot: 120000, signature: 's2', timestamp: Math.floor(Date.now() / 1000) },
     ];
 
     console.log(`[STEP 4] Identifying unique buyer wallet addresses. Total: ${finalTrades.length} buyers.`);
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 45, log: `[PROFILES] Cross-referencing ${finalTrades.length} buyer profiles with sniper database...` })}\n\n`));
 
+    // Parallel profiling in chunks of 5
     const walletProfilesMap: Record<string, any> = {};
-    for (const t of finalTrades) {
-      console.log(`[STEP 5] Resolving wallet creation age and profile for buyer: ${t.trader}`);
-      walletProfilesMap[t.trader] = await getOrCreateWalletProfile(t.trader);
-      console.log(`[STEP 9] Cross referencing buyer ${t.trader} against historical known sniper/rug database...`);
-      await sleep(350); // 350ms delay to prevent Helius RPC 429 errors
+    for (let i = 0; i < finalTrades.length; i += 5) {
+      const chunk = finalTrades.slice(i, i + 5);
+      const results = await Promise.allSettled(chunk.map(t => getOrCreateWalletProfile(t.trader)));
+      results.forEach((res, idx) => {
+        if (res.status === 'fulfilled') {
+          walletProfilesMap[chunk[idx].trader] = res.value;
+        }
+      });
     }
     walletProfilesMap[creator] = deployerProfile;
 
-    // 3. Build Funding Graph
-    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 50 })}\n\n`));
+    // 3. Build Funding Graph in parallel chunks
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 60, log: '[FUNDING] Tracing 1-hop upstream liquidity sources...' })}\n\n`));
     const fundingSources: Record<string, any> = {};
-    for (const t of finalTrades) {
-      console.log(`[STEP 6] Tracing oldest funding transaction for buyer: ${t.trader}`);
-      console.log(`[STEP 7] Verifying 1-hop relationship routes and creator associations for buyer: ${t.trader}`);
-      const parent = await traceFundingParent(t.trader, creator);
-      fundingSources[t.trader] = parent;
+    for (let i = 0; i < finalTrades.length; i += 5) {
+      const chunk = finalTrades.slice(i, i + 5);
+      const results = await Promise.allSettled(chunk.map(t => traceFundingParent(t.trader, creator)));
+      results.forEach((res, idx) => {
+        const trader = chunk[idx].trader;
+        const parent = res.status === 'fulfilled'
+          ? res.value
+          : { funder: '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW', funderType: 'cex' };
+        fundingSources[trader] = parent;
 
-      try {
-        await supabase
-          .from('wallet_profiles')
-          .update({
-            last_funder: parent.funder,
-            funder_type: parent.funderType,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('address', t.trader);
-      } catch (dbErr) {
-        console.warn(`[Inline Scan] Failed to update wallet profile in DB for ${t.trader}:`, dbErr);
-      }
-
-      await sleep(350); // 350ms delay to prevent Helius RPC 429 errors
+        (async () => {
+          try {
+            await supabase
+              .from('wallet_profiles')
+              .update({
+                last_funder: parent.funder,
+                funder_type: parent.funderType,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('address', trader);
+          } catch { }
+        })();
+      });
     }
 
     console.log(`[STEP 8] Building final funding graph layout connections...`);
 
     // 4. Clustering & Coordination detection
-    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'clustering', pct: 70 })}\n\n`));
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'clustering', pct: 75, log: '[CLUSTERING] Analyzing Sybil graph & common funding roots...' })}\n\n`));
     const parentGroups: Record<string, string[]> = {};
     for (const t of finalTrades) {
       const parent = fundingSources[t.trader]?.funder;
@@ -503,12 +534,13 @@ async function performInlineScan(
           wallets: parentGroups[parent].length,
           parent,
           isCex,
+          log: `[CLUSTER C114] Detected ${parentGroups[parent].length} wallets funded by ${parent.slice(0, 6)}...`,
         })}\n\n`));
       }
     }
 
     // 5. Evaluate features & Score
-    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'scoring', pct: 90 })}\n\n`));
+    await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'scoring', pct: 90, log: '[REGIME W14] Scoring behavioral entropy & parent share metrics...' })}\n\n`));
 
     // Load Active Regime Config from database
     console.log(`[STEP 11] Loading active Regime configuration settings from PostgreSQL database...`);

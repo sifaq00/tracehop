@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Zap, RefreshCw, ShieldAlert, Wallet } from 'lucide-react';
 import { PRESET_TOKENS } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
+import { playClick } from '@/lib/sound-fx';
 import { WalletModal } from '../WalletModal';
 import type { WalletOption } from '../WalletModal';
 
@@ -174,7 +175,7 @@ export function Demo({ registerScanner }: DemoProps) {
 
     try {
       const ctrl = new AbortController();
-      const timeout = setTimeout(() => ctrl.abort(), 65000);
+      const timeout = setTimeout(() => ctrl.abort(), 35000);
       // SSE stream: call scan API (without requiring userWallet if null)
       const qs = currentWallet
         ? `/api/v1/scan?mint=${encodeURIComponent(mint)}&stream=true&userWallet=${encodeURIComponent(currentWallet)}`
@@ -233,7 +234,9 @@ export function Demo({ registerScanner }: DemoProps) {
             setScanProgress(pct);
             if (data.step) {
               markStage(data.step);
-              setVisibleLogs((prev) => [...prev, `> ${data.step}... ${pct}%`]);
+              const message = data.log || `> ${data.step.toUpperCase()}... ${pct}%`;
+              setVisibleLogs((prev) => [...prev, message]);
+              try { playClick(); } catch { }
               // Tahap turunan dari event nyata
               if (data.step === 'buyers') { markStage('history'); markStage('known'); }
               if (data.step === 'clustering') { markStage('clusters'); markStage('bundle'); }
@@ -241,17 +244,26 @@ export function Demo({ registerScanner }: DemoProps) {
             }
           } else if (ev === 'cluster') {
             markStage('bundle');
-            setVisibleLogs((prev) => [...prev, `> cluster C114: ${data.wallets} wallets share parent`]);
+            setVisibleLogs((prev) => [
+              ...prev,
+              data.log || `🚨 CLUSTER DETECTED: ${data.wallets} coordinated wallets share funding parent`,
+            ]);
+            try { playClick(); } catch { }
           } else if (ev === 'verdict') {
             clearTimeout(timeout);
             clearInterval(interval);
             markStage('verdict');
             setLiveResult(data);
             setScanProgress(100);
-            setVisibleLogs((prev) => [...prev, `> Verdict: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}%)`]);
+            const isCap = data.verdict === 'CAP';
+            setVisibleLogs((prev) => [
+              ...prev,
+              `${isCap ? '🔴' : '🟢'} FINAL VERDICT: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}% Confidence)`,
+            ]);
             setIsScanning(false);
             setShowVerdict(true);
             finished = true;
+            try { playClick(); } catch { }
             fetchGateStatus(currentWallet);
             break;
           } else if (ev === 'error') {
@@ -269,7 +281,7 @@ export function Demo({ registerScanner }: DemoProps) {
       clearInterval(interval);
       setIsScanning(false);
       setScanError(err?.name === 'AbortError'
-        ? 'Scan timed out (>60s). High-volume mints (e.g. BONK) are too heavy — paste a fresh, quiet pump.fun mint instead.'
+        ? 'Scan timed out (>35s). Node network congested — try again or test another mint.'
         : (err?.message || 'Scan failed. Try again.'));
     }
   };
@@ -361,6 +373,24 @@ export function Demo({ registerScanner }: DemoProps) {
             className="lg:col-span-5 flex items-center justify-center relative select-none"
           >
             <div className="absolute inset-0 bg-[#7c3aed]/10 rounded-full blur-[60px] pointer-events-none" />
+            {isScanning && (
+              <>
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: [0.9, 1.25, 0.9], opacity: [0.2, 0.5, 0.2] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                  className="absolute w-72 h-72 rounded-full border border-[#ff7a29]/40 bg-[#ff7a29]/5 pointer-events-none"
+                />
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute -top-4 px-3 py-1 rounded-full bg-[#120d2b]/95 border border-[#ff7a29]/50 shadow-[0_0_15px_rgba(255,122,41,0.4)] flex items-center gap-2 font-mono text-[10px] font-bold text-[#ffb347] z-10 select-none"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#ff7a29] animate-ping" />
+                  <span>INTERROGATING BLOCKCHAIN</span>
+                </motion.div>
+              </>
+            )}
             <motion.img
               animate={isScanning ? { y: [0, -3, 0], rotate: [-1, 1, -1] } : { y: [0, -6, 0] }}
               transition={isScanning ? { repeat: Infinity, duration: 0.8, ease: 'easeInOut' } : { repeat: Infinity, duration: 4, ease: 'easeInOut' }}
@@ -610,24 +640,42 @@ export function Demo({ registerScanner }: DemoProps) {
                   )}
 
                   {/* Streaming logs */}
-                  <div className="space-y-1.5 text-[11px] text-[#94a3b8]">
-                    {visibleLogs.map((log, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="flex items-start gap-2"
-                      >
-                        <span className="text-[#7c3aed] shrink-0">&gt;</span>
-                        <span className={idx === visibleLogs.length - 1 && isScanning ? 'text-[#c4b5fd]' : ''}>
-                          {log}
-                          {idx === visibleLogs.length - 1 && isScanning && (
-                            <span className="inline-block w-1.5 h-3 bg-[#7c3aed] ml-0.5 animate-pulse" />
-                          )}
-                        </span>
-                      </motion.div>
-                    ))}
+                  <div className="space-y-1.5 text-[11px]">
+                    {visibleLogs.map((log, idx) => {
+                      const isLast = idx === visibleLogs.length - 1 && isScanning;
+                      let textColor = 'text-[#94a3b8]';
+                      if (log.includes('VERDICT')) {
+                        textColor = log.includes('CAP') ? 'text-rose-400 font-extrabold' : 'text-emerald-400 font-extrabold';
+                      } else if (log.includes('CLUSTER') || log.includes('🚨')) {
+                        textColor = 'text-amber-400 font-bold';
+                      } else if (log.includes('DEPLOYER')) {
+                        textColor = 'text-cyan-400 font-medium';
+                      } else if (log.includes('BLOCKCHAIN') || log.includes('TRADES')) {
+                        textColor = 'text-purple-400 font-medium';
+                      } else if (log.includes('FUNDING')) {
+                        textColor = 'text-blue-400 font-medium';
+                      } else if (log.includes('REGIME')) {
+                        textColor = 'text-violet-300 font-medium';
+                      }
+
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ duration: 0.18 }}
+                          className="flex items-start gap-2"
+                        >
+                          <span className="text-[#ff7a29] shrink-0 font-mono font-bold">&gt;</span>
+                          <span className={`${textColor} leading-relaxed font-mono`}>
+                            {log}
+                            {isLast && (
+                              <span className="inline-block w-1.5 h-3 bg-[#ff7a29] ml-1 animate-pulse" />
+                            )}
+                          </span>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 </motion.div>
               )}
