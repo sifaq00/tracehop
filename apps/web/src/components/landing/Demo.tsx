@@ -542,15 +542,15 @@ export function Demo({ registerScanner }: DemoProps) {
             <AnimatePresence>
               {hasScanned && (
                 <motion.div
-                  ref={terminalRef}
+                  data-lenis-prevent
                   initial={{ opacity: 0, y: 20, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.97 }}
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#0a0718] border border-[#2c2054] p-4 sm:p-5 shadow-2xl font-mono text-xs overflow-hidden max-h-[320px] overflow-y-auto"
+                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#0a0718] border border-[#2c2054] p-4 sm:p-5 shadow-2xl font-mono text-xs flex flex-col max-h-[420px] overflow-hidden"
                 >
                   {/* Terminal header */}
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#2c2054]">
+                  <div className="shrink-0 flex items-center justify-between pb-3 mb-3 border-b border-[#2c2054]">
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'animate-pulse' : ''} ${liveResult ? (liveResult.verdict === 'CAP' ? 'bg-rose-400' : 'bg-emerald-400') : selectedToken.type === 'SAFE' ? 'bg-emerald-400' : selectedToken.type === 'WARN' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                       <span className="font-bold text-white uppercase">{selectedToken.name} ({selectedToken.ticker})</span>
@@ -577,7 +577,7 @@ export function Demo({ registerScanner }: DemoProps) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1 }}
-                      className="mb-3 space-y-1.5"
+                      className="shrink-0 mb-3 space-y-1.5"
                     >
                       <p className="text-[#cbd5e1] text-[11px] leading-relaxed">
                         Pattern: <span className="text-white font-semibold">{liveResult.subclass}</span>
@@ -590,12 +590,12 @@ export function Demo({ registerScanner }: DemoProps) {
 
                   {/* Error */}
                   {!isScanning && scanError && (
-                    <p className="text-rose-300 text-[11px] leading-relaxed mb-3">⚠️ {scanError}</p>
+                    <p className="shrink-0 text-rose-300 text-[11px] leading-relaxed mb-3">⚠️ {scanError}</p>
                   )}
 
                   {/* Paywall: 402 Gating Modal/Card */}
                   {!isScanning && paywallData && (
-                    <div className="rounded-xl bg-[#120d2b] border border-[#7c3aed]/50 p-4 mb-3 font-sans shadow-[0_0_20px_rgba(124,58,237,0.2)]">
+                    <div className="shrink-0 rounded-xl bg-[#120d2b] border border-[#7c3aed]/50 p-4 mb-3 font-sans shadow-[0_0_20px_rgba(124,58,237,0.2)]">
                       <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/10">
                         <div className="flex items-center gap-2">
                           <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
@@ -640,7 +640,11 @@ export function Demo({ registerScanner }: DemoProps) {
                   )}
 
                   {/* Streaming logs */}
-                  <div className="space-y-1.5 text-[11px]">
+                  <div
+                    ref={terminalRef}
+                    data-lenis-prevent
+                    className="space-y-1.5 text-[11px] overflow-y-auto overscroll-contain pr-1.5 flex-1 min-h-[140px] max-h-[260px] [scrollbar-width:thin] [scrollbar-color:rgba(255,122,41,0.4)_transparent]"
+                  >
                     {visibleLogs.map((log, idx) => {
                       const isLast = idx === visibleLogs.length - 1 && isScanning;
                       let textColor = 'text-[#94a3b8]';
