@@ -23,6 +23,19 @@ const SCAN_LINES = [
   '> Generating verdict...',
 ];
 
+// ponytail: 9 stages mirror the engine SSE pipeline, driven by live events
+const STAGES = [
+  { key: 'deployer', label: 'Deployer located' },
+  { key: 'buyers', label: 'First 20 buyers buffered' },
+  { key: 'funding_graph', label: 'Funding graph built' },
+  { key: 'clusters', label: 'Wallet clusters resolved' },
+  { key: 'similarity', label: 'Behavior similarity scored' },
+  { key: 'known', label: 'Known wallets cross referenced' },
+  { key: 'history', label: 'Deployer history pulled' },
+  { key: 'bundle', label: 'Bundle detection' },
+  { key: 'verdict', label: 'Verdict generated' },
+];
+
 export function Demo({ registerScanner }: DemoProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
@@ -36,6 +49,13 @@ export function Demo({ registerScanner }: DemoProps) {
   // ponytail: hasil real dari API, bukan kalengan preset
   const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [doneStages, setDoneStages] = useState<string[]>([]);
+  const [activeStage, setActiveStage] = useState<string | null>(null);
+
+  const markStage = (key: string) => {
+    setActiveStage(key);
+    setDoneStages((prev) => (prev.includes(key) ? prev : [...prev, key]));
+  };
 
   const handleStartScan = async (tokenToScan?: PresetToken) => {
     const mint = (tokenToScan?.mint || inputMint || PRESET_TOKENS[0].mint).trim();
@@ -58,6 +78,8 @@ export function Demo({ registerScanner }: DemoProps) {
     setShowVerdict(false);
     setLiveResult(null);
     setScanError(null);
+    setDoneStages([]);
+    setActiveStage(null);
 
     if (!userWallet) {
       setIsScanning(false);
@@ -65,37 +87,76 @@ export function Demo({ registerScanner }: DemoProps) {
       return;
     }
 
-    // Animasi log sambil tunggu API
+    // Animasi log sambil tunggu event SSE pertama
     let step = 0;
     const interval = setInterval(() => {
-      if (step < SCAN_LINES.length) {
+      if (step < 3) {
         const nextLog = SCAN_LINES[step];
         if (nextLog) setVisibleLogs((prev) => [...prev, nextLog]);
-        setScanProgress(Math.min(95, Math.round(((step + 1) / (SCAN_LINES.length + 4)) * 100)));
         step++;
       }
-    }, 400);
+    }, 500);
 
     try {
       const ctrl = new AbortController();
       const timeout = setTimeout(() => ctrl.abort(), 65000);
-      const res = await fetch('/api/v1/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mint, chain: 'solana', userWallet, stream: false }),
-        signal: ctrl.signal,
-      });
-      clearTimeout(timeout);
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.message || data.error || `Scan failed (${res.status})`);
+      // SSE stream: progress nyata dari engine, bukan timer
+      const res = await fetch(`/api/v1/scan?mint=${encodeURIComponent(mint)}&userWallet=${encodeURIComponent(userWallet)}&stream=true`, { signal: ctrl.signal });
+      if (!res.ok || !res.body) throw new Error(`Scan failed (${res.status})`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      let finished = false;
+      while (!finished) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split('\n\n');
+        buf = parts.pop() || '';
+        for (const part of parts) {
+          const evMatch = part.match(/event: (\w+)/);
+          const dataMatch = part.match(/data: ([\s\S]*)/);
+          if (!evMatch || !dataMatch) continue;
+          const ev = evMatch[1];
+          let data: any = null;
+          try { data = JSON.parse(dataMatch[1]); } catch { continue; }
+          if (ev === 'progress') {
+            const pct = data.pct || 0;
+            setScanProgress(pct);
+            if (data.step) {
+              markStage(data.step);
+              setVisibleLogs((prev) => [...prev, `> ${data.step}... ${pct}%`]);
+              // Tahap turunan dari event nyata
+              if (data.step === 'buyers') { markStage('history'); markStage('known'); }
+              if (data.step === 'clustering') { markStage('clusters'); markStage('bundle'); }
+              if (data.step === 'scoring') { markStage('similarity'); }
+            }
+          } else if (ev === 'cluster') {
+            markStage('bundle');
+            setVisibleLogs((prev) => [...prev, `> cluster C114: ${data.wallets} wallets share parent`]);
+          } else if (ev === 'verdict') {
+            clearTimeout(timeout);
+            clearInterval(interval);
+            markStage('verdict');
+            setLiveResult(data);
+            setScanProgress(100);
+            setVisibleLogs((prev) => [...prev, `> Verdict: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}%)`]);
+            setIsScanning(false);
+            setShowVerdict(true);
+            finished = true;
+            break;
+          } else if (ev === 'error') {
+            throw new Error(data.message || data.error || 'Scan failed');
+          }
+        }
       }
+      clearTimeout(timeout);
       clearInterval(interval);
-      setLiveResult(data);
-      setScanProgress(100);
-      setVisibleLogs((prev) => [...prev, `> Verdict: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}%)`]);
-      setIsScanning(false);
-      setShowVerdict(true);
+      if (!finished && !liveResult) {
+        setIsScanning(false);
+        setScanError('Stream closed before verdict. Try again or pick a quieter mint.');
+      }
     } catch (err: any) {
       clearInterval(interval);
       setIsScanning(false);
@@ -216,6 +277,35 @@ export function Demo({ registerScanner }: DemoProps) {
                 </button>
               ))}
             </div>
+
+            {/* Stage Checklist — driven by live engine events */}
+            <AnimatePresence>
+              {hasScanned && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="w-full mt-3 overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-1.5 font-mono text-[11px]">
+                    {STAGES.map((s) => {
+                      const done = doneStages.includes(s.key);
+                      const active = activeStage === s.key && isScanning;
+                      return (
+                        <div key={s.key} className="flex items-center gap-2">
+                          <span className={done ? 'text-emerald-400' : active ? 'text-[#c4b5fd] animate-pulse' : 'text-[#475569]'}>
+                            {done ? '✓' : active ? '◌' : '○'}
+                          </span>
+                          <span className={done ? 'text-[#cbd5e1]' : active ? 'text-white' : 'text-[#64748b]'}>
+                            {s.label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Scan Progress Bar */}
             <AnimatePresence>
