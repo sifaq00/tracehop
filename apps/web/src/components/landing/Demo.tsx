@@ -61,7 +61,7 @@ export function Demo({ registerScanner }: DemoProps) {
 
     if (!userWallet) {
       setIsScanning(false);
-      setScanError('Connect wallet dulu via tombol Connect Wallet di atas, lalu RUN SCAN lagi.');
+      setScanError('Connect a wallet via the Connect Wallet button above, then hit RUN SCAN again.');
       return;
     }
 
@@ -88,7 +88,7 @@ export function Demo({ registerScanner }: DemoProps) {
       clearTimeout(timeout);
       const data = await res.json();
       if (!res.ok || data.error) {
-        throw new Error(data.message || data.error || `Scan gagal (${res.status})`);
+        throw new Error(data.message || data.error || `Scan failed (${res.status})`);
       }
       clearInterval(interval);
       setLiveResult(data);
@@ -100,8 +100,8 @@ export function Demo({ registerScanner }: DemoProps) {
       clearInterval(interval);
       setIsScanning(false);
       setScanError(err?.name === 'AbortError'
-        ? 'Scan timeout (>60s). Mint ramai (misal BONK) berat — paste mint pump.fun baru yang sepi.'
-        : (err?.message || 'Scan gagal. Coba lagi.'));
+        ? 'Scan timed out (>60s). High-volume mints (e.g. BONK) are too heavy — paste a fresh, quiet pump.fun mint instead.'
+        : (err?.message || 'Scan failed. Try again.'));
     }
   };
 
@@ -156,7 +156,7 @@ export function Demo({ registerScanner }: DemoProps) {
               Interrogate <span className="text-[#a855f7] italic">any token.</span> Instantly.
             </h2>
             <p className="text-[#94a3b8] text-sm sm:text-base mb-6 leading-relaxed max-w-xl">
-              Paste a mint address. Tracehop will reveal what others try to hide. Connect wallet dulu — 3 scan pertama gratis.
+              Paste a mint address. Tracehop will reveal what others try to hide. Connect a wallet first — first 3 scans are free.
             </p>
 
             {/* Search Input Bar */}
