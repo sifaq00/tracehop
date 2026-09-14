@@ -52,9 +52,9 @@ function EmbedContent() {
       try {
         const data = JSON.parse(e.data);
         setShowProgress(false);
-        setVerdict(data.verdict);
+        setVerdict(data.verdict === 'CAP' ? 'THREAT' : 'SAFE');
         setVerdictClass(data.verdict === 'CAP' ? 'cap' : 'nocap');
-        setConfidence(`CAP PREDICTION ${Math.round(data.confidence * 100)}%`);
+        setConfidence(`THREAT PREDICTION ${Math.round(data.confidence * 100)}%`);
         setReason(data.reason || (data.verdict === 'CAP' ? 'Supply pattern controlled.' : 'Organic trading flow confirmed.'));
         es.close();
       } catch (err) {}

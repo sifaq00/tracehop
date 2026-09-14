@@ -185,7 +185,7 @@ export function ScanReport({ uaim, trades, meta }: Props) {
         </div>
       </Panel>
       <Panel title="Behavior analysis verdict" open={open.behavior} onToggle={() => toggle('behavior')}>
-        <p className="font-mono text-[11px] text-[#cbd5e1]">{uaim?.score?.verdict ?? ''} ({uaim?.score?.subclass ?? ''}) · {Math.round((uaim?.score?.confidence ?? 0) * 100)}%</p>
+        <p className="font-mono text-[11px] text-[#cbd5e1]">{uaim?.score?.verdict === 'CAP' ? 'THREAT' : 'SAFE'} ({uaim?.score?.subclass ?? ''}) · {Math.round((uaim?.score?.confidence ?? 0) * 100)}%</p>
         {!meta?.mint ? <p className="font-mono text-[10px] text-[#64748b]">no data</p> : <p className="font-mono text-[10px] text-[#64748b]">{(meta.mint ?? '').slice(0, 6)}...{(meta.mint ?? '').slice(-4)} · {meta.regime}</p>}
       </Panel>
     </div>

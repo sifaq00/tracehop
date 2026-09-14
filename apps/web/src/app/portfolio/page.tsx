@@ -108,7 +108,7 @@ export default function PortfolioPage() {
                 borderRadius: '12px',
                 padding: '24px',
               }}>
-                <div style={{ color: '#3ce6a4', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Safe (NO CAP)</div>
+                <div style={{ color: '#3ce6a4', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>Safe</div>
                 <div style={{ fontSize: '36px', fontWeight: '800', color: '#3ce6a4' }}>{lowRisk.length}</div>
               </div>
             </div>

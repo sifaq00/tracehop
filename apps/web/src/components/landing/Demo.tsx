@@ -247,7 +247,7 @@ export function Demo({ registerScanner }: DemoProps) {
             const isCap = data.verdict === 'CAP';
             setVisibleLogs((prev) => [
               ...prev,
-              `${isCap ? '🔴' : '🟢'} FINAL VERDICT: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}% Confidence)`,
+              `${isCap ? '🔴' : '🟢'} FINAL VERDICT: ${isCap ? 'THREAT' : 'SAFE'} (${Math.round((data.confidence || 0) * 100)}% Confidence)`,
             ]);
             setIsScanning(false);
             setShowVerdict(true);
@@ -639,8 +639,8 @@ export function Demo({ registerScanner }: DemoProps) {
                       let tagColor = 'text-[#7c3aed]';
 
                       if (log.includes('FINAL VERDICT') || log.includes('VERDICT:')) {
-                        textColor = log.includes('CAP') ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold';
-                        tagColor = log.includes('CAP') ? 'text-rose-500' : 'text-emerald-500';
+                        textColor = log.includes('THREAT') ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold';
+                        tagColor = log.includes('THREAT') ? 'text-rose-500' : 'text-emerald-500';
                       } else if (log.includes('CLUSTER') || log.includes('🚨')) {
                         textColor = 'text-amber-300 font-semibold';
                         tagColor = 'text-amber-500';
@@ -702,7 +702,7 @@ export function Demo({ registerScanner }: DemoProps) {
                   <div className={`border px-5 py-4 mb-4 ${isCap ? 'border-rose-400/70 shadow-[0_0_25px_rgba(244,63,94,0.25)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(16,185,129,0.25)]'}`}>
                     <p className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: accent }}>
                       <span className="inline-block w-2.5 h-2.5 mr-2.5" style={{ background: accent }} />
-                      {isCap ? 'CAP DETECTED' : 'NO CAP'} ({subclass})
+                      {isCap ? 'THREAT' : 'SAFE'} ({subclass})
                     </p>
                   </div>
                   <p className="text-[#e2e8f0] font-sans text-sm leading-relaxed mb-5">

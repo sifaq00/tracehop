@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
           }
 
           const isCap = result.verdict === 'CAP';
-          const verdictText = isCap ? '🔴 CAP' : '🟢 NO CAP';
+          const verdictText = isCap ? '🔴 THREAT' : '🟢 SAFE';
           const confidencePercent = Math.round((result.confidence !== undefined && result.confidence !== null ? result.confidence : 0.5) * 100);
 
           let patternName = 'Organic Trading';
