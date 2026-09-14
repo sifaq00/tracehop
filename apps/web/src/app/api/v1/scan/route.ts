@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
+import { evaluateGating, bumpAnonUsage, HOLD_CONFIG } from '../../../../lib/gating';
 import { URL } from 'url';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { computeFeatures, evaluateVerdict } from '@tracehop/core';
@@ -41,7 +42,6 @@ if (!process.env.RPC_ENDPOINT) {
   }
 }
 
-const TRACEHOP_TOKEN_MINT = process.env.TRACEHOP_TOKEN_MINT || process.env.NOCAP_TOKEN_MINT || 'TraceHopMint11111111111111111111111111111111';
 const RPC_ENDPOINT = process.env.RPC_ENDPOINT || process.env.HELIUS_API_KEY || 'https://api.mainnet-beta.solana.com';
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -736,186 +736,38 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
     return new Response(JSON.stringify({ error: 'Missing mint address' }), { status: 400 });
   }
 
-  if (!userWallet) {
+  // Evaluate Robinhood Chain gating (3 free anonymous scans daily per IP or 50,000+ TRCHP (ARDRILL) hold)
+  const decision = await evaluateGating(userWallet, clientIp);
+  if (!decision.allowed) {
     return new Response(
       JSON.stringify({
-        error: 'WALLET_REQUIRED',
-        message: 'You must connect a Phantom wallet to perform scans.',
+        error:
+          decision.reason === 'anon_exhausted'
+            ? 'ANON_EXHAUSTED'
+            : decision.reason === 'invalid_wallet'
+            ? 'INVALID_WALLET'
+            : 'HOLD_REQUIRED',
+        message:
+          decision.reason === 'anon_exhausted'
+            ? 'Free anonymous scans exhausted (3/3). Connect wallet with 50,000+ TRCHP (ARDRILL) on Robinhood Chain to continue.'
+            : decision.reason === 'invalid_wallet'
+            ? 'Invalid EVM wallet address. Must be 0x followed by 40 hex characters.'
+            : `Wallet holds insufficient TRCHP (ARDRILL). Required: 50,000. Current: ${decision.formattedBalance || '0'}.`,
+        required: HOLD_CONFIG.threshold,
+        current: decision.formattedBalance || '0',
+        symbol: HOLD_CONFIG.tokenSymbol,
+        chain: HOLD_CONFIG.chainName,
+        reason: decision.reason,
       }),
-      { status: 401, headers: { 'Content-Type': 'application/json' } }
+      {
+        status: 402,
+        headers: { 'Content-Type': 'application/json' },
+      }
     );
   }
 
-  // Enforce Gating Check
-  try {
-    // 1. Fetch or create user session from Supabase
-    let session = null;
-    const { data: dbSession } = await supabase
-      .from('wallet_sessions')
-      .select('*')
-      .eq('wallet', userWallet)
-      .maybeSingle();
-
-    if (dbSession) {
-      session = {
-        wallet: dbSession.wallet,
-        connected: dbSession.connected,
-        access: dbSession.access,
-        accessUntil: dbSession.access_until,
-        spins: dbSession.spins,
-        burns: dbSession.burns,
-        freeScans: dbSession.free_scans,
-      };
-    }
-
-    if (!session) {
-      const defaultSession = {
-        wallet: userWallet,
-        connected: true,
-        access: false,
-        accessUntil: 0,
-        spins: 0,
-        burns: 0,
-        freeScans: 3,
-      };
-      await supabase.from('wallet_sessions').insert({
-        wallet: userWallet,
-        connected: true,
-        access: false,
-        access_until: 0,
-        spins: 0,
-        burns: 0,
-        free_scans: 3,
-      });
-      session = defaultSession;
-    }
-
-    const activeSession = session!;
-
-    const TREASURY_WALLET = process.env.NEXT_PUBLIC_TREASURY_WALLET!;
-    const SCAN_PRICE_SOL = parseFloat(process.env.NEXT_PUBLIC_SCAN_PRICE_SOL!);
-
-    // 3. Evaluate limits
-    let holdsEnoughToken = activeSession.access;
-    if (!holdsEnoughToken) {
-      // Direct mockup support for testing address
-      if (userWallet === '5tkE4DnF7vbBq5uhVbJDZCXzmSgddKEBRu6omsrbzuSu' || userWallet.startsWith('3mVc') || userWallet.startsWith('Fh2s')) {
-        holdsEnoughToken = true;
-      } else {
-        try {
-          const connection = new Connection(RPC_ENDPOINT);
-          const pubkey = new PublicKey(userWallet);
-          const mint = new PublicKey(TRACEHOP_TOKEN_MINT);
-          const tokenAccounts = await connection.getTokenAccountsByOwner(pubkey, { mint });
-          if (tokenAccounts.value.length > 0) {
-            const balanceInfo = await connection.getTokenAccountBalance(tokenAccounts.value[0].pubkey);
-            const balance = balanceInfo.value.uiAmount || 0;
-            if (balance >= 66666) {
-              holdsEnoughToken = true;
-            }
-          }
-        } catch (e) {
-          console.warn(`[Gating] Failed to check TRACEHOP balance for ${userWallet}:`, e);
-        }
-      }
-    }
-
-    if (holdsEnoughToken) {
-      console.log(`[Gating] Wallet ${userWallet} holds >= 66666 $TRACEHOP or has active session access. Bypassing scan limits.`);
-    } else if (activeSession.freeScans > 0) {
-      // Consume 1 free scan
-      const nextFree = activeSession.freeScans - 1;
-      const nextSpins = activeSession.spins + 1;
-
-      await supabase.from('wallet_sessions').update({
-        free_scans: nextFree,
-        spins: nextSpins,
-        access: false,
-        updated_at: new Date().toISOString(),
-      }).eq('wallet', userWallet);
-
-      console.log(`[Gating] Wallet ${userWallet} consumed free scan. Remaining: ${nextFree}`);
-    } else {
-      // Free scans exhausted, require payment
-      if (!txHash) {
-        return new Response(
-          JSON.stringify({
-            x402Version: 2,
-            error: 'Payment Required',
-            message: `Free scans exhausted. Send ${SCAN_PRICE_SOL} SOL to ${TREASURY_WALLET}, then retry with the payment signature. Holders of 66,666+ $TRACEHOP scan free.`,
-            resource: {
-              serviceName: 'TraceHop Security Scan',
-              category: 'Analytics'
-            },
-            accepts: [
-              {
-                network: 'solana',
-                asset: 'SOL',
-                amount: String(SCAN_PRICE_SOL),
-                payTo: TREASURY_WALLET
-              }
-            ]
-          }),
-          {
-            status: 402,
-            headers: {
-              'Content-Type': 'application/json',
-              'X-402-Payment-Required': 'true'
-            }
-          }
-        );
-      }
-
-      // Verify transaction hash
-      let paymentValid = false;
-      if (txHash.startsWith('0xmock') || txHash.startsWith('mock')) {
-        paymentValid = true;
-      } else {
-        try {
-          const connection = new Connection(RPC_ENDPOINT);
-          const txInfo = await connection.getParsedTransaction(txHash, { maxSupportedTransactionVersion: 0 });
-          if (txInfo && txInfo.meta && !txInfo.meta.err) {
-            const message = txInfo.transaction.message;
-            const accountKeys = message.accountKeys.map(k => k.pubkey.toBase58());
-            const sender = accountKeys[0];
-            if (sender === userWallet) {
-              const recipientIndex = accountKeys.indexOf(TREASURY_WALLET);
-              if (recipientIndex !== -1) {
-                const pre = txInfo.meta.preBalances[recipientIndex] || 0;
-                const post = txInfo.meta.postBalances[recipientIndex] || 0;
-                if ((post - pre) >= SCAN_PRICE_SOL * 1e9) {
-                  paymentValid = true;
-                }
-              }
-            }
-          }
-        } catch (rpcErr) {
-          console.error('[Gating] Solana payment RPC check failed, rejecting payment:', rpcErr);
-          paymentValid = false;
-        }
-      }
-
-      if (!paymentValid) {
-        return new Response(
-          JSON.stringify({
-            error: 'INVALID_PAYMENT',
-            message: `Provided transaction signature does not transfer ${SCAN_PRICE_SOL} SOL to ${TREASURY_WALLET} from the connected wallet (${userWallet}).`,
-          }),
-          { status: 402, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Allow scan and increment spin count
-      await supabase.from('wallet_sessions').update({
-        spins: activeSession.spins + 1,
-        access: true,
-        updated_at: new Date().toISOString(),
-      }).eq('wallet', userWallet);
-
-      console.log(`[Gating] Wallet ${userWallet} authorized via ${SCAN_PRICE_SOL} SOL payment transfer.`);
-    }
-  } catch (err: any) {
-    console.error('[Gating Gatekeeper] Error executing gating check, allowing as fallback:', err);
+  if (decision.reason === 'anon_free') {
+    await bumpAnonUsage(clientIp);
   }
 
   // Disable caching to ensure real-time evaluation with updated scoring weights

@@ -1,27 +1,23 @@
 import { NextRequest } from 'next/server';
 import { handleScan } from '../../scan/route';
 import { supabase } from '../../../../../lib/supabase';
+import { checkTokenHold, HOLD_CONFIG } from '../../../../../lib/gating';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 async function checkTracehopBalance(walletAddress: string): Promise<number> {
-  const TRACEHOP_TOKEN_MINT = process.env.TRACEHOP_TOKEN_MINT || process.env.NOCAP_TOKEN_MINT || 'TraceHopMint11111111111111111111111111111111';
-  const RPC_ENDPOINT = process.env.RPC_ENDPOINT || process.env.HELIUS_API_KEY || 'https://api.mainnet-beta.solana.com';
-  
+  if (!walletAddress) return 0;
+
   if (walletAddress === '5tkE4DnF7vbBq5uhVbJDZCXzmSgddKEBRu6omsrbzuSu' || walletAddress.startsWith('3mVc') || walletAddress.startsWith('Fh2s')) {
     return 70000;
   }
-  
+
   try {
-    const connection = new Connection(RPC_ENDPOINT);
-    const pubkey = new PublicKey(walletAddress);
-    const mint = new PublicKey(TRACEHOP_TOKEN_MINT);
-    const tokenAccounts = await connection.getTokenAccountsByOwner(pubkey, { mint });
-    if (tokenAccounts.value.length > 0) {
-      const balanceInfo = await connection.getTokenAccountBalance(tokenAccounts.value[0].pubkey);
-      return balanceInfo.value.uiAmount || 0;
+    if (/^0x[0-9a-fA-F]{40}$/.test(walletAddress)) {
+      const hold = await checkTokenHold(walletAddress);
+      return hold.tier === 2 ? HOLD_CONFIG.threshold : parseFloat(hold.formattedBalance || '0');
     }
   } catch (e) {
-    console.warn(`[Telegram Webhook] Failed to check TRACEHOP balance for ${walletAddress}:`, e);
+    console.warn(`[Telegram Webhook] Failed to check token hold for ${walletAddress}:`, e);
   }
   return 0;
 }
@@ -188,7 +184,7 @@ export async function POST(request: NextRequest) {
 
       const userWallet = dbSession.wallet;
       const balance = await checkTracehopBalance(userWallet);
-      const holdsEnoughTracehop = balance >= 66666 || dbSession.access;
+      const holdsEnoughTokens = balance >= HOLD_CONFIG.threshold || dbSession.access;
 
       // Determine if targetAddress is a Token Mint or a Wallet Address
       let isMint = true;
@@ -209,12 +205,12 @@ export async function POST(request: NextRequest) {
       if (isMint) {
         // Handle Token Scan Gating
         const remainingFree = dbSession.free_scans !== undefined && dbSession.free_scans !== null ? dbSession.free_scans : 3;
-        if (!holdsEnoughTracehop && remainingFree <= 0) {
+        if (!holdsEnoughTokens && remainingFree <= 0) {
           await sendTelegramMessage(
             chatId,
             `❌ <b>Access Restricted</b>\n\n` +
             `Your free scans are exhausted.\n\n` +
-            `Please hold at least <b>66,666 $TRACEHOP</b> in your connected wallet to unlock unlimited free scans and wallet checks.`
+            `Please hold at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet to unlock unlimited free scans and wallet checks.`
           );
           return new Response(JSON.stringify({ ok: true }));
         }
@@ -231,16 +227,16 @@ export async function POST(request: NextRequest) {
         );
 
         try {
-          const response = await handleScan(targetAddress, false, userWallet, '127.0.0.1');
+          const scanWallet = /^0x[0-9a-fA-F]{40}$/.test(userWallet) ? userWallet : null;
+          const response = await handleScan(targetAddress, false, scanWallet, '127.0.0.1');
           const result = await response.json();
 
           if (result.error) {
-            if (result.error === 'INSUFFICIENT_BALANCE' || result.error === 'Payment Required') {
+            if (result.error === 'INSUFFICIENT_BALANCE' || result.error === 'Payment Required' || result.error === 'HOLD_REQUIRED' || result.error === 'ANON_EXHAUSTED') {
               await sendTelegramMessage(
                 chatId,
                 `❌ <b>Scans Exhausted / Access Restricted</b>\n\n` +
-                `Your free scans are exhausted.\n\n` +
-                `Please hold at least <b>66,666 $TRACEHOP</b> in your connected wallet to unlock unlimited free scans and wallet checks.`
+                (result.message || `Please hold at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet to unlock unlimited scans.`)
               );
             } else {
               await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
@@ -343,12 +339,12 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // Handle Wallet Check Gating
-        if (!holdsEnoughTracehop) {
+        if (!holdsEnoughTokens) {
           await sendTelegramMessage(
             chatId,
             `❌ <b>Access Restricted</b>\n\n` +
-            `Wallet analysis requires holding at least <b>66,666 $TRACEHOP</b> in your connected wallet.\n\n` +
-            `Please acquire enough $TRACEHOP to unlock wallet checks.`
+            `Wallet analysis requires holding at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet.\n\n` +
+            `Please acquire enough $${HOLD_CONFIG.tokenSymbol} to unlock wallet checks.`
           );
           return new Response(JSON.stringify({ ok: true }));
         }
