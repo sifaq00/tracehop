@@ -206,6 +206,16 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [isOpen]);
+
   const handleSelectWallet = async (wallet: WalletOption) => {
     playClick();
     setConnectingId(wallet.id);
@@ -385,7 +395,10 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
   if (!isOpen || !mounted) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div
+      data-lenis-prevent
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain"
+    >
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -401,10 +414,10 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-        className="relative my-auto w-full max-w-[400px] overflow-hidden rounded-2xl border border-[#7c3aed]/30 bg-[#0c081e]/95 p-5 text-white shadow-[0_10px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(124,58,237,0.25)] backdrop-blur-xl z-10"
+        className="relative my-auto flex flex-col w-full max-w-[420px] max-h-[85vh] rounded-2xl border border-[#7c3aed]/30 bg-[#0c081e]/95 p-5 text-white shadow-[0_10px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(124,58,237,0.25)] backdrop-blur-xl z-10"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-3.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 pb-3.5">
           <div>
             <h3 className="font-display text-base font-extrabold tracking-wide text-white">
               Connect a Wallet
@@ -423,7 +436,10 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
         </div>
 
         {/* Wallet List */}
-        <div className="mt-3.5 space-y-2 max-h-[60vh] overflow-y-auto pr-0.5 scrollbar-none">
+        <div
+          data-lenis-prevent
+          className="mt-3.5 space-y-2 overflow-y-auto overscroll-contain pr-1 flex-1 min-h-0 [scrollbar-width:thin] [scrollbar-color:rgba(124,58,237,0.4)_transparent]"
+        >
           {WALLETS.map((wallet) => {
             const isInstalled = wallet.detect();
             const isConnecting = connectingId === wallet.id;
@@ -483,7 +499,7 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
         </div>
 
         {/* Security Footer */}
-        <div className="mt-4 flex items-center justify-center gap-1.5 text-center font-sans text-[11px] text-[#94a3b8] pt-2.5 border-t border-white/5">
+        <div className="mt-4 shrink-0 flex items-center justify-center gap-1.5 text-center font-sans text-[11px] text-[#94a3b8] pt-2.5 border-t border-white/5">
           <ShieldCheck className="h-3.5 w-3.5 text-[#ff7a29]" />
           <span>Non-custodial & secure. Powered by Robinhood Chain & Tracehop.</span>
         </div>
