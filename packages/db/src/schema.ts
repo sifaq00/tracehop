@@ -71,6 +71,7 @@ export const walletSessions = pgTable('wallet_sessions', {
   spins: integer('spins').default(0).notNull(),
   burns: integer('burns').default(0).notNull(),
   freeScans: integer('free_scans').default(3).notNull(),
+  telegramChatId: varchar('telegram_chat_id', { length: 32 }),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -1,0 +1,1 @@
+ALTER TABLE "wallet_sessions" ADD COLUMN "telegram_chat_id" varchar(32);

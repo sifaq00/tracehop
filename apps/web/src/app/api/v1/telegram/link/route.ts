@@ -18,13 +18,14 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
 
     if (dbSession) {
-      await supabase.from('wallet_sessions').update({
+      const { error } = await supabase.from('wallet_sessions').update({
         telegram_chat_id: tgChatId,
         connected: true,
         updated_at: new Date().toISOString(),
       }).eq('wallet', wallet);
+      if (error) throw new Error(error.message);
     } else {
-      await supabase.from('wallet_sessions').insert({
+      const { error } = await supabase.from('wallet_sessions').insert({
         wallet,
         telegram_chat_id: tgChatId,
         connected: true,
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
         burns: 0,
         free_scans: 3,
       });
+      if (error) throw new Error(error.message);
     }
 
     return new Response(JSON.stringify({ success: true, message: 'Wallet linked successfully to Telegram.' }));
