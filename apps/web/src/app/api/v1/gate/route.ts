@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   checkTokenHold,
   checkAnonUsage,
-  evaluateGating,
+  parseClientIp,
   HOLD_CONFIG,
   HoldResult,
+  GatingReason,
 } from '../../../../lib/gating';
 
 export const dynamic = 'force-dynamic';
@@ -22,14 +23,26 @@ export async function GET(req: Request | NextRequest) {
       req.headers.get('x-forwarded-for') ||
       req.headers.get('x-real-ip') ||
       '127.0.0.1';
+    const clientIp = parseClientIp(rawIp);
 
-    const [holdResult, anon, decision] = await Promise.all([
+    const [holdResult, anon] = await Promise.all([
       wallet
         ? checkTokenHold(wallet)
         : Promise.resolve<HoldResult>({ tier: -1, balance: '0', formattedBalance: '0' }),
-      checkAnonUsage(rawIp),
-      evaluateGating(wallet, rawIp),
+      checkAnonUsage(clientIp),
     ]);
+
+    const isWalletValid = wallet ? /^0x[0-9a-fA-F]{40}$/.test(wallet) : false;
+    const access = wallet ? isWalletValid && holdResult.tier === 2 : anon.allowed;
+    const accessReason: GatingReason = wallet
+      ? !isWalletValid
+        ? 'invalid_wallet'
+        : holdResult.tier === 2
+          ? 'holder'
+          : 'insufficient_hold'
+      : anon.allowed
+        ? 'anon_free'
+        : 'anon_exhausted';
 
     return NextResponse.json(
       {
@@ -44,8 +57,8 @@ export async function GET(req: Request | NextRequest) {
         required: HOLD_CONFIG.threshold,
         symbol: HOLD_CONFIG.tokenSymbol,
         chain: HOLD_CONFIG.chainName,
-        access: decision.allowed,
-        accessReason: decision.reason,
+        access,
+        accessReason,
       },
       {
         status: 200,
