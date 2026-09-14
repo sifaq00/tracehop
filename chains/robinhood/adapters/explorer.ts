@@ -10,7 +10,9 @@ export class BlockscoutExplorerAdapter implements ExplorerAdapter {
 
   async getTransactionHistory(address: string): Promise<any[]> {
     try {
-      const res = await fetch(`${this.apiBase}/addresses/${address}/transactions`);
+      const res = await fetch(`${this.apiBase}/addresses/${address}/transactions`, {
+        signal: AbortSignal.timeout(2500),
+      });
       const json = await res.json() as any;
       return json.items || [];
     } catch {
@@ -20,7 +22,9 @@ export class BlockscoutExplorerAdapter implements ExplorerAdapter {
 
   async getTokenHolders(assetAddress: string): Promise<any[]> {
     try {
-      const res = await fetch(`${this.apiBase}/tokens/${assetAddress}/holders`);
+      const res = await fetch(`${this.apiBase}/tokens/${assetAddress}/holders`, {
+        signal: AbortSignal.timeout(2500),
+      });
       const json = await res.json() as any;
       return json.items || [];
     } catch {
@@ -30,7 +34,9 @@ export class BlockscoutExplorerAdapter implements ExplorerAdapter {
 
   async isSourceVerified(address: string): Promise<boolean> {
     try {
-      const res = await fetch(`${this.apiBase}/smart-contracts/${address}`);
+      const res = await fetch(`${this.apiBase}/smart-contracts/${address}`, {
+        signal: AbortSignal.timeout(2500),
+      });
       const json = await res.json() as any;
       return !!json.is_verified;
     } catch {
