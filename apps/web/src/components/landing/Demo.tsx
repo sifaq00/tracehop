@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, RefreshCw, ShieldAlert, ShieldCheck, Wallet } from 'lucide-react';
+import { Zap, RefreshCw, ShieldAlert, Wallet } from 'lucide-react';
 import { PRESET_TOKENS } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
 import { playClick } from '@/lib/sound-fx';
@@ -67,7 +67,9 @@ export function Demo({ registerScanner }: DemoProps) {
   const [visibleLogs, setVisibleLogs] = useState<string[]>([]);
   const [showVerdict, setShowVerdict] = useState(false);
   // ponytail: live API result, not preset mock
-  const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
+  const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[]; verdictLevel?: string } | null>(null);
+  const [scanMs, setScanMs] = useState<number | null>(null);
+  const scanStartRef = useRef<number>(0);
   const [scanError, setScanError] = useState<string | null>(null);
   const [paywallData, setPaywallData] = useState<PaywallData | null>(null);
   const [doneStages, setDoneStages] = useState<string[]>([]);
@@ -153,6 +155,8 @@ export function Demo({ registerScanner }: DemoProps) {
     setPaywallData(null);
     setDoneStages([]);
     setActiveStage(null);
+    scanStartRef.current = Date.now();
+    setScanMs(null);
 
     // Honest connecting line — all further logs come from live SSE events only
     setVisibleLogs([`> Connecting to scan engine for ${mint.slice(0, 8)}...`]);
@@ -238,6 +242,7 @@ export function Demo({ registerScanner }: DemoProps) {
             clearTimeout(timeout);
                         markStage('verdict');
             setLiveResult(data);
+            setScanMs(Date.now() - scanStartRef.current);
             setScanProgress(100);
             const isCap = data.verdict === 'CAP';
             setVisibleLogs((prev) => [
@@ -657,95 +662,76 @@ export function Demo({ registerScanner }: DemoProps) {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Result Card — separate from process terminal */}
-            <AnimatePresence>
-              {showVerdict && liveResult && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.97 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#090616] border border-[#241a45] p-4 sm:p-5 shadow-2xl font-mono text-xs"
-                >
-                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#241a45]">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`w-2.5 h-2.5 rounded-full ${liveResult.verdict === 'CAP' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                      <span className="font-bold text-white uppercase tracking-wide">{selectedToken.name}</span>
-                      <span className="font-mono text-[#94a3b8] text-[11px]">({selectedToken.ticker})</span>
-                    </div>
-                    <div className="flex items-center gap-2 font-mono text-[10px]">
-                      <span className="text-[#64748b]">SCAN REPORT</span>
-                      <span className="text-[#c4b5fd] font-semibold uppercase">{gateStatus?.chain || 'MULTI-CHAIN'}</span>
-                    </div>
-                  </div>
-
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-                    className={`p-4 rounded-xl border relative overflow-hidden ${
-                      liveResult.verdict === 'CAP'
-                        ? 'bg-gradient-to-b from-rose-950/60 to-[#140b18] border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.25)]'
-                        : 'bg-gradient-to-b from-emerald-950/60 to-[#0b1614] border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]'
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
-                      <div className="flex items-center gap-3">
-                        {liveResult.verdict === 'CAP' ? (
-                          <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
-                            <ShieldAlert className="w-5 h-5 text-rose-400" />
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
-                            <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                          </div>
-                        )}
-                        <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <span className="text-[10px] font-mono uppercase tracking-wider text-[#94a3b8]">AUDIT VERDICT</span>
-                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                              liveResult.verdict === 'CAP' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            }`}>
-                              {liveResult.subclass || 'UNKNOWN PATTERN'}
-                            </span>
-                          </div>
-                          <h3 className={`text-base sm:text-lg font-black tracking-tight font-sans ${
-                            liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'
-                          }`}>
-                            {liveResult.verdict === 'CAP' ? 'CAP DETECTED · HIGH RISK FRAUD' : 'NO CAP · VERIFIED ORGANIC'}
-                          </h3>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 font-mono text-xs">
-                        <span className="text-[#94a3b8] text-[10.5px]">CONFIDENCE:</span>
-                        <span className={`font-black text-sm ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          {Math.round((liveResult.confidence || 0) * 100)}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {liveResult.reasons && liveResult.reasons.length > 0 && (
-                      <div className="space-y-1.5 pt-2 border-t border-white/10">
-                        {liveResult.reasons.slice(0, 3).map((r, i) => (
-                          <div key={i} className="flex items-start gap-2 text-[11.5px] leading-snug font-sans">
-                            <span className={`shrink-0 font-bold ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                              {liveResult.verdict === 'CAP' ? '✕' : '✓'}
-                            </span>
-                            <span className="text-[#e2e8f0]">{r.text}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks */}
-                  <ScanReport uaim={(liveResult as any).uaim} trades={(liveResult as any).trades ?? []} meta={(liveResult as any).meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
-                </motion.div>
-              )}
-            </AnimatePresence>
           </motion.div>
         </div>
+
+        {/* Full-width result row — report like reference: hero left, panels right */}
+        <AnimatePresence>
+          {showVerdict && liveResult && (() => {
+            const isCap = liveResult.verdict === 'CAP';
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks
+            const lr = liveResult as any;
+            const risk = Math.round((liveResult.confidence || 0) * 100);
+            const accent = isCap ? '#fb7185' : '#34d399';
+            const meta = lr.meta ?? {};
+            const mintAddr: string = meta.mint ?? selectedToken.mint;
+            const regime: string = meta.regime ?? 'REGIME W14';
+            const level: string = lr.verdictLevel ?? 'FINAL';
+            const subclass = liveResult.subclass
+              ? liveResult.subclass.charAt(0).toUpperCase() + liveResult.subclass.slice(1)
+              : 'Unknown';
+            const ring = 2 * Math.PI * 26;
+            return (
+              <motion.div
+                key="scan-report"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 24 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-10 rounded-2xl bg-[#090616] border border-[#241a45] p-5 sm:p-7 shadow-2xl font-mono text-xs grid gap-6 md:grid-cols-2"
+              >
+                {/* Left: verdict hero */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-[#3b82f6]">——</span>
+                    <span className="text-[11px] tracking-[0.2em] text-[#7dd3fc]">SCAN REPORT</span>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-bold ${isCap ? 'text-rose-300 border-rose-500/40 bg-rose-500/10' : 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10'}`}>
+                      {level}
+                    </span>
+                  </div>
+                  <div className={`border px-5 py-4 mb-4 ${isCap ? 'border-rose-400/70 shadow-[0_0_25px_rgba(244,63,94,0.25)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(16,185,129,0.25)]'}`}>
+                    <p className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: accent }}>
+                      <span className="inline-block w-2.5 h-2.5 mr-2.5" style={{ background: accent }} />
+                      {isCap ? 'CAP DETECTED' : 'NO CAP'} ({subclass})
+                    </p>
+                  </div>
+                  <p className="text-[#e2e8f0] font-sans text-sm leading-relaxed mb-5">
+                    {liveResult.reasons?.[0]?.text ?? 'No reason returned.'}
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-16 h-16 shrink-0">
+                      <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90">
+                        <circle cx="32" cy="32" r="26" fill="none" stroke="#1e293b" strokeWidth="6" />
+                        <circle cx="32" cy="32" r="26" fill="none" stroke={accent} strokeWidth="6" strokeLinecap="round" strokeDasharray={ring} strokeDashoffset={ring * (1 - risk / 100)} />
+                      </svg>
+                      <span className="absolute inset-0 flex items-center justify-center text-sm font-black" style={{ color: accent }}>{risk}%</span>
+                    </div>
+                    <div className="text-[11px] leading-[1.9] text-[#64748b]">
+                      <p>RISK&nbsp;&nbsp;<span className="text-[#cbd5e1] font-bold">{risk}%</span></p>
+                      <p>MINT&nbsp;&nbsp;<span className="text-[#cbd5e1]">{mintAddr.slice(0, 6)}...{mintAddr.slice(-4)}</span></p>
+                      <p>SPEED&nbsp;&nbsp;<span className="text-[#cbd5e1]">{scanMs != null ? `${(scanMs / 1000).toFixed(1)}s` : '—'}</span></p>
+                      <p>REGIME&nbsp;&nbsp;<span className="text-[#cbd5e1]">{regime}</span></p>
+                    </div>
+                  </div>
+                </div>
+                {/* Right: collapsible panels */}
+                <div>
+                  <ScanReport uaim={lr.uaim} trades={lr.trades ?? []} meta={lr.meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
       </div>
 
       {/* Wallet Modal for EVM Connection / Gating */}
