@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- UAIM intentionally untyped at boundary, narrowed via ?? guards */
 'use client';
 import { useState } from 'react';
 
