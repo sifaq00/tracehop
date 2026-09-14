@@ -40,6 +40,20 @@ export class BlockscoutExplorerAdapter implements ExplorerAdapter {
     }
   }
 
+  async getTokenTransfers(assetAddress: string): Promise<any[]> {
+    try {
+      const res = await fetch(`${this.apiBase}/tokens/${assetAddress}/transfers`, {
+        signal: AbortSignal.timeout(8000),
+        headers: UA_HEADERS,
+      });
+      if (!res.ok) return [];
+      const json = await res.json() as any;
+      return json.items || [];
+    } catch {
+      return [];
+    }
+  }
+
   async getTokenHolders(assetAddress: string): Promise<any[]> {
     try {
       const res = await fetch(`${this.apiBase}/tokens/${assetAddress}/holders`, {

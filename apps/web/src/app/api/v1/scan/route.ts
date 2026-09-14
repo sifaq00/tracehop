@@ -235,30 +235,28 @@ async function performInlineScan(
       ]);
 
       // Blockscout v2 returns from/to as objects {hash} or plain strings — normalize first.
-      // Prefer real ERC-20 transfers of this mint (token_transfers), oldest first, max 20.
+      // Primary: dedicated ERC-20 transfers endpoint, oldest first, max 20 real buys.
       const addrOf = (v: unknown): string => (typeof v === 'string' ? v : (v as { hash?: string } | null)?.hash ?? '');
-      const transferOf = (t: unknown): Record<string, unknown> | null => {
-        const list = Array.isArray((t as { token_transfers?: unknown })?.token_transfers)
-          ? (t as { token_transfers: unknown[] }).token_transfers
-          : [];
-        return (list.find((x) => {
-          const rec = x as Record<string, unknown>;
-          const tok = rec.token as Record<string, unknown> | undefined;
-          const a = (tok?.address_hash ?? rec.token_address ?? '') as string;
-          return a.toLowerCase() === mint.toLowerCase();
-        }) as Record<string, unknown> | undefined) ?? null;
-      };
-      const oldestFirst = [...txs].reverse();
-      const transferTxs = oldestFirst.map((t, i) => {
-        const xfer = transferOf(t);
-        const total = (xfer?.total ?? {}) as Record<string, unknown>;
-        const raw = Number(total.value ?? xfer?.value ?? 0);
-        return {
-          trader: xfer ? addrOf(xfer.to_hash ?? xfer.to) : addrOf(t.from) || addrOf(t.to),
-          solAmount: raw > 0 ? raw / 10 ** tokenDecimals : Number(t.value ?? 0) / 1e18,
-          slot: Number(t.block_number ?? i),
-        };
-      }).filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase());
+      let transferTxs: Array<{ trader: string; solAmount: number; slot: number }> = [];
+      try {
+        const rawTransfers = await Promise.race([
+          explorer.getTokenTransfers(mint),
+          new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000)),
+        ]);
+        const oldestFirst = [...rawTransfers].reverse().slice(0, 20);
+        transferTxs = oldestFirst
+          .map((x) => {
+            const dec = Number((x?.total as Record<string, unknown> | undefined)?.decimals ?? tokenDecimals);
+            const raw = Number((x?.total as Record<string, unknown> | undefined)?.value ?? 0);
+            return {
+              trader: addrOf(x?.to),
+              solAmount: raw > 0 ? raw / 10 ** dec : 0,
+              slot: Number(x?.block_number ?? 0),
+            };
+          })
+          .filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase() && t.solAmount > 0);
+      } catch { /* fall through to tx-based parse */ }
+      // Fallback: derive traders from address tx list (amounts = native value, may be 0)
       const parsedTxs = transferTxs.length > 0 ? transferTxs : txs
         .map((t, i) => ({
           trader: addrOf(t.from) || addrOf(t.to),
@@ -276,7 +274,10 @@ async function performInlineScan(
       if (parsedTxs.length === 0) {
         try {
           await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 40, log: '[RPC] Blockscout down — pulling Transfer logs from chain...' })}\n\n`));
-          const rpc = new RobinhoodChainClient();
+          // Scan targets MAINNET (real). Hold-gating stays on testnet ARDRILL (see gating.ts).
+          const rpc = new RobinhoodChainClient(
+            process.env.HOOD_SCAN_RPC_URL || 'https://robinhood-rpc.publicnode.com'
+          );
           const [dec, head] = await Promise.all([
             tokenInfo ? Promise.resolve(Number(tokenInfo.decimals ?? 18)) : rpc.getTokenDecimals(mint),
             rpc.getBlockNumber(),
