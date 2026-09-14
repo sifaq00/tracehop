@@ -140,7 +140,7 @@ export function Hero({ onStartDemo }: HeroProps) {
                 className="inline-flex items-center gap-2 h-[48px] px-6.5 rounded-xl bg-[#120d2b] hover:bg-[#1b143f] border border-[#2c2054] hover:border-[#7c3aed]/60 text-white font-bold text-xs sm:text-[13px] tracking-wider uppercase shadow-sm transition-all duration-200 whitespace-nowrap cursor-pointer"
               >
                 <Terminal className="w-4 h-4 text-[#c4b5fd] shrink-0" />
-                <span>Get API Access</span>
+                <span>Get Started</span>
               </motion.a>
             </div>
 

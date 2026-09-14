@@ -1,11 +1,22 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaTelegramPlane, FaGithub, FaDiscord } from 'react-icons/fa';
+import { FaTelegramPlane, FaGithub } from 'react-icons/fa';
 import { FaXTwitter } from 'react-icons/fa6';
 import { scrollToSection } from '@/lib/landing';
 
 export function Footer() {
+  // ponytail: status live, bukan dot pajangan
+  const [apiUp, setApiUp] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/v1/blockhash')
+      .then((r) => { if (alive) setApiUp(r.ok); })
+      .catch(() => { if (alive) setApiUp(false); });
+    return () => { alive = false; };
+  }, []);
   return (
     <footer className="relative pt-16 pb-12 text-xs font-sans text-[#94a3b8] bg-[#050212] border-t border-[#1a1236]">
       <motion.div
@@ -53,7 +64,7 @@ export function Footer() {
             {/* Social Icons */}
             <div className="flex items-center gap-2 text-white">
               <a
-                href="https://t.me/TraceHopAgentBot"
+                href="https://t.me/tracehop_bot"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Telegram"
@@ -79,15 +90,6 @@ export function Footer() {
               >
                 <FaGithub className="w-3.5 h-3.5" />
               </a>
-              <a
-                href="https://discord.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Discord"
-                className="w-8 h-8 rounded-lg bg-[#0e0a22] hover:bg-[#7c3aed] text-[#94a3b8] hover:text-white flex items-center justify-center transition-all border border-[#251c47]"
-              >
-                <FaDiscord className="w-3.5 h-3.5" />
-              </a>
             </div>
           </div>
 
@@ -105,25 +107,25 @@ export function Footer() {
             <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">DEVELOPERS</h5>
             <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">API Reference</a>
             <a href="#api" onClick={(e) => { e.preventDefault(); scrollToSection('api'); }} className="hover:text-white transition-colors">Integration Guide</a>
-            <div className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] mt-0.5">
-              <span>API Status</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center gap-1.5 font-mono text-[11px] mt-0.5">
+              <span className={apiUp === false ? 'text-red-400' : 'text-emerald-400'}>API Status</span>
+              <span className={`w-2 h-2 rounded-full animate-pulse ${apiUp === false ? 'bg-red-400' : apiUp ? 'bg-emerald-400' : 'bg-amber-400'}`} />
             </div>
           </div>
 
           {/* Resources */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
             <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">RESOURCES</h5>
-            <a href="#" className="hover:text-white transition-colors">Blog</a>
-            <a href="#" className="hover:text-white transition-colors">Support</a>
-            <a href="#" className="hover:text-white transition-colors">Changelog</a>
+            <a href="/embed" className="hover:text-white transition-colors">Embed Widget</a>
+            <a href="/portfolio" className="hover:text-white transition-colors">Portfolio</a>
+            <a href="https://t.me/tracehop_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Telegram Bot</a>
           </div>
 
           {/* Join the Movement */}
           <div className="md:col-span-2 flex flex-col gap-2.5">
             <h5 className="font-bold text-white font-mono text-xs uppercase tracking-wider mb-1">JOIN THE MOVEMENT</h5>
             <a
-              href="https://t.me/TraceHopAgentBot"
+              href="https://t.me/tracehop_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 py-2 px-3.5 rounded-xl bg-[#0e0a22] hover:bg-[#181138] border border-[#251c47] text-white text-xs font-medium transition-all"
@@ -146,11 +148,9 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#64748b] text-[11px]">
-          <p>&copy; 2024 Tracehop. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Disclaimer</a>
+          <p>&copy; 2026 Tracehop. All rights reserved.</p>
+          <div className="flex items-center gap-2 font-mono">
+            <span>Solana + Robinhood Chain • REGIME W14</span>
           </div>
         </div>
       </motion.div>
