@@ -38,6 +38,8 @@ interface PaywallData {
   symbol: string;
   chain: string;
   reason: string;
+  used?: number;
+  total?: number;
 }
 
 
@@ -166,7 +168,7 @@ export function Demo({ registerScanner }: DemoProps) {
       if (res.status === 402) {
         let parsed: PaywallData = {
           error: 'ANON_EXHAUSTED',
-          message: 'Free scans exhausted (3/3). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.',
+          message: `Free scans exhausted (${gateStatus?.anonUsed ?? 0}/${(gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`,
           required: 50000,
           current: '0',
           symbol: 'ARDRILL',
@@ -183,6 +185,8 @@ export function Demo({ registerScanner }: DemoProps) {
             symbol: j.symbol || 'ARDRILL',
             chain: j.chain || 'Robinhood Chain',
             reason: j.reason || '',
+            used: typeof j.used === 'number' ? j.used : undefined,
+            total: typeof j.total === 'number' ? j.total : undefined,
           };
         } catch { /* ignore */ }
                 setIsScanning(false);
@@ -316,11 +320,12 @@ export function Demo({ registerScanner }: DemoProps) {
     }
 
     const remaining = gateStatus?.anonRemaining ?? 3;
+    const total = (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 3);
     if (remaining > 0) {
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-[#7c3aed]/30 bg-[#7c3aed]/15 font-mono text-[10.5px] font-medium text-[#c4b5fd]">
           <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7]" />
-          <span>Free Anonymous Scans: {remaining}/3 remaining</span>
+          <span>Free Anonymous Scans: {remaining}/{total} remaining</span>
         </span>
       );
     }
@@ -332,7 +337,7 @@ export function Demo({ registerScanner }: DemoProps) {
         className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 font-mono text-[10.5px] font-semibold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-        <span>Free Scans Exhausted (3/3) · Connect Wallet</span>
+        <span>Free Scans Exhausted ({total}/{total}) · Connect Wallet</span>
       </button>
     );
   };
@@ -586,7 +591,7 @@ export function Demo({ registerScanner }: DemoProps) {
 
                       <p className="text-[#cbd5e1] text-[11.5px] leading-relaxed mb-3">
                         {paywallData.error === 'ANON_EXHAUSTED' || paywallData.reason === 'anon_exhausted'
-                          ? 'Free scans exhausted (3/3). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.'
+                          ? `Free scans exhausted (${paywallData.used ?? gateStatus?.anonUsed ?? 0}/${paywallData.total ?? (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`
                           : paywallData.error === 'HOLD_REQUIRED' || paywallData.reason === 'insufficient_hold'
                           ? `Insufficient $TRCHP balance. Required: 50,000. Current: ${paywallData.current}.`
                           : paywallData.message}

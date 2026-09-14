@@ -96,7 +96,7 @@ async function runTests() {
   if (json4.error !== 'ANON_EXHAUSTED') {
     throw new Error(`Expected error 'ANON_EXHAUSTED', got '${json4.error}'`);
   }
-  if (!json4.message.includes('Free anonymous scans exhausted (3/3)')) {
+  if (!json4.message.startsWith('Free anonymous scans exhausted (')) {
     throw new Error(`Unexpected message: ${json4.message}`);
   }
   console.log('  PASS Test 1: 3 free anonymous scans allowed, 4th returned 402 ANON_EXHAUSTED\n');
