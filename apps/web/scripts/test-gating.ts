@@ -7,6 +7,7 @@ import {
   bumpAnonUsage,
   evaluateGating,
   formatTokenBalance,
+  parseClientIp,
 } from '../src/lib/gating';
 
 // Load .env / .env.local manually if not yet populated
@@ -53,6 +54,19 @@ async function runTests() {
     throw new Error('formatTokenBalance assertion failed');
   }
   console.log('  PASS formatTokenBalance');
+
+  // Test 1.5: parseClientIp with multi-IP x-forwarded-for header
+  console.log('\n[Test 1.5] parseClientIp (multi-IP header parsing)');
+  const parsedSingle = parseClientIp('203.0.113.195');
+  const parsedMulti = parseClientIp('203.0.113.195, 70.41.3.18, 150.172.238.178');
+  const parsedEmpty = parseClientIp('');
+  console.log(`  single -> ${parsedSingle}`);
+  console.log(`  multi  -> ${parsedMulti}`);
+  console.log(`  empty  -> ${parsedEmpty}`);
+  if (parsedSingle !== '203.0.113.195' || parsedMulti !== '203.0.113.195' || parsedEmpty !== 'unknown') {
+    throw new Error('parseClientIp assertion failed');
+  }
+  console.log('  PASS parseClientIp');
 
   // Test 2: Token hold on zero address (must be tier 0, balance 0)
   console.log('\n[Test 2] checkTokenHold with zero address');

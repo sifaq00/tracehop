@@ -80,6 +80,12 @@ export function formatTokenBalance(rawBalance: string, decimals = 18): string {
   }
 }
 
+export function parseClientIp(ip: string): string {
+  if (!ip) return 'unknown';
+  const first = ip.split(',')[0].trim();
+  return first || 'unknown';
+}
+
 export async function checkTokenHold(wallet: string): Promise<HoldResult> {
   const fail: HoldResult = { tier: -1, balance: '0', formattedBalance: '0' };
   if (!wallet || !/^0x[0-9a-fA-F]{40}$/.test(wallet)) return fail;
@@ -92,6 +98,7 @@ export async function checkTokenHold(wallet: string): Promise<HoldResult> {
     const res = await fetch(rpcUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(5000),
       body: JSON.stringify({
         jsonrpc: '2.0',
         id: 1,
@@ -116,7 +123,7 @@ export async function checkTokenHold(wallet: string): Promise<HoldResult> {
 
 export async function checkAnonUsage(ip: string): Promise<AnonUsageResult> {
   const { freeLimit, supabaseUrl, supabaseKey } = getConfig();
-  const cleanIp = ip?.trim() || 'unknown';
+  const cleanIp = parseClientIp(ip);
   const today = new Date().toISOString().split('T')[0];
 
   if (!supabaseUrl || !supabaseKey) {
@@ -130,6 +137,7 @@ export async function checkAnonUsage(ip: string): Promise<AnonUsageResult> {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
       },
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {
@@ -152,7 +160,7 @@ export async function checkAnonUsage(ip: string): Promise<AnonUsageResult> {
 
 export async function bumpAnonUsage(ip: string): Promise<void> {
   const { supabaseUrl, supabaseKey } = getConfig();
-  const cleanIp = ip?.trim() || 'unknown';
+  const cleanIp = parseClientIp(ip);
   const today = new Date().toISOString().split('T')[0];
 
   if (!supabaseUrl || !supabaseKey) return;
@@ -170,6 +178,7 @@ export async function bumpAnonUsage(ip: string): Promise<void> {
         'Content-Type': 'application/json',
         Prefer: 'resolution=merge-duplicates',
       },
+      signal: AbortSignal.timeout(5000),
       body: JSON.stringify({
         wallet: cleanIp,
         day: today,
