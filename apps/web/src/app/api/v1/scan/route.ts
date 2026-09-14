@@ -334,17 +334,24 @@ async function performInlineScan(
         uaim.ownership.clusterAdjustedConcentration = 0.75;
       }
 
-      uaim.fundingGraph = {
-        nodes: Object.keys(fundingSources).map((addr) => ({
+      const fundingNodes: { address: string; type: 'cex' | 'eoa' }[] = [];
+      const fundingEdges: { from: string; to: string; amount: number; timestamp: number }[] = [];
+      for (const [addr, src] of Object.entries(fundingSources)) {
+        fundingNodes.push({
           address: addr,
-          type: fundingSources[addr].funderType === 'cex' ? 'cex' : 'eoa',
-        })),
-        edges: Object.keys(fundingSources).map((addr) => ({
-          from: fundingSources[addr].funder,
+          type: src.funderType === 'cex' ? 'cex' : 'eoa',
+        });
+        fundingEdges.push({
+          from: src.funder,
           to: addr,
           amount: 0,
           timestamp: Date.now(),
-        })),
+        });
+      }
+
+      uaim.fundingGraph = {
+        nodes: fundingNodes,
+        edges: fundingEdges,
       };
 
       console.log(`[STEP 10] Calculating behavioral features (parent share, uniformity, fresh wallets, same block, overlaps)...`);
@@ -378,7 +385,7 @@ async function performInlineScan(
           regime_version: 'REGIME W14',
           created_at: new Date().toISOString(),
           wallet: userWallet,
-          uaim_document: uaim,
+          uaim_document: scoredUaim,
         });
 
         const isRug = scoredUaim.score.verdict === 'CAP';
@@ -637,15 +644,17 @@ async function performInlineScan(
       : [{ code: 'SAFE', text: 'Funding and buyer patterns appear organic.', severity: 'low' }];
 
     let dbSaved = false;
-    (uaim as any).score = {
-      value: verdict.confidence * 100,
-      verdict: verdict.verdict,
-      subclass: verdict.subclass,
-      confidence: verdict.confidence,
-      regimeVersion: regime.regimeVersion,
-      oneLineReason: reasonsList[0]?.text ?? '',
-    };
-    (uaim as any).risks = verdict.reasons.map((r) => ({ code: r.code, severity: r.severity, confidence: 1, evidence: r.text }));
+    if (!uaim.score || (uaim.score.confidence ?? 0) === 0) {
+      (uaim as any).score = {
+        value: verdict.confidence * 100,
+        verdict: verdict.verdict,
+        subclass: verdict.subclass,
+        confidence: verdict.confidence,
+        regimeVersion: regime.regimeVersion,
+        oneLineReason: reasonsList[0]?.text ?? '',
+      };
+      (uaim as any).risks = verdict.reasons.map((r) => ({ code: r.code, severity: r.severity, confidence: verdict.confidence, evidence: r.text }));
+    }
     // Save to predictions table
     console.log(`[STEP 14] Logging immutable scan prediction record to PostgreSQL database...`);
     try {

@@ -12,7 +12,7 @@ interface Props {
 function Panel({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
     <div className="rounded-lg bg-black/30 border border-[#241a45]">
-      <button type="button" onClick={onToggle} className="w-full flex items-center justify-between px-3 py-2.5 font-mono text-[10px] uppercase tracking-widest text-[#94a3b8] hover:text-white cursor-pointer">
+      <button type="button" onClick={onToggle} aria-expanded={open} className="w-full flex items-center justify-between px-3 py-2.5 font-mono text-[10px] uppercase tracking-widest text-[#94a3b8] hover:text-white cursor-pointer">
         <span>{title}</span>
         <span>{open ? 'x' : '+'}</span>
       </button>
@@ -26,7 +26,7 @@ export function ScanReport({ uaim, trades, meta }: Props) {
   const toggle = (k: keyof typeof open) => setOpen((p) => ({ ...p, [k]: !p[k] }));
   const nodes: any[] = uaim?.fundingGraph?.nodes ?? [];
   const edges: any[] = uaim?.fundingGraph?.edges ?? [];
-  const maxBuy = Math.max(0.0001, ...trades.map((t) => t.solAmount));
+  const maxBuy = Math.max(0.0001, ...(trades ?? []).map((t) => t.solAmount));
   const creator = uaim?.creator ?? {};
   const outcomes = creator?.priorOutcomes ?? {};
   if (!uaim) return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
@@ -53,9 +53,9 @@ export function ScanReport({ uaim, trades, meta }: Props) {
         <p className="font-mono text-[10px] text-[#64748b] mt-1">{edges.length} edges · parent share {Math.round((uaim?.ownership?.clusterAdjustedConcentration ?? 0) * 100)}%</p>
       </Panel>
       <Panel title="Launch buy uniformity" open={open.uniformity} onToggle={() => toggle('uniformity')}>
-        {trades.length === 0 ? <p className="font-mono text-[11px] text-[#64748b]">no data</p> : (
+        {(trades ?? []).length === 0 ? <p className="font-mono text-[11px] text-[#64748b]">no data</p> : (
           <div className="flex items-end gap-1 h-20">
-            {trades.map((t, i) => (
+            {(trades ?? []).map((t, i) => (
               <div key={`${t.trader}-${i}`} title={`${t.trader} ${t.solAmount}`} className="flex-1 rounded-sm bg-emerald-400/80" style={{ height: `${Math.max(6, (t.solAmount / maxBuy) * 100)}%` }} />
             ))}
           </div>
@@ -68,7 +68,7 @@ export function ScanReport({ uaim, trades, meta }: Props) {
       </Panel>
       <Panel title="Behavior analysis verdict" open={open.behavior} onToggle={() => toggle('behavior')}>
         <p className="font-mono text-[11px] text-[#cbd5e1]">{uaim?.score?.verdict ?? ''} ({uaim?.score?.subclass ?? ''}) · {Math.round((uaim?.score?.confidence ?? 0) * 100)}%</p>
-        <p className="font-mono text-[10px] text-[#64748b]">{meta.mint.slice(0, 6)}...{meta.mint.slice(-4)} · {meta.regime}</p>
+        {!meta?.mint ? <p className="font-mono text-[10px] text-[#64748b]">no data</p> : <p className="font-mono text-[10px] text-[#64748b]">{(meta.mint ?? '').slice(0, 6)}...{(meta.mint ?? '').slice(-4)} · {meta.regime}</p>}
       </Panel>
     </div>
   );
