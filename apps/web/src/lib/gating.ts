@@ -108,7 +108,9 @@ export function formatTokenBalance(rawBalance: string, decimals = 18): string {
 
 export function parseClientIp(ip: string): string {
   if (!ip) return 'unknown';
-  const first = ip.split(',')[0].trim();
+  let first = ip.split(',')[0].trim() || 'unknown';
+  if (first === '::1') return '127.0.0.1';
+  if (first.startsWith('::ffff:')) first = first.slice('::ffff:'.length);
   return first || 'unknown';
 }
 
