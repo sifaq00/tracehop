@@ -675,6 +675,15 @@ async function performInlineScan(
     }
 
     // Final Verdict Event
+    (uaim as any).score = {
+      value: verdict.confidence * 100,
+      verdict: verdict.verdict,
+      subclass: verdict.subclass,
+      confidence: verdict.confidence,
+      regimeVersion: regime.regimeVersion,
+      oneLineReason: reasonsList[0]?.text ?? '',
+    };
+    (uaim as any).risks = verdict.reasons.map((r) => ({ code: r.code, severity: r.severity, confidence: 1, evidence: r.text }));
     await writer.write(encoder.encode(`event: verdict\ndata: ${JSON.stringify({
       step: 'verdict',
       verdict: verdict.verdict,
@@ -684,6 +693,9 @@ async function performInlineScan(
       verdictLevel: verdict.verdictLevel,
       dbSaved: dbSaved,
       features,
+      uaim,
+      trades: finalTrades.slice(0, 20).map((t) => ({ trader: t.trader, solAmount: t.solAmount, slot: t.slot })),
+      meta: { mint, regime: regime.regimeVersion },
     })}\n\n`));
 
   } catch (err: any) {
