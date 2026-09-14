@@ -49,6 +49,8 @@ export function Demo({ registerScanner }: DemoProps) {
   // ponytail: hasil real dari API, bukan kalengan preset
   const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [paywalled, setPaywalled] = useState<{ amount: string; payTo: string } | null>(null);
+  const [txSig, setTxSig] = useState('');
   const [doneStages, setDoneStages] = useState<string[]>([]);
   const [activeStage, setActiveStage] = useState<string | null>(null);
 
@@ -57,7 +59,7 @@ export function Demo({ registerScanner }: DemoProps) {
     setDoneStages((prev) => (prev.includes(key) ? prev : [...prev, key]));
   };
 
-  const handleStartScan = async (tokenToScan?: PresetToken) => {
+  const handleStartScan = async (tokenToScan?: PresetToken, sigOverride?: string) => {
     const mint = (tokenToScan?.mint || inputMint || PRESET_TOKENS[0].mint).trim();
     const targetToken = tokenToScan || {
       ...PRESET_TOKENS[0],
@@ -78,6 +80,7 @@ export function Demo({ registerScanner }: DemoProps) {
     setShowVerdict(false);
     setLiveResult(null);
     setScanError(null);
+    setPaywalled(null);
     setDoneStages([]);
     setActiveStage(null);
 
@@ -101,7 +104,24 @@ export function Demo({ registerScanner }: DemoProps) {
       const ctrl = new AbortController();
       const timeout = setTimeout(() => ctrl.abort(), 65000);
       // SSE stream: progress nyata dari engine, bukan timer
-      const res = await fetch(`/api/v1/scan?mint=${encodeURIComponent(mint)}&userWallet=${encodeURIComponent(userWallet)}&stream=true`, { signal: ctrl.signal });
+      const sig = sigOverride ?? txSig;
+      const qs = `/api/v1/scan?mint=${encodeURIComponent(mint)}&userWallet=${encodeURIComponent(userWallet)}&stream=true${sig.trim() ? `&txHash=${encodeURIComponent(sig.trim())}` : ''}`;
+      const res = await fetch(qs, { signal: ctrl.signal });
+      if (res.status === 402) {
+        // Paywall: tampilkan cara bayar, bukan error mentah
+        let amount = '';
+        let payTo = '';
+        try {
+          const j = await res.json();
+          amount = j?.accepts?.[0]?.amount || '';
+          payTo = j?.accepts?.[0]?.payTo || '';
+        } catch { /* ignore */ }
+        clearInterval(interval);
+        setIsScanning(false);
+        setPaywalled({ amount, payTo });
+        setScanError(null);
+        return;
+      }
       if (!res.ok || !res.body) throw new Error(`Scan failed (${res.status})`);
 
       const reader = res.body.getReader();
@@ -386,6 +406,35 @@ export function Demo({ registerScanner }: DemoProps) {
                   {/* Error */}
                   {!isScanning && scanError && (
                     <p className="text-rose-300 text-[11px] leading-relaxed mb-3">⚠️ {scanError}</p>
+                  )}
+
+                  {/* Paywall: free scans out, pay SOL and retry */}
+                  {!isScanning && paywalled && (
+                    <div className="rounded-xl bg-[#120d2b] border border-[#7c3aed]/40 p-3.5 mb-3 font-sans">
+                      <p className="text-white text-xs font-bold mb-1">Free scans exhausted</p>
+                      <p className="text-[#94a3b8] text-[11px] leading-relaxed mb-2.5">
+                        Send <span className="text-white font-bold">{paywalled.amount} SOL</span> to{' '}
+                        <code className="text-[#c4b5fd] break-all">{paywalled.payTo}</code>, then paste the payment signature below. Holders of 66,666+ $TRACEHOP scan free.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <input
+                          type="text"
+                          value={txSig}
+                          onChange={(e) => setTxSig(e.target.value)}
+                          placeholder="Paste payment signature..."
+                          className="flex-1 bg-[#0c081e] border border-[#2c2054] focus:border-[#a855f7] rounded-lg px-3 py-2 text-[11px] text-white placeholder-[#64748b] font-mono focus:outline-none"
+                        />
+                        <button
+                          onClick={() => handleStartScan(undefined, txSig)}
+                          disabled={isScanning || !txSig.trim()}
+                          type="button"
+                          className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-lg bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-extrabold text-[11px] uppercase tracking-wider transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                        >
+                          <Zap className="w-3.5 h-3.5 fill-current" />
+                          <span>Unlock scan</span>
+                        </button>
+                      </div>
+                    </div>
                   )}
 
                   {/* Streaming logs */}

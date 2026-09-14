@@ -842,7 +842,7 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
           JSON.stringify({
             x402Version: 2,
             error: 'Payment Required',
-            message: `Free trials exhausted. Payment features are currently Coming Soon while we finalize our wallet security verification.`,
+            message: `Free scans exhausted. Send ${SCAN_PRICE_SOL} SOL to ${TREASURY_WALLET}, then retry with the payment signature. Holders of 66,666+ $TRACEHOP scan free.`,
             resource: {
               serviceName: 'TraceHop Security Scan',
               category: 'Analytics'
