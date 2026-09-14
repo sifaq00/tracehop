@@ -85,26 +85,42 @@ export function WalletButton() {
     setIsRefreshing(false);
   }, []);
 
-  // Check if wallet was previously connected
+  // Check if wallet was previously connected or changed
   useEffect(() => {
-    const saved = localStorage.getItem('tracehop-wallet-connected');
-    const savedName = localStorage.getItem('tracehop-wallet-name') || 'Phantom';
-    const savedChain = (localStorage.getItem('tracehop-wallet-chain') || 'Solana') as 'Solana' | 'Multi-Chain' | 'Ethereum';
-    const savedIcon = localStorage.getItem('tracehop-wallet-icon') || '/wallets/phantom.svg';
+    const handleWalletChanged = () => {
+      const saved = localStorage.getItem('tracehop-wallet-connected');
+      const savedName = localStorage.getItem('tracehop-wallet-name') || 'MetaMask';
+      const savedChain = (localStorage.getItem('tracehop-wallet-chain') || 'Robinhood EVM') as any;
+      const savedIcon = localStorage.getItem('tracehop-wallet-icon') || '/wallets/metamask.svg';
 
-    if (saved) {
-      setAddress(saved);
-      setSelectedWallet({
-        id: 'phantom',
-        name: savedName,
-        chain: savedChain,
-        icon: savedIcon,
-        installUrl: '',
-        detect: () => true,
-      });
-      setConnected(true);
-      fetchBalance(saved);
-    }
+      if (saved) {
+        setAddress(saved);
+        setSelectedWallet({
+          id: 'metamask',
+          name: savedName,
+          chain: savedChain,
+          icon: savedIcon,
+          installUrl: '',
+          detect: () => true,
+        });
+        setConnected(true);
+        fetchBalance(saved);
+      } else {
+        setConnected(false);
+        setAddress('');
+        setSelectedWallet(null);
+        setBalance('0.00');
+        setUsdValue('0.00');
+      }
+    };
+
+    handleWalletChanged();
+    window.addEventListener('storage', handleWalletChanged);
+    window.addEventListener('tracehop-wallet-changed', handleWalletChanged);
+    return () => {
+      window.removeEventListener('storage', handleWalletChanged);
+      window.removeEventListener('tracehop-wallet-changed', handleWalletChanged);
+    };
   }, [fetchBalance]);
 
   const handleWalletSelected = (wallet: WalletOption, addr: string) => {
@@ -115,6 +131,9 @@ export function WalletButton() {
     localStorage.setItem('tracehop-wallet-name', wallet.name);
     localStorage.setItem('tracehop-wallet-chain', wallet.chain);
     localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('tracehop-wallet-changed'));
+    }
     fetchBalance(addr);
   };
 
@@ -130,6 +149,9 @@ export function WalletButton() {
     localStorage.removeItem('tracehop-wallet-name');
     localStorage.removeItem('tracehop-wallet-chain');
     localStorage.removeItem('tracehop-wallet-icon');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('tracehop-wallet-changed'));
+    }
   };
 
   const handleCopy = async () => {
@@ -146,11 +168,15 @@ export function WalletButton() {
 
   const isEvm = address.startsWith('0x');
   const shortAddress = address
-    ? `${address.slice(0, 4)}...${address.slice(-4)}`
+    ? isEvm && address.length >= 10
+      ? `${address.slice(0, 4)}...${address.slice(-4)}`
+      : address.length > 8
+      ? `${address.slice(0, 4)}...${address.slice(-4)}`
+      : address
     : '';
 
   const explorerUrl = isEvm
-    ? `https://etherscan.io/address/${address}`
+    ? `https://explorer.testnet.robinhood.com/address/${address}`
     : `https://solscan.io/account/${address}`;
 
   return (
@@ -280,9 +306,21 @@ export function WalletButton() {
                 >
                   <span className="flex items-center gap-2">
                     <ExternalLink className="h-3.5 w-3.5 text-[#c084fc]" />
-                    <span>View on {isEvm ? 'Etherscan' : 'Solscan'}</span>
+                    <span>View on {isEvm ? 'Robinhood Explorer' : 'Solscan'}</span>
                   </span>
                 </a>
+
+                <button
+                  onClick={() => {
+                    playClick();
+                    setMenuOpen(false);
+                    setIsModalOpen(true);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-white/80 transition hover:bg-white/5 hover:text-white cursor-pointer"
+                >
+                  <Wallet className="h-3.5 w-3.5 text-[#ff7a29]" />
+                  <span>Switch Wallet</span>
+                </button>
 
                 <button
                   onClick={handleDisconnect}

@@ -19,6 +19,7 @@ declare global {
         isPhantom?: boolean;
         connect: () => Promise<{ publicKey: { toString: () => string } }>;
       };
+      ethereum?: any;
     };
     solflare?: {
       isSolflare?: boolean;
@@ -30,25 +31,36 @@ declare global {
     };
     ethereum?: {
       isMetaMask?: boolean;
-      request: (args: { method: string; params?: unknown[] }) => Promise<string[]>;
+      isOkxWallet?: boolean;
+      isCoinbaseWallet?: boolean;
+      providers?: any[];
+      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
     };
     okxwallet?: {
       solana?: {
         connect: () => Promise<{ publicKey: { toString: () => string } }>;
       };
+      request?: (args: { method: string; params?: unknown[] }) => Promise<any>;
     };
     coinbaseWalletExtension?: {
-      request: (args: { method: string }) => Promise<string[]>;
+      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
     };
   }
 }
 
-export type WalletType = 'phantom' | 'solflare' | 'backpack' | 'metamask' | 'okx' | 'coinbase';
+export type WalletType =
+  | 'metamask'
+  | 'okx'
+  | 'coinbase'
+  | 'browser'
+  | 'phantom'
+  | 'solflare'
+  | 'backpack';
 
 export interface WalletOption {
   id: WalletType;
   name: string;
-  chain: 'Solana' | 'Multi-Chain' | 'Ethereum';
+  chain: 'Robinhood EVM' | 'Multi-Chain' | 'Ethereum' | 'Solana';
   icon: string;
   installUrl: string;
   detect: () => boolean;
@@ -56,12 +68,67 @@ export interface WalletOption {
 
 const WALLETS: WalletOption[] = [
   {
+    id: 'metamask',
+    name: 'MetaMask',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/metamask.svg',
+    installUrl: 'https://metamask.io/',
+    detect: () =>
+      Boolean(
+        typeof window !== 'undefined' &&
+          (window.ethereum?.isMetaMask ||
+            (window.ethereum as any)?.providers?.some((p: any) => p.isMetaMask))
+      ),
+  },
+  {
+    id: 'okx',
+    name: 'OKX Wallet',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/okx.svg',
+    installUrl: 'https://www.okx.com/web3',
+    detect: () =>
+      Boolean(
+        typeof window !== 'undefined' &&
+          (Boolean(window.okxwallet) ||
+            (window.ethereum as any)?.isOkxWallet ||
+            (window.ethereum as any)?.providers?.some((p: any) => p.isOkxWallet))
+      ),
+  },
+  {
+    id: 'coinbase',
+    name: 'Coinbase Wallet',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/coinbase.svg',
+    installUrl: 'https://www.coinbase.com/wallet',
+    detect: () =>
+      Boolean(
+        typeof window !== 'undefined' &&
+          (Boolean(window.coinbaseWalletExtension) ||
+            (window.ethereum as any)?.isCoinbaseWallet ||
+            (window.ethereum as any)?.providers?.some((p: any) => p.isCoinbaseWallet))
+      ),
+  },
+  {
+    id: 'browser',
+    name: 'Browser Wallet',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/trust.svg',
+    installUrl: 'https://ethereum.org/wallets/',
+    detect: () => Boolean(typeof window !== 'undefined' && Boolean(window.ethereum)),
+  },
+  {
     id: 'phantom',
     name: 'Phantom',
-    chain: 'Solana',
+    chain: 'Multi-Chain',
     icon: '/wallets/phantom.svg',
     installUrl: 'https://phantom.app/',
-    detect: () => Boolean(typeof window !== 'undefined' && (window.solana?.isPhantom || window.phantom?.solana?.isPhantom)),
+    detect: () =>
+      Boolean(
+        typeof window !== 'undefined' &&
+          (window.solana?.isPhantom ||
+            window.phantom?.solana?.isPhantom ||
+            Boolean(window.phantom?.ethereum))
+      ),
   },
   {
     id: 'solflare',
@@ -79,36 +146,47 @@ const WALLETS: WalletOption[] = [
     installUrl: 'https://backpack.app/',
     detect: () => Boolean(typeof window !== 'undefined' && window.backpack),
   },
-  {
-    id: 'metamask',
-    name: 'MetaMask',
-    chain: 'Multi-Chain',
-    icon: '/wallets/metamask.svg',
-    installUrl: 'https://metamask.io/',
-    detect: () => Boolean(typeof window !== 'undefined' && window.ethereum?.isMetaMask),
-  },
-  {
-    id: 'okx',
-    name: 'OKX Wallet',
-    chain: 'Multi-Chain',
-    icon: '/wallets/okx.svg',
-    installUrl: 'https://www.okx.com/web3',
-    detect: () => Boolean(typeof window !== 'undefined' && window.okxwallet),
-  },
-  {
-    id: 'coinbase',
-    name: 'Coinbase Wallet',
-    chain: 'Multi-Chain',
-    icon: '/wallets/coinbase.svg',
-    installUrl: 'https://www.coinbase.com/wallet',
-    detect: () => Boolean(typeof window !== 'undefined' && window.coinbaseWalletExtension),
-  },
 ];
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onConnect: (wallet: WalletOption, address: string) => void;
+}
+
+// Robinhood Chain Testnet switch/add helper
+async function promptRobinhoodChain(provider: any) {
+  const chainId = '0xb626'; // 46630
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId }],
+    });
+  } catch (switchError: any) {
+    if (switchError?.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+      try {
+        await provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            {
+              chainId,
+              chainName: 'Robinhood Chain Testnet',
+              rpcUrls: ['https://robinhood-sepolia-rpc.publicnode.com'],
+              nativeCurrency: {
+                name: 'Ether',
+                symbol: 'ETH',
+                decimals: 18,
+              },
+            },
+          ],
+        });
+      } catch (addError) {
+        console.warn('[WalletModal] User declined adding Robinhood Chain:', addError);
+      }
+    } else {
+      console.warn('[WalletModal] Switch chain notice:', switchError);
+    }
+  }
 }
 
 export function WalletModal({ isOpen, onClose, onConnect }: Props) {
@@ -133,36 +211,120 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
     setConnectingId(wallet.id);
 
     try {
-      // 1. Phantom Native
-      if (wallet.id === 'phantom' && (window.solana?.isPhantom || window.phantom?.solana)) {
-        const provider = window.phantom?.solana || window.solana;
-        const res = await provider?.connect();
-        if (res?.publicKey) {
-          const addr = res.publicKey.toString();
-          onConnect(wallet, addr);
-          playSuccessChime();
-          onClose();
-          return;
+      const isEvm = ['metamask', 'okx', 'coinbase', 'browser'].includes(wallet.id);
+
+      // 1. EVM Providers (MetaMask, OKX, Coinbase, Browser)
+      if (isEvm) {
+        let provider: any = null;
+        if (typeof window !== 'undefined') {
+          if (wallet.id === 'okx' && window.okxwallet?.request) {
+            provider = window.okxwallet;
+          } else if (wallet.id === 'coinbase' && window.coinbaseWalletExtension?.request) {
+            provider = window.coinbaseWalletExtension;
+          } else if (window.ethereum) {
+            const providers = window.ethereum.providers;
+            if (Array.isArray(providers)) {
+              if (wallet.id === 'metamask') {
+                provider = providers.find((p: any) => p.isMetaMask) || window.ethereum;
+              } else if (wallet.id === 'okx') {
+                provider =
+                  providers.find((p: any) => p.isOkxWallet) ||
+                  window.okxwallet ||
+                  window.ethereum;
+              } else if (wallet.id === 'coinbase') {
+                provider =
+                  providers.find((p: any) => p.isCoinbaseWallet) ||
+                  window.coinbaseWalletExtension ||
+                  window.ethereum;
+              } else {
+                provider = window.ethereum;
+              }
+            } else {
+              provider = window.ethereum;
+            }
+          }
+        }
+
+        if (provider?.request) {
+          const accounts = await provider.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
+            const addr = accounts[0];
+            await promptRobinhoodChain(provider);
+
+            localStorage.setItem('tracehop-wallet-connected', addr);
+            localStorage.setItem('tracehop-wallet-name', wallet.name);
+            localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('tracehop-wallet-changed'));
+            }
+
+            onConnect(wallet, addr);
+            playSuccessChime();
+            onClose();
+            return;
+          }
         }
       }
 
-      // 2. Solflare Native
+      // 2. Phantom (Check EVM first, then Solana)
+      if (wallet.id === 'phantom') {
+        if (window.phantom?.ethereum?.request) {
+          const accounts = await window.phantom.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
+            const addr = accounts[0];
+            await promptRobinhoodChain(window.phantom.ethereum);
+
+            localStorage.setItem('tracehop-wallet-connected', addr);
+            localStorage.setItem('tracehop-wallet-name', wallet.name);
+            localStorage.setItem('tracehop-wallet-chain', 'Robinhood EVM');
+            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('tracehop-wallet-changed'));
+            }
+
+            onConnect(wallet, addr);
+            playSuccessChime();
+            onClose();
+            return;
+          }
+        }
+
+        if (window.solana?.isPhantom || window.phantom?.solana) {
+          const provider = window.phantom?.solana || window.solana;
+          const res = await provider?.connect();
+          if (res?.publicKey) {
+            const addr = res.publicKey.toString();
+            localStorage.setItem('tracehop-wallet-connected', addr);
+            localStorage.setItem('tracehop-wallet-name', wallet.name);
+            localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('tracehop-wallet-changed'));
+            }
+
+            onConnect(wallet, addr);
+            playSuccessChime();
+            onClose();
+            return;
+          }
+        }
+      }
+
+      // 3. Solflare Native
       if (wallet.id === 'solflare' && window.solflare) {
         await window.solflare.connect();
         if (window.solflare.publicKey) {
           const addr = window.solflare.publicKey.toString();
-          onConnect(wallet, addr);
-          playSuccessChime();
-          onClose();
-          return;
-        }
-      }
+          localStorage.setItem('tracehop-wallet-connected', addr);
+          localStorage.setItem('tracehop-wallet-name', wallet.name);
+          localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+          localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('tracehop-wallet-changed'));
+          }
 
-      // 3. MetaMask Native
-      if (wallet.id === 'metamask' && window.ethereum) {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (accounts && accounts.length > 0) {
-          onConnect(wallet, accounts[0]);
+          onConnect(wallet, addr);
           playSuccessChime();
           onClose();
           return;
@@ -173,7 +335,16 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
       if (wallet.id === 'backpack' && window.backpack) {
         const res = await window.backpack.connect();
         if (res?.publicKey) {
-          onConnect(wallet, res.publicKey.toString());
+          const addr = res.publicKey.toString();
+          localStorage.setItem('tracehop-wallet-connected', addr);
+          localStorage.setItem('tracehop-wallet-name', wallet.name);
+          localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+          localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('tracehop-wallet-changed'));
+          }
+
+          onConnect(wallet, addr);
           playSuccessChime();
           onClose();
           return;
@@ -185,17 +356,27 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
       setConnectingId(null);
     }
 
-    // Seamless fallback address for instantaneous testing across all environments
+    // Seamless fallback address for testing across all environments (valid EVM 0x hex format)
     const fallbackAddrs: Record<WalletType, string> = {
-      phantom: '8vB7sP2mK9vL3xQ7eR5tY1wN4uI6oP8aZ',
-      solflare: 'SolF1are7xKp9M2vL3xQ7eR5tY1wN4uI6oP8aZ',
-      backpack: 'Back9Pack7xKp9M2vL3xQ7eR5tY1wN4uI6oP8aZ',
-      metamask: '0x71C...8eA9F4aB26B1E5F4829',
-      okx: 'OKX7xKp9M2vL3xQ7eR5tY1wN4uI6oP8aZ',
-      coinbase: '0x482...B1E5F482971C8eA9F4a',
+      metamask: '0x71C8BFa6a3b2a5d9F81e5B796bF9B9fE8984926A',
+      okx: '0x901FC7E22B7BC7353C66F0344A521E6533bF665f',
+      coinbase: '0x4829E1A7d52b95B64344Fa560c5E3B3A5A384a5B',
+      browser: '0x1234567890123456789012345678901234567890',
+      phantom: '0x5B38Da6a701c568545dCfcB03FcB875f56beddC4',
+      solflare: '0x28a8746e75304c0780E011BEd21C72cD78cd535E',
+      backpack: '0xdD870fA1b7C4700F2BD7f44238821C26f7392148',
     };
 
-    onConnect(wallet, fallbackAddrs[wallet.id]);
+    const fallback = fallbackAddrs[wallet.id] || '0x71C8BFa6a3b2a5d9F81e5B796bF9B9fE8984926A';
+    localStorage.setItem('tracehop-wallet-connected', fallback);
+    localStorage.setItem('tracehop-wallet-name', wallet.name);
+    localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+    localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('tracehop-wallet-changed'));
+    }
+
+    onConnect(wallet, fallback);
     playSuccessChime();
     setConnectingId(null);
     onClose();
@@ -229,13 +410,13 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
               Connect a Wallet
             </h3>
             <p className="font-sans text-[11.5px] text-[#94a3b8]">
-              Select your Solana or Multi-Chain wallet
+              Select your Robinhood EVM or Web3 wallet
             </p>
           </div>
           <button
             onClick={onClose}
             aria-label="Close modal"
-            className="rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white"
+            className="rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -254,7 +435,7 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
                 whileTap={{ scale: 0.985 }}
                 onClick={() => handleSelectWallet(wallet)}
                 disabled={isConnecting}
-                className="group flex w-full items-center justify-between rounded-xl border border-[#2a1e4a] bg-[#120d2b]/90 p-2.5 px-3.5 transition hover:border-[#7c3aed]/60 hover:bg-[#1a133d]"
+                className="group flex w-full items-center justify-between rounded-xl border border-[#2a1e4a] bg-[#120d2b]/90 p-2.5 px-3.5 transition hover:border-[#7c3aed]/60 hover:bg-[#1a133d] cursor-pointer disabled:opacity-50"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/50 border border-white/10 p-1.5 group-hover:border-[#7c3aed]/40 transition-colors">
@@ -262,7 +443,7 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
                       src={wallet.icon}
                       alt={wallet.name}
                       onError={(e) => {
-                        e.currentTarget.src = '/wallets/phantom.svg';
+                        e.currentTarget.src = '/wallets/metamask.svg';
                       }}
                       className="h-full w-full object-contain"
                     />
@@ -304,7 +485,7 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
         {/* Security Footer */}
         <div className="mt-4 flex items-center justify-center gap-1.5 text-center font-sans text-[11px] text-[#94a3b8] pt-2.5 border-t border-white/5">
           <ShieldCheck className="h-3.5 w-3.5 text-[#ff7a29]" />
-          <span>Non-custodial & secure. Powered by Tracehop Web3.</span>
+          <span>Non-custodial & secure. Powered by Robinhood Chain & Tracehop.</span>
         </div>
       </motion.div>
     </div>

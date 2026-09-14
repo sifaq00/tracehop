@@ -1,13 +1,41 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, RefreshCw } from 'lucide-react';
+import { Zap, RefreshCw, ShieldAlert, Wallet } from 'lucide-react';
 import { PRESET_TOKENS } from '@/lib/landing';
 import type { PresetToken } from '@/lib/landing';
+import { WalletModal } from '../WalletModal';
+import type { WalletOption } from '../WalletModal';
 
 interface DemoProps {
   registerScanner: (fn: (token?: PresetToken) => void) => void;
+}
+
+interface GateStatus {
+  mode: string;
+  wallet: string | null;
+  tier: number;
+  balance: string;
+  formattedBalance: string;
+  anonUsed: number;
+  anonRemaining: number;
+  anonAllowed: boolean;
+  required: number;
+  symbol: string;
+  chain: string;
+  access: boolean;
+  accessReason: 'holder' | 'anon_free' | 'insufficient_hold' | 'anon_exhausted' | 'invalid_wallet';
+}
+
+interface PaywallData {
+  error: string;
+  message: string;
+  required: number;
+  current: string;
+  symbol: string;
+  chain: string;
+  reason: string;
 }
 
 const SCAN_LINES = [
@@ -49,17 +77,65 @@ export function Demo({ registerScanner }: DemoProps) {
   // ponytail: hasil real dari API, bukan kalengan preset
   const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
-  const [paywalled, setPaywalled] = useState<{ amount: string; payTo: string } | null>(null);
-  const [txSig, setTxSig] = useState('');
+  const [paywallData, setPaywallData] = useState<PaywallData | null>(null);
   const [doneStages, setDoneStages] = useState<string[]>([]);
   const [activeStage, setActiveStage] = useState<string | null>(null);
+
+  // Robinhood EVM wallet and Gating status
+  const [userWallet, setUserWallet] = useState<string | null>(null);
+  const [gateStatus, setGateStatus] = useState<GateStatus | null>(null);
+  const [isGateLoading, setIsGateLoading] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+
+  const fetchGateStatus = useCallback(async (walletParam?: string | null) => {
+    try {
+      setIsGateLoading(true);
+      const activeWallet =
+        walletParam !== undefined
+          ? walletParam
+          : typeof window !== 'undefined'
+          ? localStorage.getItem('tracehop-wallet-connected')
+          : null;
+
+      const url = activeWallet
+        ? `/api/v1/gate?wallet=${encodeURIComponent(activeWallet)}`
+        : '/api/v1/gate';
+
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        const data: GateStatus = await res.json();
+        setGateStatus(data);
+      }
+    } catch (err) {
+      console.warn('[Demo] Failed to fetch gate status:', err);
+    } finally {
+      setIsGateLoading(false);
+    }
+  }, []);
+
+  // Sync wallet state and gate status
+  useEffect(() => {
+    const syncWallet = () => {
+      const saved = typeof window !== 'undefined' ? localStorage.getItem('tracehop-wallet-connected') : null;
+      setUserWallet(saved);
+      fetchGateStatus(saved);
+    };
+
+    syncWallet();
+    window.addEventListener('storage', syncWallet);
+    window.addEventListener('tracehop-wallet-changed', syncWallet);
+    return () => {
+      window.removeEventListener('storage', syncWallet);
+      window.removeEventListener('tracehop-wallet-changed', syncWallet);
+    };
+  }, [fetchGateStatus]);
 
   const markStage = (key: string) => {
     setActiveStage(key);
     setDoneStages((prev) => (prev.includes(key) ? prev : [...prev, key]));
   };
 
-  const handleStartScan = async (tokenToScan?: PresetToken, sigOverride?: string) => {
+  const handleStartScan = async (tokenToScan?: PresetToken) => {
     const mint = (tokenToScan?.mint || inputMint || PRESET_TOKENS[0].mint).trim();
     const targetToken = tokenToScan || {
       ...PRESET_TOKENS[0],
@@ -68,8 +144,10 @@ export function Demo({ registerScanner }: DemoProps) {
       mint,
     };
 
-    // Wallet wajib (gating server), baca dari koneksi Navbar
-    const userWallet = typeof window !== 'undefined' ? localStorage.getItem('tracehop-wallet-connected') : null;
+    // Anonymous scan allowed without connected wallet
+    const currentWallet =
+      userWallet ||
+      (typeof window !== 'undefined' ? localStorage.getItem('tracehop-wallet-connected') : null);
 
     setSelectedToken(targetToken);
     setInputMint(mint);
@@ -80,15 +158,9 @@ export function Demo({ registerScanner }: DemoProps) {
     setShowVerdict(false);
     setLiveResult(null);
     setScanError(null);
-    setPaywalled(null);
+    setPaywallData(null);
     setDoneStages([]);
     setActiveStage(null);
-
-    if (!userWallet) {
-      setIsScanning(false);
-      setScanError('Connect a wallet via the Connect Wallet button above, then hit RUN SCAN again.');
-      return;
-    }
 
     // Animasi log sambil tunggu event SSE pertama
     let step = 0;
@@ -103,23 +175,38 @@ export function Demo({ registerScanner }: DemoProps) {
     try {
       const ctrl = new AbortController();
       const timeout = setTimeout(() => ctrl.abort(), 65000);
-      // SSE stream: progress nyata dari engine, bukan timer
-      const sig = sigOverride ?? txSig;
-      const qs = `/api/v1/scan?mint=${encodeURIComponent(mint)}&userWallet=${encodeURIComponent(userWallet)}&stream=true${sig.trim() ? `&txHash=${encodeURIComponent(sig.trim())}` : ''}`;
+      // SSE stream: call scan API (without requiring userWallet if null)
+      const qs = currentWallet
+        ? `/api/v1/scan?mint=${encodeURIComponent(mint)}&stream=true&userWallet=${encodeURIComponent(currentWallet)}`
+        : `/api/v1/scan?mint=${encodeURIComponent(mint)}&stream=true`;
       const res = await fetch(qs, { signal: ctrl.signal });
       if (res.status === 402) {
-        // Paywall: tampilkan cara bayar, bukan error mentah
-        let amount = '';
-        let payTo = '';
+        let parsed: PaywallData = {
+          error: 'ANON_EXHAUSTED',
+          message: 'Free scans exhausted (3/3). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.',
+          required: 50000,
+          current: '0',
+          symbol: 'ARDRILL',
+          chain: 'Robinhood Chain',
+          reason: 'anon_exhausted',
+        };
         try {
           const j = await res.json();
-          amount = j?.accepts?.[0]?.amount || '';
-          payTo = j?.accepts?.[0]?.payTo || '';
+          parsed = {
+            error: j.error || 'HOLD_REQUIRED',
+            message: j.message || '',
+            required: typeof j.required === 'number' ? j.required : 50000,
+            current: typeof j.current === 'string' ? j.current : String(j.current ?? '0'),
+            symbol: j.symbol || 'ARDRILL',
+            chain: j.chain || 'Robinhood Chain',
+            reason: j.reason || '',
+          };
         } catch { /* ignore */ }
         clearInterval(interval);
         setIsScanning(false);
-        setPaywalled({ amount, payTo });
+        setPaywallData(parsed);
         setScanError(null);
+        fetchGateStatus(currentWallet);
         return;
       }
       if (!res.ok || !res.body) throw new Error(`Scan failed (${res.status})`);
@@ -165,6 +252,7 @@ export function Demo({ registerScanner }: DemoProps) {
             setIsScanning(false);
             setShowVerdict(true);
             finished = true;
+            fetchGateStatus(currentWallet);
             break;
           } else if (ev === 'error') {
             throw new Error(data.message || data.error || 'Scan failed');
@@ -197,6 +285,67 @@ export function Demo({ registerScanner }: DemoProps) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
   }, [visibleLogs]);
+
+  const renderGateBadge = () => {
+    if (!gateStatus && isGateLoading) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-white/10 bg-white/5 font-mono text-[10.5px] text-[#94a3b8]">
+          <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+          <span>Checking access...</span>
+        </span>
+      );
+    }
+
+    if (gateStatus?.wallet) {
+      if (gateStatus.tier === 2 || gateStatus.accessReason === 'holder') {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10.5px] font-semibold text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Holder Access: Active</span>
+          </span>
+        );
+      }
+      if (gateStatus.accessReason === 'invalid_wallet') {
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 font-mono text-[10.5px] font-semibold text-rose-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+            <span>Invalid EVM Address</span>
+          </span>
+        );
+      }
+      return (
+        <button
+          type="button"
+          onClick={() => setIsWalletModalOpen(true)}
+          className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 font-mono text-[10.5px] font-semibold text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span>Need 50,000 {gateStatus.symbol || 'ARDRILL'}</span>
+        </button>
+      );
+    }
+
+    const remaining = gateStatus?.anonRemaining ?? 3;
+    if (remaining > 0) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-[#7c3aed]/30 bg-[#7c3aed]/15 font-mono text-[10.5px] font-medium text-[#c4b5fd]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a855f7]" />
+          <span>Free Anonymous Scans: {remaining}/3 remaining</span>
+        </span>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => setIsWalletModalOpen(true)}
+        className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 font-mono text-[10.5px] font-semibold text-rose-400 hover:bg-rose-500/20 transition cursor-pointer"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+        <span>Free Scans Exhausted (3/3) · Connect Wallet</span>
+      </button>
+    );
+  };
 
   return (
     <section ref={sectionRef} id="demo" className="relative py-16 sm:py-24 overflow-hidden">
@@ -237,11 +386,17 @@ export function Demo({ registerScanner }: DemoProps) {
               Interrogate <span className="text-[#a855f7] italic">any token.</span> Instantly.
             </h2>
             <p className="text-[#94a3b8] text-sm sm:text-base mb-6 leading-relaxed max-w-xl">
-              Paste a mint address. Tracehop will reveal what others try to hide. Connect a wallet first — first 3 scans are free.
+              Paste a mint address. Tracehop will reveal what others try to hide. 3 free anonymous scans daily, or hold 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain for unlimited access.
             </p>
 
             {/* Search Input Bar */}
             <div className="w-full mb-4.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <span className="text-[11px] font-mono font-medium text-[#94a3b8]">
+                  Target Mint Address
+                </span>
+                {renderGateBadge()}
+              </div>
               <div className={`relative flex items-center p-2 sm:p-2.5 rounded-2xl bg-[#0c081e] border transition-all duration-300 ${isScanning ? 'border-[#7c3aed] shadow-[0_0_20px_rgba(124,58,237,0.25)]' : 'border-[#2c2054] shadow-[0_0_12px_rgba(124,58,237,0.1)] focus-within:border-[#a855f7]'}`}>
                 {/* Scanning sweep line */}
                 {isScanning && (
@@ -408,31 +563,48 @@ export function Demo({ registerScanner }: DemoProps) {
                     <p className="text-rose-300 text-[11px] leading-relaxed mb-3">⚠️ {scanError}</p>
                   )}
 
-                  {/* Paywall: free scans out, pay SOL and retry */}
-                  {!isScanning && paywalled && (
-                    <div className="rounded-xl bg-[#120d2b] border border-[#7c3aed]/40 p-3.5 mb-3 font-sans">
-                      <p className="text-white text-xs font-bold mb-1">Free scans exhausted</p>
-                      <p className="text-[#94a3b8] text-[11px] leading-relaxed mb-2.5">
-                        Send <span className="text-white font-bold">{paywalled.amount} SOL</span> to{' '}
-                        <code className="text-[#c4b5fd] break-all">{paywalled.payTo}</code>, then paste the payment signature below. Holders of 66,666+ $TRACEHOP scan free.
+                  {/* Paywall: 402 Gating Modal/Card */}
+                  {!isScanning && paywallData && (
+                    <div className="rounded-xl bg-[#120d2b] border border-[#7c3aed]/50 p-4 mb-3 font-sans shadow-[0_0_20px_rgba(124,58,237,0.2)]">
+                      <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-white/10">
+                        <div className="flex items-center gap-2">
+                          <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                          <h4 className="text-white text-xs sm:text-sm font-extrabold tracking-wide">
+                            {paywallData.error === 'ANON_EXHAUSTED' || paywallData.reason === 'anon_exhausted'
+                              ? 'Free Scans Exhausted'
+                              : paywallData.error === 'HOLD_REQUIRED' || paywallData.reason === 'insufficient_hold'
+                              ? 'Token Holding Required'
+                              : 'Access Gated'}
+                          </h4>
+                        </div>
+                        <span className="font-mono text-[9px] uppercase font-bold px-2 py-0.5 rounded bg-[#7c3aed]/20 text-[#c084fc] border border-[#7c3aed]/30">
+                          {paywallData.chain || 'Robinhood Chain'}
+                        </span>
+                      </div>
+
+                      <p className="text-[#cbd5e1] text-[11.5px] leading-relaxed mb-3">
+                        {paywallData.error === 'ANON_EXHAUSTED' || paywallData.reason === 'anon_exhausted'
+                          ? 'Free scans exhausted (3/3). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.'
+                          : paywallData.error === 'HOLD_REQUIRED' || paywallData.reason === 'insufficient_hold'
+                          ? `Insufficient $TRCHP balance. Required: 50,000. Current: ${paywallData.current}.`
+                          : paywallData.message}
                       </p>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                          type="text"
-                          value={txSig}
-                          onChange={(e) => setTxSig(e.target.value)}
-                          placeholder="Paste payment signature..."
-                          className="flex-1 bg-[#0c081e] border border-[#2c2054] focus:border-[#a855f7] rounded-lg px-3 py-2 text-[11px] text-white placeholder-[#64748b] font-mono focus:outline-none"
-                        />
+
+                      <div className="flex flex-wrap items-center gap-2.5">
                         <button
-                          onClick={() => handleStartScan(undefined, txSig)}
-                          disabled={isScanning || !txSig.trim()}
+                          onClick={() => setIsWalletModalOpen(true)}
                           type="button"
-                          className="inline-flex items-center justify-center gap-2 h-9 px-5 rounded-lg bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-extrabold text-[11px] uppercase tracking-wider transition-all shrink-0 cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl bg-gradient-to-r from-[#ff7a29] to-[#ea580c] hover:from-[#ff9548] hover:to-[#ff7a29] text-white font-extrabold text-[11px] uppercase tracking-wider shadow-[0_0_15px_rgba(255,122,41,0.4)] transition-all cursor-pointer"
                         >
-                          <Zap className="w-3.5 h-3.5 fill-current" />
-                          <span>Unlock scan</span>
+                          <Wallet className="w-3.5 h-3.5 shrink-0" />
+                          <span>{userWallet ? 'Switch EVM Wallet' : 'Connect EVM Wallet'}</span>
                         </button>
+
+                        {userWallet && (
+                          <span className="font-mono text-[10.5px] text-[#94a3b8]">
+                            Connected: <code className="text-[#c084fc]">{userWallet.slice(0, 4)}...{userWallet.slice(-4)}</code>
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -463,6 +635,21 @@ export function Demo({ registerScanner }: DemoProps) {
           </motion.div>
         </div>
       </div>
+
+      {/* Wallet Modal for EVM Connection / Gating */}
+      <AnimatePresence>
+        {isWalletModalOpen && (
+          <WalletModal
+            isOpen={isWalletModalOpen}
+            onClose={() => setIsWalletModalOpen(false)}
+            onConnect={(_wallet, addr) => {
+              setUserWallet(addr);
+              setIsWalletModalOpen(false);
+              fetchGateStatus(addr);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 }
