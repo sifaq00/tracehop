@@ -24,6 +24,9 @@ class AddressResolver {
 
 dns.setDefaultResultOrder('ipv4first');
 
+// ponytail: Vercel hobby kredit 60s, scan butuh >10s
+export const maxDuration = 60;
+
 import path from 'path';
 import fs from 'fs';
 
