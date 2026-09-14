@@ -334,6 +334,19 @@ async function performInlineScan(
         uaim.ownership.clusterAdjustedConcentration = 0.75;
       }
 
+      uaim.fundingGraph = {
+        nodes: Object.keys(fundingSources).map((addr) => ({
+          address: addr,
+          type: fundingSources[addr].funderType === 'cex' ? 'cex' : 'eoa',
+        })),
+        edges: Object.keys(fundingSources).map((addr) => ({
+          from: fundingSources[addr].funder,
+          to: addr,
+          amount: 0,
+          timestamp: Date.now(),
+        })),
+      };
+
       console.log(`[STEP 10] Calculating behavioral features (parent share, uniformity, fresh wallets, same block, overlaps)...`);
       const detectedRisks = runRiskRules(uaim, rules);
       const scoredUaim = scoreUaimDocument(uaim, detectedRisks);
@@ -387,15 +400,33 @@ async function performInlineScan(
         console.error('[EVM Scan] Failed to save prediction to DB:', dbErr);
       }
 
+      const txValueByAddr = new Map<string, number>();
+      for (const t of txs as any[]) {
+        const addr = (t.from || t.to) as string | undefined;
+        if (!addr) continue;
+        const v = Number((t as any).value ?? 0);
+        if (!txValueByAddr.has(addr.toLowerCase()) && Number.isFinite(v) && v > 0) {
+          txValueByAddr.set(addr.toLowerCase(), v);
+        }
+      }
+      const evmTrades = evmBuyers.slice(0, 20).map((trader, i) => ({
+        trader,
+        solAmount: txValueByAddr.get(trader.toLowerCase()) ?? 0.1,
+        slot: i,
+      }));
+
       await writer.write(encoder.encode(`event: verdict\ndata: ${JSON.stringify({
         step: 'verdict',
         verdict: scoredUaim.score.verdict,
         confidence: scoredUaim.score.confidence,
         subclass: scoredUaim.score.subclass,
         reasons: reasonsList,
-        verdictLevel: scoredUaim.score.verdict === 'CAP' ? 'high' : 'low',
+        verdictLevel: 'FINAL',
         dbSaved,
         features,
+        uaim: scoredUaim,
+        trades: evmTrades,
+        meta: { mint, regime: 'REGIME W14' },
       })}\n\n`));
       return;
     }
