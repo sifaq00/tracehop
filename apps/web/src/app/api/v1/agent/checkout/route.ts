@@ -100,6 +100,7 @@ export async function POST(req: NextRequest) {
         features,
         regime_version: 'REGIME W14',
         created_at: new Date().toISOString(),
+        wallet: userWallet || 'agent_caller',
         uaim_document: uaim,
       });
 

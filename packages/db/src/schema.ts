@@ -39,6 +39,7 @@ export const predictions = pgTable('predictions', {
   features: jsonb('features').notNull(), // JSON snapshot of computed features
   uaimDocument: jsonb('uaim_document'), // Store complete UAIM structure
   regimeVersion: varchar('regime_version', { length: 50 }).notNull(),
+  wallet: varchar('wallet', { length: 44 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => {
   return {
