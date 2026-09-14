@@ -9,6 +9,11 @@ interface Props {
   meta: { mint: string; regime: string };
 }
 
+function short(addr: string): string {
+  if (!addr || addr.length < 10) return addr || '?';
+  return `${addr.slice(0, 4)}..${addr.slice(-3)}`;
+}
+
 function Panel({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   return (
     <div className="rounded-lg bg-black/30 border border-[#241a45]">
@@ -21,50 +26,149 @@ function Panel({ title, open, onToggle, children }: { title: string; open: boole
   );
 }
 
+function FundingGraph({ uaim }: { uaim: any }) {
+  const edges: any[] = uaim?.fundingGraph?.edges ?? [];
+  const nodes: any[] = uaim?.fundingGraph?.nodes ?? [];
+  const deployer: string = uaim?.deployment?.deployer ?? '';
+  if (edges.length === 0 && nodes.length === 0) {
+    return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
+  }
+  const typeOf = new Map<string, string>(nodes.map((n) => [n.address, n.type]));
+  const groups = new Map<string, string[]>();
+  for (const e of edges) {
+    if (!e?.from || !e?.to) continue;
+    if (!groups.has(e.from)) groups.set(e.from, []);
+    if (!groups.get(e.from)!.includes(e.to)) groups.get(e.from)!.push(e.to);
+  }
+  for (const n of nodes) {
+    if (!groups.has(n.address) && !edges.some((e) => e.to === n.address)) {
+      groups.set(n.address, []);
+    }
+  }
+  const parents = [...groups.keys()];
+  const W = 320;
+  const topY = 30;
+  const rowH = 44;
+  const H = topY + 34 + parents.length * rowH + 8;
+  const colorOf = (addr: string): string => {
+    if (deployer && addr === deployer) return '#fb7185';
+    if (typeOf.get(addr) === 'cex') return '#34d399';
+    return '#f59e0b';
+  };
+  const labelOf = (addr: string): string => {
+    if (deployer && addr === deployer) return 'DEPLOYER';
+    if (typeOf.get(addr) === 'cex') return 'CEX';
+    return 'PARENT';
+  };
+  return (
+    <div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: Math.min(220, H) }}>
+        {parents.map((p, pi) => {
+          const wallets = groups.get(p)!;
+          const y = topY + 34 + pi * rowH + rowH / 2;
+          const px = 76;
+          return (
+            <g key={p}>
+              <line x1={px} y1={topY} x2={px} y2={y} stroke="#3b2d6e" strokeWidth="1" strokeDasharray="3 3" />
+              <rect x={px - 62} y={topY - 13} width={124} height={26} rx={7} fill="#14102b" stroke={colorOf(p)} strokeOpacity="0.8" />
+              <circle cx={px - 50} cy={topY} r={4} fill={colorOf(p)} />
+              <text x={px - 40} y={topY - 1} fill="#e2e8f0" fontSize="9" fontFamily="monospace">{short(p)}</text>
+              <text x={px - 40} y={topY + 9} fill={colorOf(p)} fontSize="7.5" fontFamily="monospace">{labelOf(p)} · {wallets.length}</text>
+              {wallets.slice(0, 8).map((w, wi) => {
+                const x = 150 + wi * 21;
+                const clustered = wallets.length > 1;
+                return (
+                  <g key={w}>
+                    <line x1={px} y1={topY + 13} x2={x} y2={y - 6} stroke={clustered ? '#f59e0b' : '#475569'} strokeWidth="1" opacity={clustered ? 0.85 : 0.45} />
+                    <circle cx={x} cy={y} r={5.5} fill={clustered ? '#f59e0b' : '#64748b'} opacity="0.9">
+                      <title>{w}</title>
+                    </circle>
+                  </g>
+                );
+              })}
+              {wallets.length > 8 && (
+                <text x={150 + 8 * 21} y={y + 3} fill="#64748b" fontSize="9" fontFamily="monospace">+{wallets.length - 8}</text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 font-mono text-[9.5px] text-[#64748b]">
+        <span><span className="inline-block w-2 h-2 rounded-full bg-[#fb7185] mr-1" />deployer</span>
+        <span><span className="inline-block w-2 h-2 rounded-full bg-[#34d399] mr-1" />cex (benign)</span>
+        <span><span className="inline-block w-2 h-2 rounded-full bg-[#f59e0b] mr-1" />clustered</span>
+        <span className="ml-auto">{parents.length} parents · {edges.length} links · {Math.round((uaim?.ownership?.clusterAdjustedConcentration ?? 0) * 100)}% share</span>
+      </div>
+    </div>
+  );
+}
+
+function Uniformity({ uaim, trades }: { uaim: any; trades: TradePoint[] }) {
+  const list = trades ?? [];
+  if (list.length === 0) return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
+  const maxBuy = Math.max(0.0001, ...list.map((t) => t.solAmount));
+  const mean = list.reduce((a, t) => a + t.solAmount, 0) / list.length;
+  return (
+    <div>
+      <div className="flex items-end justify-center gap-1.5 h-24">
+          {list.map((t, i) => {
+            const h = Math.max(5, (t.solAmount / maxBuy) * 100);
+            const whale = t.solAmount > mean * 2 && list.length > 2;
+            return (
+              <div
+                key={`${t.trader}-${i}`}
+                title={`${t.trader} · ${t.solAmount.toFixed(4)} SOL · slot ${t.slot}`}
+                className={`flex-1 max-w-[40px] rounded-t-[3px] ${whale ? 'bg-gradient-to-t from-amber-600 to-amber-300' : 'bg-gradient-to-t from-emerald-700 to-emerald-300'}`}
+                style={{ height: `${h}%` }}
+              />
+            );
+          })}
+        </div>
+      <div className="h-px bg-[#241a45] mt-0" />
+      <p className="font-mono text-[10px] text-[#64748b] mt-1">
+        {list.length} buys · avg {mean.toFixed(4)} · stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}
+      </p>
+    </div>
+  );
+}
+
 export function ScanReport({ uaim, trades, meta }: Props) {
   const [open, setOpen] = useState({ graph: false, uniformity: true, deployer: false, behavior: false });
   const toggle = (k: keyof typeof open) => setOpen((p) => ({ ...p, [k]: !p[k] }));
-  const nodes: any[] = uaim?.fundingGraph?.nodes ?? [];
-  const edges: any[] = uaim?.fundingGraph?.edges ?? [];
-  const maxBuy = Math.max(0.0001, ...(trades ?? []).map((t) => t.solAmount));
   const creator = uaim?.creator ?? {};
   const outcomes = creator?.priorOutcomes ?? {};
   if (!uaim) return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
   return (
     <div className="shrink-0 grid gap-2 mt-3">
       <Panel title="Funding relation graph" open={open.graph} onToggle={() => toggle('graph')}>
-        {nodes.length === 0 ? <p className="font-mono text-[11px] text-[#64748b]">no data</p> : (
-          <svg viewBox="0 0 300 120" className="w-full h-28">
-            <circle cx="150" cy="60" r="8" fill="#a855f7" />
-            {nodes.slice(0, 12).map((n, i) => {
-              const a = (i / Math.max(1, Math.min(12, nodes.length))) * Math.PI * 2;
-              const x = 150 + Math.cos(a) * 90;
-              const y = 60 + Math.sin(a) * 45;
-              const isCex = n.type === 'cex';
-              return (
-                <g key={n.address ?? i}>
-                  <line x1="150" y1="60" x2={x} y2={y} stroke={isCex ? '#34d399' : '#7c3aed'} strokeWidth="1" opacity="0.7" />
-                  <circle cx={x} cy={y} r="5" fill={isCex ? '#34d399' : '#f59e0b'} />
-                </g>
-              );
-            })}
-          </svg>
-        )}
-        <p className="font-mono text-[10px] text-[#64748b] mt-1">{edges.length} edges · parent share {Math.round((uaim?.ownership?.clusterAdjustedConcentration ?? 0) * 100)}%</p>
+        <FundingGraph uaim={uaim} />
       </Panel>
       <Panel title="Launch buy uniformity" open={open.uniformity} onToggle={() => toggle('uniformity')}>
-        {(trades ?? []).length === 0 ? <p className="font-mono text-[11px] text-[#64748b]">no data</p> : (
-          <div className="flex items-end justify-center gap-1.5 h-20">
-            {(trades ?? []).map((t, i) => (
-              <div key={`${t.trader}-${i}`} title={`${t.trader} ${t.solAmount}`} className="flex-1 max-w-[36px] rounded-sm bg-emerald-400/80" style={{ height: `${Math.max(6, (t.solAmount / maxBuy) * 100)}%` }} />
-            ))}
-          </div>
-        )}
-        <p className="font-mono text-[10px] text-[#64748b] mt-1">{(trades ?? []).length} buys · stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}</p>
+        <Uniformity uaim={uaim} trades={trades} />
       </Panel>
       <Panel title="Deployer profile history" open={open.deployer} onToggle={() => toggle('deployer')}>
-        <p className="font-mono text-[11px] text-[#cbd5e1]">launches {creator.priorLaunches ?? 0} · died {outcomes.died ?? 0} · graduated {outcomes.graduated ?? 0} · rep {creator.reputationScore ?? 0}</p>
-        <p className="font-mono text-[10px] text-[#64748b] break-all">{uaim?.deployment?.deployer ?? ''}</p>
+        <div className="flex items-center gap-4 font-mono">
+          <div className="flex items-end gap-2 h-16">
+            {[
+              { label: 'LAUNCH', v: creator.priorLaunches ?? 0, c: 'bg-[#7c3aed]' },
+              { label: 'DIED', v: outcomes.died ?? 0, c: 'bg-rose-500' },
+              { label: 'GRAD', v: outcomes.graduated ?? 0, c: 'bg-emerald-400' },
+            ].map((b) => {
+              const mx = Math.max(1, creator.priorLaunches ?? 0, outcomes.died ?? 0, outcomes.graduated ?? 0);
+              return (
+                <div key={b.label} className="flex flex-col items-center gap-1">
+                  <span className="text-[11px] text-white font-bold">{b.v}</span>
+                  <div className={`w-9 rounded-t-[3px] ${b.c} opacity-90`} style={{ height: `${Math.max(6, (b.v / mx) * 52)}px` }} />
+                  <span className="text-[8px] text-[#64748b]">{b.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[11px] leading-relaxed">
+            <p className="text-[#cbd5e1]">rep score <span className="text-white font-bold">{creator.reputationScore ?? 0}</span></p>
+            <p className="text-[#64748b] break-all text-[10px]">{uaim?.deployment?.deployer ?? ''}</p>
+          </div>
+        </div>
       </Panel>
       <Panel title="Behavior analysis verdict" open={open.behavior} onToggle={() => toggle('behavior')}>
         <p className="font-mono text-[11px] text-[#cbd5e1]">{uaim?.score?.verdict ?? ''} ({uaim?.score?.subclass ?? ''}) · {Math.round((uaim?.score?.confidence ?? 0) * 100)}%</p>
