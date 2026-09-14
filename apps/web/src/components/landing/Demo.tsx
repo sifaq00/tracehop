@@ -33,41 +33,76 @@ export function Demo({ registerScanner }: DemoProps) {
   const [scanProgress, setScanProgress] = useState(0);
   const [visibleLogs, setVisibleLogs] = useState<string[]>([]);
   const [showVerdict, setShowVerdict] = useState(false);
+  // ponytail: hasil real dari API, bukan kalengan preset
+  const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
-  const handleStartScan = (tokenToScan?: PresetToken) => {
-    const targetToken = tokenToScan || (inputMint
-      ? (PRESET_TOKENS.find(t => t.mint.toLowerCase() === inputMint.toLowerCase() || t.ticker.toLowerCase() === inputMint.toLowerCase()) || {
-          ...PRESET_TOKENS[0],
-          name: 'Custom Target Token',
-          ticker: inputMint.slice(0, 4) + '...' + inputMint.slice(-4),
-          mint: inputMint,
-        })
-      : PRESET_TOKENS[0]);
+  const handleStartScan = async (tokenToScan?: PresetToken) => {
+    const mint = (tokenToScan?.mint || inputMint || PRESET_TOKENS[0].mint).trim();
+    const targetToken = tokenToScan || {
+      ...PRESET_TOKENS[0],
+      name: 'Live Scan Target',
+      ticker: mint.slice(0, 4) + '...' + mint.slice(-4),
+      mint,
+    };
+
+    // Wallet wajib (gating server), baca dari koneksi Navbar
+    const userWallet = typeof window !== 'undefined' ? localStorage.getItem('tracehop-wallet-connected') : null;
 
     setSelectedToken(targetToken);
-    setInputMint(targetToken.mint);
+    setInputMint(mint);
     setHasScanned(true);
     setIsScanning(true);
-    setScanProgress(0);
+    setScanProgress(5);
     setVisibleLogs([]);
     setShowVerdict(false);
+    setLiveResult(null);
+    setScanError(null);
 
+    if (!userWallet) {
+      setIsScanning(false);
+      setScanError('Connect wallet dulu via tombol Connect Wallet di atas, lalu RUN SCAN lagi.');
+      return;
+    }
+
+    // Animasi log sambil tunggu API
     let step = 0;
-    const logs = targetToken.logs && targetToken.logs.length > 0 ? targetToken.logs : SCAN_LINES;
     const interval = setInterval(() => {
-      if (step < logs.length) {
-        const nextLog = logs[step];
-        if (nextLog) {
-          setVisibleLogs((prev) => [...prev, nextLog]);
-        }
-        setScanProgress(Math.round(((step + 1) / logs.length) * 100));
+      if (step < SCAN_LINES.length) {
+        const nextLog = SCAN_LINES[step];
+        if (nextLog) setVisibleLogs((prev) => [...prev, nextLog]);
+        setScanProgress(Math.min(95, Math.round(((step + 1) / (SCAN_LINES.length + 4)) * 100)));
         step++;
-      } else {
-        clearInterval(interval);
-        setIsScanning(false);
-        setShowVerdict(true);
       }
-    }, 320);
+    }, 400);
+
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 65000);
+      const res = await fetch('/api/v1/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mint, chain: 'solana', userWallet, stream: false }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(timeout);
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.message || data.error || `Scan gagal (${res.status})`);
+      }
+      clearInterval(interval);
+      setLiveResult(data);
+      setScanProgress(100);
+      setVisibleLogs((prev) => [...prev, `> Verdict: ${data.verdict} (${Math.round((data.confidence || 0) * 100)}%)`]);
+      setIsScanning(false);
+      setShowVerdict(true);
+    } catch (err: any) {
+      clearInterval(interval);
+      setIsScanning(false);
+      setScanError(err?.name === 'AbortError'
+        ? 'Scan timeout (>60s). Mint ramai (misal BONK) berat — paste mint pump.fun baru yang sepi.'
+        : (err?.message || 'Scan gagal. Coba lagi.'));
+    }
   };
 
   useEffect(() => {
@@ -121,7 +156,7 @@ export function Demo({ registerScanner }: DemoProps) {
               Interrogate <span className="text-[#a855f7] italic">any token.</span> Instantly.
             </h2>
             <p className="text-[#94a3b8] text-sm sm:text-base mb-6 leading-relaxed max-w-xl">
-              Paste a mint address. Tracehop will reveal what others try to hide.
+              Paste a mint address. Tracehop will reveal what others try to hide. Connect wallet dulu — 3 scan pertama gratis.
             </p>
 
             {/* Search Input Bar */}
@@ -222,37 +257,45 @@ export function Demo({ registerScanner }: DemoProps) {
                   {/* Terminal header */}
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#2c2054]">
                     <div className="flex items-center gap-2">
-                      <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'animate-pulse' : ''} ${selectedToken.type === 'SAFE' ? 'bg-emerald-400' : selectedToken.type === 'WARN' ? 'bg-amber-400' : 'bg-rose-400'}`} />
+                      <span className={`w-2.5 h-2.5 rounded-full ${isScanning ? 'animate-pulse' : ''} ${liveResult ? (liveResult.verdict === 'CAP' ? 'bg-rose-400' : 'bg-emerald-400') : selectedToken.type === 'SAFE' ? 'bg-emerald-400' : selectedToken.type === 'WARN' ? 'bg-amber-400' : 'bg-rose-400'}`} />
                       <span className="font-bold text-white uppercase">{selectedToken.name} ({selectedToken.ticker})</span>
                     </div>
-                    {showVerdict && (
+                    {showVerdict && liveResult && (
                       <motion.span
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ type: 'spring', stiffness: 500, damping: 20 }}
                         className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                          selectedToken.type === 'SAFE'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                            : selectedToken.type === 'WARN'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          liveResult.verdict === 'CAP'
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                         }`}
                       >
-                        {selectedToken.type} · {selectedToken.score}/100
+                        {liveResult.verdict} · {Math.round((liveResult.confidence || 0) * 100)}/100
                       </motion.span>
                     )}
                   </div>
 
                   {/* Summary */}
-                  {showVerdict && (
-                    <motion.p
+                  {showVerdict && liveResult && (
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1 }}
-                      className="text-[#cbd5e1] text-[11px] leading-relaxed mb-3"
+                      className="mb-3 space-y-1.5"
                     >
-                      {selectedToken.summary}
-                    </motion.p>
+                      <p className="text-[#cbd5e1] text-[11px] leading-relaxed">
+                        Pattern: <span className="text-white font-semibold">{liveResult.subclass}</span>
+                      </p>
+                      {liveResult.reasons.slice(0, 3).map((r, i) => (
+                        <p key={i} className="text-[#94a3b8] text-[11px] leading-relaxed">• {r.text}</p>
+                      ))}
+                    </motion.div>
+                  )}
+
+                  {/* Error */}
+                  {!isScanning && scanError && (
+                    <p className="text-rose-300 text-[11px] leading-relaxed mb-3">⚠️ {scanError}</p>
                   )}
 
                   {/* Streaming logs */}
