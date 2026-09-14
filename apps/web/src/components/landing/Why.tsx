@@ -523,13 +523,15 @@ export function Why() {
                         strokeWidth="1.2"
                         strokeOpacity="0.5"
                       />
-                      {/* Flowing particle along line */}
+                      {/* Flowing particle — x/y transform, not cx/cy (composite, no layout) */}
                       <motion.circle
                         r="1.4"
+                        cx={src.cx}
+                        cy={src.cy}
                         fill="#ff7a29"
                         animate={{
-                          cx: [src.cx, dst.cx],
-                          cy: [src.cy, dst.cy],
+                          x: [0, dst.cx - src.cx],
+                          y: [0, dst.cy - src.cy],
                           opacity: [0, 1, 0],
                         }}
                         transition={{

@@ -23,7 +23,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-hidden font-sans">
+    <div className="relative min-h-screen bg-[#06040d] text-white selection:bg-[#7c3aed]/30 overflow-x-clip font-sans">
       <SmoothScroll />
       <CyberBackgroundCanvas />
       <Navbar />

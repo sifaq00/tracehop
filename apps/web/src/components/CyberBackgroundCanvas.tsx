@@ -150,13 +150,23 @@ export function CyberBackgroundCanvas() {
     window.addEventListener('scroll', onScroll, { passive: true });
 
     // IntersectionObserver to pause rendering when scrolled out of view (matching Pounce-Daemo)
+    // ponytail: single rAF chain — same visuals, no double-loop or rAF storm
     let isIntersecting = true;
+    let rafQueued = false;
     const observer = new IntersectionObserver(
       (entries) => {
-        isIntersecting = entries[0]?.isIntersecting ?? true;
-        if (isIntersecting) {
-          cancelAnimationFrame(animId);
-          animId = requestAnimationFrame(animate);
+        const next = entries[0]?.isIntersecting ?? true;
+        if (next && !isIntersecting) {
+          isIntersecting = next;
+          if (!rafQueued) {
+            rafQueued = true;
+            animId = requestAnimationFrame((t) => {
+              rafQueued = false;
+              animate(t);
+            });
+          }
+        } else {
+          isIntersecting = next;
         }
       },
       { threshold: 0.05 }
@@ -164,16 +174,17 @@ export function CyberBackgroundCanvas() {
     observer.observe(container);
 
     const animate = (currentTime: number) => {
-      animId = requestAnimationFrame(animate);
-
-      // 1. Pause completely when tab is hidden or when scrolled out of hero view
-      if (!isVisible || !isIntersecting) return;
-
-      // 2. Pause during active scroll motion to free 100% GPU for smooth scrolling
-      if (isScrolling) return;
+      // Pause paths reschedule but skip render — GPU stays free while scrolling/tab hidden
+      if (!isVisible || !isIntersecting || isScrolling) {
+        animId = requestAnimationFrame(animate);
+        return;
+      }
 
       // Cap render rate to ~40fps to keep CPU/GPU cold
-      if (currentTime - lastRenderTime < 24) return;
+      if (currentTime - lastRenderTime < 24) {
+        animId = requestAnimationFrame(animate);
+        return;
+      }
       lastRenderTime = currentTime;
 
       const elapsed = (currentTime - startTime) * 0.0008;
@@ -189,6 +200,7 @@ export function CyberBackgroundCanvas() {
       camera.lookAt(0, -2, -15);
 
       renderer.render(scene, camera);
+      animId = requestAnimationFrame(animate);
     };
 
     animId = requestAnimationFrame(animate);

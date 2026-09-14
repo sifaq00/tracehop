@@ -872,8 +872,8 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
             }
           }
         } catch (rpcErr) {
-          console.warn('[Gating] Solana payment RPC check failed, assuming test environment mock success:', rpcErr);
-          paymentValid = true; // Fallback for local sandbox/offline runs
+          console.error('[Gating] Solana payment RPC check failed, rejecting payment:', rpcErr);
+          paymentValid = false;
         }
       }
 

@@ -197,9 +197,11 @@ export function Demo({ registerScanner }: DemoProps) {
                   </div>
                   <div className="w-full h-1 bg-[#1b143f] rounded-full overflow-hidden">
                     <motion.div
-                      animate={{ width: `${scanProgress}%` }}
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: scanProgress / 100 }}
                       transition={{ duration: 0.3, ease: 'easeOut' }}
-                      className="h-full bg-gradient-to-r from-[#7c3aed] to-[#ff7a29] rounded-full"
+                      style={{ transformOrigin: 'left' }}
+                      className="h-full w-full bg-gradient-to-r from-[#7c3aed] to-[#ff7a29] rounded-full"
                     />
                   </div>
                 </motion.div>

@@ -67,11 +67,14 @@
   backface-visibility: hidden;
 }
 
-img {
-  content-visibility: auto;
-}
+/* ponytail: img{content-visibility:auto} removed — it prevented img paint (CTA rabbit went missing) */
 
 /* Sisy-style Lenis integration */
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
+
 html.lenis, html.lenis body {
   height: auto;
 }
@@ -111,8 +114,7 @@ html.lenis, html.lenis body {
 }
 
 #api {
-  content-visibility: auto;
-  contain-intrinsic-size: 450px;
+  /* ponytail: NO content-visibility here — the cool rabbit overflows above and gets clipped when auto */
 }
 
 footer {

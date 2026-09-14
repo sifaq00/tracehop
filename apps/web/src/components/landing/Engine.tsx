@@ -6,7 +6,6 @@ import {
   Crosshair, Users, Network, Layers, ShieldAlert, Lock,
   FileCheck, UserCheck, History, Shield,
 } from 'lucide-react';
-import { gsap } from '@/lib/gsap';
 
 const STEPS = [
   { num: '01', title: 'Deployer Located', icon: Crosshair },
@@ -162,14 +161,15 @@ function EngineStepUnit({
               transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
               className="opacity-75"
             />
-            {/* Traveling glowing pulse bead from left to right */}
+            {/* Traveling glowing pulse bead — x transform, not cx (composite, no layout) */}
             <motion.circle
               r="1.8"
+              cx="0"
               cy="6"
               fill="#ffffff"
               className="drop-shadow-[0_0_5px_#ff7a29]"
               animate={{
-                cx: [0, 18],
+                x: [0, 18],
                 opacity: [0, 1, 0.8, 0],
                 scale: [0.7, 1.2, 0.7],
               }}
@@ -221,12 +221,22 @@ export function Engine() {
   const [currentText, setCurrentText] = useState(SCAN_STAGES[0]!.text);
 
   // Real-time continuous live scanning loop
+  // ponytail: skip ticks while offscreen/tab hidden — same visuals when visible
   useEffect(() => {
     let current = 24;
     let isHolding = false;
+    let inView = true;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry?.isIntersecting ?? true;
+      },
+      { threshold: 0.05 }
+    );
+    if (sectionRef.current) observer.observe(sectionRef.current);
 
     const interval = setInterval(() => {
-      if (isHolding) return;
+      if (isHolding || !inView || document.hidden) return;
 
       current += Math.floor(Math.random() * 2) + 1; // Increment by 1-2%
 
@@ -252,7 +262,10 @@ export function Engine() {
       }
     }, 110);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      observer.disconnect();
+    };
   }, []);
 
   return (
@@ -387,11 +400,12 @@ export function Engine() {
                   />
                   <motion.circle
                     r="1.8"
+                    cx="0"
                     cy="6"
                     fill="#ffffff"
                     className="drop-shadow-[0_0_5px_#ff7a29]"
                     animate={{
-                      cx: [0, 16],
+                      x: [0, 16],
                       opacity: [0, 1, 0.8, 0],
                       scale: [0.7, 1.2, 0.7],
                     }}
@@ -444,17 +458,11 @@ export function Engine() {
         >
           {/* Left Status Area */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Pulsing LIVE SCAN badge */}
+            {/* LIVE SCAN badge — opacity pulse (composite), static glow */}
             <motion.div
-              animate={{
-                boxShadow: [
-                  '0 0 8px rgba(124,58,237,0.4)',
-                  '0 0 16px rgba(168,85,247,0.75)',
-                  '0 0 8px rgba(124,58,237,0.4)',
-                ],
-              }}
+              animate={{ opacity: [1, 0.82, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white font-bold text-[10px] uppercase tracking-wider select-none shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white font-bold text-[10px] uppercase tracking-wider select-none shrink-0 shadow-[0_0_12px_rgba(168,85,247,0.55)]"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>LIVE SCAN</span>

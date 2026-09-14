@@ -14,53 +14,46 @@ export function Navbar() {
   const isManualScrollingRef = useRef(false);
   const manualScrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Scroll-spy active section detection with RAF throttling & cached offsets
+  // Scroll-spy via IntersectionObserver — always in sync with content,
+  // no stale cached offsets (survives layout shifts, Lenis, content-visibility).
+  // 'top' is handled by scroll position since #top wraps the whole page.
   useEffect(() => {
     const sectionIds = ['demo', 'engine', 'why', 'stats', 'api'];
-    let cachedOffsets: { id: string; top: number }[] = [];
 
-    const updateOffsets = () => {
-      cachedOffsets = sectionIds
-        .map((id) => {
-          const el = document.getElementById(id);
-          return el ? { id, top: el.offsetTop } : null;
-        })
-        .filter((item): item is { id: string; top: number } => item !== null);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (isManualScrollingRef.current) return;
+        if (window.scrollY < 200) {
+          setActiveNav('top');
+          return;
+        }
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.target.id) {
+            setActiveNav(entry.target.id);
+          }
+        }
+      },
+      { root: null, rootMargin: '-30% 0px -60% 0px', threshold: 0 }
+    );
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (isManualScrollingRef.current || ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        if (window.scrollY < 200) setActiveNav('top');
+      });
     };
 
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
         setMobileMenuOpen(false);
-      }
-      updateOffsets();
-    };
-
-    updateOffsets();
-
-    let isTicking = false;
-    const handleScroll = () => {
-      if (isManualScrollingRef.current) return;
-
-      if (!isTicking) {
-        requestAnimationFrame(() => {
-          const scrollY = window.scrollY;
-          if (scrollY < 260) {
-            setActiveNav('top');
-            isTicking = false;
-            return;
-          }
-
-          const scrollPosition = scrollY + 200;
-          for (let i = cachedOffsets.length - 1; i >= 0; i--) {
-            const item = cachedOffsets[i];
-            if (item && scrollPosition >= item.top) {
-              setActiveNav(item.id);
-              break;
-            }
-          }
-          isTicking = false;
-        });
-        isTicking = true;
       }
     };
 
@@ -68,6 +61,7 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('scroll', handleScroll);
       if (manualScrollTimeoutRef.current) clearTimeout(manualScrollTimeoutRef.current);
@@ -79,9 +73,10 @@ export function Navbar() {
     setMobileMenuOpen(false);
     isManualScrollingRef.current = true;
     if (manualScrollTimeoutRef.current) clearTimeout(manualScrollTimeoutRef.current);
+    // Lock slightly longer than the scroll animation (lenis 1.0s) to avoid mid-flight flicker
     manualScrollTimeoutRef.current = setTimeout(() => {
       isManualScrollingRef.current = false;
-    }, 850);
+    }, 1150);
     scrollToSection(id);
   };
 

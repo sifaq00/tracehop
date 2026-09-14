@@ -5,7 +5,7 @@ export class RobinhoodChainClient implements ChainClientAdapter {
   private rpcUrl: string;
 
   constructor() {
-    this.rpcUrl = process.env.ALCHEMY_ROBINHOOD_RPC_URL || 'https://rpc.robinhoodchain.com';
+    this.rpcUrl = process.env.ALCHEMY_ROBINHOOD_RPC_URL || process.env.HOOD_MAINNET_RPC || 'https://rpc.mainnet.chain.robinhood.com';
   }
 
   async fetchTransaction(signature: string): Promise<any> {

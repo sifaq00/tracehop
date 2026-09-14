@@ -100,12 +100,11 @@ export async function POST(req: NextRequest) {
         features,
         regime_version: 'REGIME W14',
         created_at: new Date().toISOString(),
-        wallet: userWallet || 'agent_caller',
         uaim_document: uaim,
       });
 
       const isRug = scoredUaim.score.verdict === 'CAP';
-      const graduated = !isRug && Math.random() > 0.5;
+      const graduated = false;
       await supabase.from('outcomes').upsert({
         mint: address,
         chain_id: chainId,

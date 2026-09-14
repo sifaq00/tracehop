@@ -59,6 +59,25 @@ export class ChainRegistry {
       },
       regimeVersion: 'RH_V1'
     });
+
+    // ponytail: HOOD_MAINNET_RPC real returns 46630, alias same stack
+    this.registerChain({
+      chainId: '46630',
+      chainName: 'Robinhood Chain Testnet',
+      capabilities: {
+        canSimulateSell: true,
+        hasVerifiedSource: true,
+        hasIssuerRegistry: true,
+        lpModel: 'nftPosition'
+      },
+      adapters: {
+        client: 'RobinhoodClient',
+        explorer: 'BlockscoutExplorer',
+        dex: 'UniswapV3Dex',
+        launchSource: 'HoodfunLaunchpad'
+      },
+      regimeVersion: 'RH_V1'
+    });
   }
 
   registerChain(entry: ChainRegistryEntry): void {
