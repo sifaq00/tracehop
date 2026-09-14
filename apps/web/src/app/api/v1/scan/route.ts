@@ -637,6 +637,15 @@ async function performInlineScan(
       : [{ code: 'SAFE', text: 'Funding and buyer patterns appear organic.', severity: 'low' }];
 
     let dbSaved = false;
+    (uaim as any).score = {
+      value: verdict.confidence * 100,
+      verdict: verdict.verdict,
+      subclass: verdict.subclass,
+      confidence: verdict.confidence,
+      regimeVersion: regime.regimeVersion,
+      oneLineReason: reasonsList[0]?.text ?? '',
+    };
+    (uaim as any).risks = verdict.reasons.map((r) => ({ code: r.code, severity: r.severity, confidence: 1, evidence: r.text }));
     // Save to predictions table
     console.log(`[STEP 14] Logging immutable scan prediction record to PostgreSQL database...`);
     try {
@@ -675,15 +684,6 @@ async function performInlineScan(
     }
 
     // Final Verdict Event
-    (uaim as any).score = {
-      value: verdict.confidence * 100,
-      verdict: verdict.verdict,
-      subclass: verdict.subclass,
-      confidence: verdict.confidence,
-      regimeVersion: regime.regimeVersion,
-      oneLineReason: reasonsList[0]?.text ?? '',
-    };
-    (uaim as any).risks = verdict.reasons.map((r) => ({ code: r.code, severity: r.severity, confidence: 1, evidence: r.text }));
     await writer.write(encoder.encode(`event: verdict\ndata: ${JSON.stringify({
       step: 'verdict',
       verdict: verdict.verdict,
