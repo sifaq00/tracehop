@@ -11,12 +11,18 @@ import fs from 'fs';
 
 if (!process.env.DATABASE_URL) {
   dotenv.config();
-  const workspaceEnv = path.resolve(process.cwd(), '.env');
-  const parentEnv = path.resolve(process.cwd(), '../../.env');
-  if (fs.existsSync(workspaceEnv)) {
-    dotenv.config({ path: workspaceEnv });
-  } else if (fs.existsSync(parentEnv)) {
-    dotenv.config({ path: parentEnv });
+  const candidates = [
+    path.resolve(process.cwd(), '.env.local'),
+    path.resolve(process.cwd(), 'apps/web/.env.local'),
+    path.resolve(process.cwd(), '../../apps/web/.env.local'),
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(process.cwd(), '../../.env'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) {
+      dotenv.config({ path: p });
+      if (process.env.DATABASE_URL) break;
+    }
   }
 }
 
