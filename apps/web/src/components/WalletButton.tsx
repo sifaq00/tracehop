@@ -39,7 +39,7 @@ export function WalletButton() {
     setSymbol(isEvmAddr ? 'ETH' : 'SOL');
 
     try {
-      if (isEvmAddr && typeof window !== 'undefined' && window.ethereum) {
+      if (isEvmAddr && typeof window !== 'undefined' && window.ethereum?.request) {
         // Fetch real balance from MetaMask via RPC
         const hex = await window.ethereum.request({
           method: 'eth_getBalance',
@@ -130,7 +130,11 @@ export function WalletButton() {
     localStorage.setItem('tracehop-wallet-connected', addr);
     localStorage.setItem('tracehop-wallet-name', wallet.name);
     localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-    localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+    if (wallet.icon) {
+      localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+    } else {
+      localStorage.removeItem('tracehop-wallet-icon');
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('tracehop-wallet-changed'));
     }

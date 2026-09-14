@@ -1,72 +1,174 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
-import { X, ShieldCheck, Loader2 } from 'lucide-react';
-import { playClick, playSuccessChime } from '../lib/sound-fx';
 
 declare global {
   interface Window {
     solana?: {
       isPhantom?: boolean;
-      connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
-      disconnect: () => Promise<void>;
-      publicKey?: { toString: () => string };
+      connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toString?: () => string } }>;
     };
     phantom?: {
       solana?: {
         isPhantom?: boolean;
-        connect: () => Promise<{ publicKey: { toString: () => string } }>;
+        connect?: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toString?: () => string } }>;
       };
-      ethereum?: any;
+      ethereum?: {
+        request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      };
     };
     solflare?: {
       isSolflare?: boolean;
-      connect: () => Promise<void>;
-      publicKey?: { toString: () => string };
+      connect?: () => Promise<void>;
+      publicKey?: { toString?: () => string };
     };
     backpack?: {
-      connect: () => Promise<{ publicKey: { toString: () => string } }>;
+      connect?: () => Promise<{ publicKey?: { toString?: () => string } }>;
+    };
+    nightly?: {
+      solana?: {
+        connect?: () => Promise<{ publicKey?: { toString?: () => string } }>;
+      };
     };
     ethereum?: {
+      isRabby?: boolean;
       isMetaMask?: boolean;
-      isOkxWallet?: boolean;
-      isCoinbaseWallet?: boolean;
-      providers?: any[];
-      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
+      providers?: Array<Record<string, unknown>>;
+      request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
     };
     okxwallet?: {
-      solana?: {
-        connect: () => Promise<{ publicKey: { toString: () => string } }>;
-      };
-      request?: (args: { method: string; params?: unknown[] }) => Promise<any>;
+      request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
     };
     coinbaseWalletExtension?: {
-      request: (args: { method: string; params?: unknown[] }) => Promise<any>;
+      request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    };
+    trustwallet?: {
+      request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    };
+    bitkeep?: {
+      ethereum?: {
+        request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+      };
     };
   }
 }
 
 export type WalletType =
+  | 'rabby'
   | 'metamask'
-  | 'okx'
+  | 'phantom-evm'
   | 'coinbase'
-  | 'browser'
+  | 'okx'
+  | 'trust'
+  | 'bitkeep'
   | 'phantom'
   | 'solflare'
-  | 'backpack';
+  | 'backpack'
+  | 'nightly';
 
 export interface WalletOption {
   id: WalletType;
   name: string;
-  chain: 'Robinhood EVM' | 'Multi-Chain' | 'Ethereum' | 'Solana';
-  icon: string;
+  chain: string;
+  icon: string | null;
   installUrl: string;
   detect: () => boolean;
 }
 
-const WALLETS: WalletOption[] = [
+export function getEvmProvider(id: string): { request?: (args: { method: string; params?: unknown[] }) => Promise<unknown> } | null {
+  if (typeof window === 'undefined') return null;
+  const eth = window.ethereum;
+  if (id === 'phantom-evm') return window.phantom?.ethereum ?? null;
+  if (id === 'coinbase') return window.coinbaseWalletExtension ?? null;
+  if (id === 'okx') return window.okxwallet ?? null;
+  if (id === 'trust') return window.trustwallet ?? null;
+  if (id === 'bitkeep') return window.bitkeep?.ethereum ?? null;
+  if (id === 'rabby') return eth?.isRabby ? eth : null;
+  if (id === 'metamask') {
+    if (eth?.isRabby) {
+      if (Array.isArray(eth.providers)) {
+        const found = eth.providers.find((p) => p.isMetaMask && !p.isRabby);
+        if (found) return found as any;
+      }
+      return null;
+    }
+    return eth?.isMetaMask ? eth : null;
+  }
+  return eth ?? null;
+}
+
+function getPhantomProvider() {
+  if (typeof window === 'undefined') return null;
+  if (window.phantom?.solana?.isPhantom) return window.phantom.solana;
+  if (window.solana?.isPhantom) return window.solana;
+  return null;
+}
+
+function solAddress(res: unknown): string {
+  if (typeof res === 'string') return res;
+  if (!res || typeof res !== 'object') return '';
+  const o = res as {
+    publicKey?: { toString?: () => string; toBase58?: () => string };
+    toBase58?: () => string;
+  };
+  const addr =
+    o.publicKey?.toBase58?.() ??
+    o.publicKey?.toString?.() ??
+    (typeof o.toBase58 === 'function' ? o.toBase58() : '');
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr ?? '') ? (addr as string) : '';
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, errMsg: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(errMsg)), ms)),
+  ]);
+}
+
+const ROBINHOOD_TESTNET_CHAIN_ID = '0xb626'; // 46630 in hex
+const ROBINHOOD_TESTNET_CONFIG = {
+  chainId: ROBINHOOD_TESTNET_CHAIN_ID,
+  chainName: 'Robinhood Chain Testnet',
+  nativeCurrency: {
+    name: 'Ether',
+    symbol: 'ETH',
+    decimals: 18,
+  },
+  rpcUrls: ['https://robinhood-sepolia-rpc.publicnode.com'],
+  blockExplorerUrls: ['https://explorer.testnet.robinhood.com/'],
+};
+
+async function promptRobinhoodChain(provider: any) {
+  if (!provider?.request) return;
+  try {
+    await provider.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: ROBINHOOD_TESTNET_CHAIN_ID }],
+    });
+  } catch (switchError: any) {
+    if (switchError?.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+      try {
+        await provider.request({
+          method: 'wallet_addEthereumChain',
+          params: [ROBINHOOD_TESTNET_CONFIG],
+        });
+      } catch {
+        // user rejected chain addition
+      }
+    }
+  }
+}
+
+export const EVM_WALLETS: WalletOption[] = [
+  {
+    id: 'rabby',
+    name: 'Rabby',
+    chain: 'EVM',
+    icon: '/wallets/rabby.svg',
+    installUrl: 'https://rabby.io/',
+    detect: () => Boolean(typeof window !== 'undefined' && window.ethereum?.isRabby),
+  },
   {
     id: 'metamask',
     name: 'MetaMask',
@@ -76,27 +178,21 @@ const WALLETS: WalletOption[] = [
     detect: () =>
       Boolean(
         typeof window !== 'undefined' &&
-          (window.ethereum?.isMetaMask ||
-            (window.ethereum as any)?.providers?.some((p: any) => p.isMetaMask))
+          ((window.ethereum?.isMetaMask && !window.ethereum?.isRabby) ||
+            window.ethereum?.providers?.some((p) => p.isMetaMask && !p.isRabby))
       ),
   },
   {
-    id: 'okx',
-    name: 'OKX Wallet',
+    id: 'phantom-evm',
+    name: 'Phantom (EVM)',
     chain: 'Robinhood EVM',
-    icon: '/wallets/okx.svg',
-    installUrl: 'https://www.okx.com/web3',
-    detect: () =>
-      Boolean(
-        typeof window !== 'undefined' &&
-          (Boolean(window.okxwallet) ||
-            (window.ethereum as any)?.isOkxWallet ||
-            (window.ethereum as any)?.providers?.some((p: any) => p.isOkxWallet))
-      ),
+    icon: '/wallets/phantom.svg',
+    installUrl: 'https://phantom.app/',
+    detect: () => Boolean(typeof window !== 'undefined' && window.phantom?.ethereum?.request),
   },
   {
     id: 'coinbase',
-    name: 'Coinbase Wallet',
+    name: 'Coinbase',
     chain: 'Robinhood EVM',
     icon: '/wallets/coinbase.svg',
     installUrl: 'https://www.coinbase.com/wallet',
@@ -104,31 +200,49 @@ const WALLETS: WalletOption[] = [
       Boolean(
         typeof window !== 'undefined' &&
           (Boolean(window.coinbaseWalletExtension) ||
-            (window.ethereum as any)?.isCoinbaseWallet ||
-            (window.ethereum as any)?.providers?.some((p: any) => p.isCoinbaseWallet))
+            window.ethereum?.providers?.some((p: any) => p.isCoinbaseWallet))
       ),
   },
   {
-    id: 'browser',
-    name: 'Browser Wallet',
+    id: 'okx',
+    name: 'OKX',
     chain: 'Robinhood EVM',
-    icon: '/wallets/trust.svg',
-    installUrl: 'https://ethereum.org/wallets/',
-    detect: () => Boolean(typeof window !== 'undefined' && Boolean(window.ethereum)),
-  },
-  {
-    id: 'phantom',
-    name: 'Phantom',
-    chain: 'Multi-Chain',
-    icon: '/wallets/phantom.svg',
-    installUrl: 'https://phantom.app/',
+    icon: '/wallets/okx.svg',
+    installUrl: 'https://www.okx.com/web3',
     detect: () =>
       Boolean(
         typeof window !== 'undefined' &&
-          (window.solana?.isPhantom ||
-            window.phantom?.solana?.isPhantom ||
-            Boolean(window.phantom?.ethereum))
+          (Boolean(window.okxwallet) ||
+            window.ethereum?.providers?.some((p: any) => p.isOkxWallet))
       ),
+  },
+  {
+    id: 'trust',
+    name: 'Trust',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/trust.png',
+    installUrl: 'https://trustwallet.com/',
+    detect: () => Boolean(typeof window !== 'undefined' && Boolean(window.trustwallet?.request)),
+  },
+  {
+    id: 'bitkeep',
+    name: 'Bitget',
+    chain: 'Robinhood EVM',
+    icon: '/wallets/bitget.webp',
+    installUrl: 'https://web3.bitget.com/',
+    detect: () => Boolean(typeof window !== 'undefined' && Boolean(window.bitkeep?.ethereum?.request)),
+  },
+];
+
+export const SOLANA_WALLETS: WalletOption[] = [
+  {
+    id: 'phantom',
+    name: 'Phantom',
+    chain: 'Solana',
+    icon: '/wallets/phantom.svg',
+    installUrl: 'https://phantom.app/',
+    detect: () =>
+      Boolean(typeof window !== 'undefined' && (window.solana?.isPhantom || window.phantom?.solana?.isPhantom)),
   },
   {
     id: 'solflare',
@@ -146,7 +260,25 @@ const WALLETS: WalletOption[] = [
     installUrl: 'https://backpack.app/',
     detect: () => Boolean(typeof window !== 'undefined' && window.backpack),
   },
+  {
+    id: 'nightly',
+    name: 'Nightly',
+    chain: 'Solana',
+    icon: '/wallets/nightly.svg',
+    installUrl: 'https://nightly.app/',
+    detect: () => Boolean(typeof window !== 'undefined' && window.nightly?.solana),
+  },
 ];
+
+export const WALLETS: WalletOption[] = [...EVM_WALLETS, ...SOLANA_WALLETS];
+
+function wallet_detect(w: WalletOption): boolean {
+  try {
+    return w.detect();
+  } catch {
+    return false;
+  }
+}
 
 interface Props {
   isOpen: boolean;
@@ -154,56 +286,29 @@ interface Props {
   onConnect: (wallet: WalletOption, address: string) => void;
 }
 
-// Robinhood Chain Testnet switch/add helper
-async function promptRobinhoodChain(provider: any) {
-  const chainId = '0xb626'; // 46630
-  try {
-    await provider.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId }],
-    });
-  } catch (switchError: any) {
-    if (switchError?.code === 4902 || switchError?.data?.originalError?.code === 4902) {
-      try {
-        await provider.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId,
-              chainName: 'Robinhood Chain Testnet',
-              rpcUrls: ['https://robinhood-sepolia-rpc.publicnode.com'],
-              nativeCurrency: {
-                name: 'Ether',
-                symbol: 'ETH',
-                decimals: 18,
-              },
-            },
-          ],
-        });
-      } catch (addError) {
-        console.warn('[WalletModal] User declined adding Robinhood Chain:', addError);
-      }
-    } else {
-      console.warn('[WalletModal] Switch chain notice:', switchError);
-    }
-  }
-}
-
 export function WalletModal({ isOpen, onClose, onConnect }: Props) {
-  const [connectingId, setConnectingId] = useState<WalletType | null>(null);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [tab, setTab] = useState<'evm' | 'solana'>('evm');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Close on Escape key
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    if (!isOpen) {
+      setErrorMessage(null);
+      setConnectingId(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    if (isOpen) window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
   // Lock body scroll when modal is open
@@ -216,296 +321,215 @@ export function WalletModal({ isOpen, onClose, onConnect }: Props) {
     };
   }, [isOpen]);
 
-  const handleSelectWallet = async (wallet: WalletOption) => {
-    playClick();
+  const select = async (wallet: WalletOption) => {
     setConnectingId(wallet.id);
+    setErrorMessage(null);
+
+    if (!wallet_detect(wallet)) {
+      try {
+        window.open(wallet.installUrl, '_blank', 'noopener,noreferrer');
+      } catch {
+        // popup blocked: ignore
+      }
+      const conflict =
+        typeof window !== 'undefined' &&
+        Boolean(window.ethereum?.request) &&
+        (wallet.id === 'rabby' ||
+          wallet.id === 'metamask' ||
+          wallet.id === 'phantom-evm' ||
+          wallet.id === 'coinbase' ||
+          wallet.id === 'okx' ||
+          wallet.id === 'trust' ||
+          wallet.id === 'bitkeep');
+      setErrorMessage(
+        conflict
+          ? 'Another wallet controls the browser. Disable other EVM extensions or pick the active one.'
+          : `${wallet.name} not detected. Install it, then try again.`
+      );
+      setConnectingId(null);
+      return;
+    }
 
     try {
-      const isEvm = ['metamask', 'okx', 'coinbase', 'browser'].includes(wallet.id);
-
-      // 1. EVM Providers (MetaMask, OKX, Coinbase, Browser)
-      if (isEvm) {
-        let provider: any = null;
-        if (typeof window !== 'undefined') {
-          if (wallet.id === 'okx' && window.okxwallet?.request) {
-            provider = window.okxwallet;
-          } else if (wallet.id === 'coinbase' && window.coinbaseWalletExtension?.request) {
-            provider = window.coinbaseWalletExtension;
-          } else if (window.ethereum) {
-            const providers = window.ethereum.providers;
-            if (Array.isArray(providers)) {
-              if (wallet.id === 'metamask') {
-                provider = providers.find((p: any) => p.isMetaMask) || window.ethereum;
-              } else if (wallet.id === 'okx') {
-                provider =
-                  providers.find((p: any) => p.isOkxWallet) ||
-                  window.okxwallet ||
-                  window.ethereum;
-              } else if (wallet.id === 'coinbase') {
-                provider =
-                  providers.find((p: any) => p.isCoinbaseWallet) ||
-                  window.coinbaseWalletExtension ||
-                  window.ethereum;
-              } else {
-                provider = window.ethereum;
-              }
-            } else {
-              provider = window.ethereum;
-            }
-          }
-        }
-
-        if (provider?.request) {
-          const accounts = await provider.request({ method: 'eth_requestAccounts' });
-          if (accounts && accounts.length > 0) {
-            const addr = accounts[0];
-            await promptRobinhoodChain(provider);
-
-            localStorage.setItem('tracehop-wallet-connected', addr);
-            localStorage.setItem('tracehop-wallet-name', wallet.name);
-            localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new Event('tracehop-wallet-changed'));
-            }
-
-            onConnect(wallet, addr);
-            playSuccessChime();
-            onClose();
-            return;
-          }
-        }
-      }
-
-      // 2. Phantom (Check EVM first, then Solana)
       if (wallet.id === 'phantom') {
-        if (window.phantom?.ethereum?.request) {
-          const accounts = await window.phantom.ethereum.request({ method: 'eth_requestAccounts' });
-          if (accounts && accounts.length > 0) {
-            const addr = accounts[0];
-            await promptRobinhoodChain(window.phantom.ethereum);
-
-            localStorage.setItem('tracehop-wallet-connected', addr);
-            localStorage.setItem('tracehop-wallet-name', wallet.name);
-            localStorage.setItem('tracehop-wallet-chain', 'Robinhood EVM');
-            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new Event('tracehop-wallet-changed'));
-            }
-
-            onConnect(wallet, addr);
-            playSuccessChime();
-            onClose();
-            return;
-          }
-        }
-
-        if (window.solana?.isPhantom || window.phantom?.solana) {
-          const provider = window.phantom?.solana || window.solana;
-          const res = await provider?.connect();
-          if (res?.publicKey) {
-            const addr = res.publicKey.toString();
-            localStorage.setItem('tracehop-wallet-connected', addr);
-            localStorage.setItem('tracehop-wallet-name', wallet.name);
-            localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-            localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new Event('tracehop-wallet-changed'));
-            }
-
-            onConnect(wallet, addr);
-            playSuccessChime();
-            onClose();
-            return;
-          }
-        }
-      }
-
-      // 3. Solflare Native
-      if (wallet.id === 'solflare' && window.solflare) {
-        await window.solflare.connect();
-        if (window.solflare.publicKey) {
-          const addr = window.solflare.publicKey.toString();
-          localStorage.setItem('tracehop-wallet-connected', addr);
-          localStorage.setItem('tracehop-wallet-name', wallet.name);
-          localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-          localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('tracehop-wallet-changed'));
-          }
-
-          onConnect(wallet, addr);
-          playSuccessChime();
-          onClose();
+        const provider = getPhantomProvider();
+        const res = await withTimeout(provider!.connect!(), 12000, 'Phantom connection timed out. Unlock your wallet.');
+        const addr = solAddress(res);
+        if (addr) {
+          saveAndConnect(wallet, addr);
           return;
         }
-      }
-
-      // 4. Backpack Native
-      if (wallet.id === 'backpack' && window.backpack) {
-        const res = await window.backpack.connect();
-        if (res?.publicKey) {
-          const addr = res.publicKey.toString();
-          localStorage.setItem('tracehop-wallet-connected', addr);
-          localStorage.setItem('tracehop-wallet-name', wallet.name);
-          localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-          localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('tracehop-wallet-changed'));
-          }
-
-          onConnect(wallet, addr);
-          playSuccessChime();
-          onClose();
+        setErrorMessage('Phantom returned no address. Unlock and retry.');
+      } else if (wallet.id === 'solflare' && window.solflare) {
+        await withTimeout(window.solflare.connect!(), 12000, 'Solflare connection timed out.');
+        const addr = solAddress(window.solflare.publicKey);
+        if (addr) {
+          saveAndConnect(wallet, addr);
           return;
+        }
+        setErrorMessage('Solflare returned no address. Unlock and retry.');
+      } else if (wallet.id === 'backpack' && window.backpack) {
+        const res = await withTimeout(window.backpack.connect!(), 12000, 'Backpack connection timed out.');
+        const addr = solAddress(res);
+        if (addr) {
+          saveAndConnect(wallet, addr);
+          return;
+        }
+        setErrorMessage('Backpack returned no address. Unlock and retry.');
+      } else if (wallet.id === 'nightly' && window.nightly?.solana) {
+        const res = await withTimeout(window.nightly.solana.connect!(), 12000, 'Nightly connection timed out.');
+        const addr = solAddress(res);
+        if (addr) {
+          saveAndConnect(wallet, addr);
+          return;
+        }
+        setErrorMessage('Nightly returned no address. Unlock and retry.');
+      } else {
+        // EVM Wallets
+        const provider = getEvmProvider(wallet.id);
+        if (provider?.request) {
+          const accounts = (await withTimeout(
+            provider.request({ method: 'eth_requestAccounts' }),
+            12000,
+            `${wallet.name} connection timed out. Unlock your wallet.`
+          )) as unknown;
+          const addr = Array.isArray(accounts) ? String(accounts[0] ?? '') : '';
+          if (/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+            await promptRobinhoodChain(provider);
+            saveAndConnect(wallet, addr);
+            return;
+          }
+          setErrorMessage('No valid EVM address returned.');
+        } else {
+          setErrorMessage(`${wallet.name} provider not found.`);
         }
       }
     } catch (err) {
-      console.warn(`Connection attempt to ${wallet.name} cancelled or failed:`, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(msg.includes('rejected') || msg.includes('cancelled') ? 'Connection cancelled.' : msg);
     } finally {
       setConnectingId(null);
     }
+  };
 
-    // Seamless fallback address for testing across all environments (valid EVM 0x hex format)
-    const fallbackAddrs: Record<WalletType, string> = {
-      metamask: '0x71C8BFa6a3b2a5d9F81e5B796bF9B9fE8984926A',
-      okx: '0x901FC7E22B7BC7353C66F0344A521E6533bF665f',
-      coinbase: '0x4829E1A7d52b95B64344Fa560c5E3B3A5A384a5B',
-      browser: '0x1234567890123456789012345678901234567890',
-      phantom: '0x5B38Da6a701c568545dCfcB03FcB875f56beddC4',
-      solflare: '0x28a8746e75304c0780E011BEd21C72cD78cd535E',
-      backpack: '0xdD870fA1b7C4700F2BD7f44238821C26f7392148',
-    };
-
-    const fallback = fallbackAddrs[wallet.id] || '0x71C8BFa6a3b2a5d9F81e5B796bF9B9fE8984926A';
-    localStorage.setItem('tracehop-wallet-connected', fallback);
-    localStorage.setItem('tracehop-wallet-name', wallet.name);
-    localStorage.setItem('tracehop-wallet-chain', wallet.chain);
-    localStorage.setItem('tracehop-wallet-icon', wallet.icon);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('tracehop-wallet-changed'));
+  const saveAndConnect = (wallet: WalletOption, addr: string) => {
+    try {
+      localStorage.setItem('tracehop-wallet-connected', addr);
+      localStorage.setItem('tracehop-wallet-name', wallet.name);
+      localStorage.setItem('tracehop-wallet-chain', wallet.chain);
+      if (wallet.icon) localStorage.setItem('tracehop-wallet-icon', wallet.icon);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('tracehop-wallet-changed'));
+      }
+    } catch {
+      // ignore
     }
-
-    onConnect(wallet, fallback);
-    playSuccessChime();
+    onConnect(wallet, addr);
     setConnectingId(null);
     onClose();
   };
 
-  if (!isOpen || !mounted) return null;
+  if (!isOpen || !mounted || typeof document === 'undefined') return null;
 
   const modalContent = (
     <div
       data-lenis-prevent
-      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto overscroll-contain"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Connect wallet"
     >
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-        className="fixed inset-0 bg-black/80 backdrop-blur-md"
-      />
-
-      {/* Modal Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-        className="relative my-auto flex flex-col w-full max-w-[420px] max-h-[85vh] rounded-2xl border border-[#7c3aed]/30 bg-[#0c081e]/95 p-5 text-white shadow-[0_10px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(124,58,237,0.25)] backdrop-blur-xl z-10"
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div
+        data-lenis-prevent
+        className="relative w-full max-w-sm rounded-xl border border-zinc-800 bg-zinc-950 p-5 text-white shadow-2xl z-10 flex flex-col max-h-[85vh]"
       >
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-white/10 pb-3.5">
-          <div>
-            <h3 className="font-display text-base font-extrabold tracking-wide text-white">
-              Connect a Wallet
-            </h3>
-            <p className="font-sans text-[11.5px] text-[#94a3b8]">
-              Select your Robinhood EVM or Web3 wallet
-            </p>
-          </div>
+        <div className="flex items-center justify-between shrink-0">
+          <h2 className="text-base font-semibold text-white">Connect wallet</h2>
           <button
+            type="button"
+            aria-label="Close"
             onClick={onClose}
-            aria-label="Close modal"
-            className="rounded-full p-1.5 text-white/50 transition hover:bg-white/10 hover:text-white cursor-pointer"
+            className="rounded px-2 py-1 text-zinc-400 hover:text-white cursor-pointer"
           >
-            <X className="h-4 w-4" />
+            ✕
           </button>
         </div>
+        <p className="mt-1 text-xs text-zinc-500 shrink-0">
+          Select your Robinhood EVM or Web3 wallet.
+        </p>
 
-        {/* Wallet List */}
+        {/* Tab switch matching project aries */}
+        <div className="mt-3 flex gap-1 rounded border border-zinc-800 p-1 shrink-0" role="tablist" aria-label="Wallet network">
+          {(['evm', 'solana'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={tab === t}
+              onClick={() => {
+                setTab(t);
+                setErrorMessage(null);
+              }}
+              className={`flex-1 cursor-pointer rounded px-2 py-1 font-mono text-xs font-bold tracking-wider uppercase transition-colors ${
+                tab === t ? 'bg-[#22c55e] text-black' : 'text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {t === 'evm' ? 'EVM (Robinhood)' : 'Solana'}
+            </button>
+          ))}
+        </div>
+
+        {/* Wallet list with scroll support and data-lenis-prevent */}
         <div
           data-lenis-prevent
-          className="mt-3.5 space-y-2 overflow-y-auto overscroll-contain pr-1 flex-1 min-h-0 [scrollbar-width:thin] [scrollbar-color:rgba(124,58,237,0.4)_transparent]"
+          className="mt-3 flex flex-col gap-2 overflow-y-auto overscroll-contain pr-1 flex-1 min-h-0 [scrollbar-width:thin] [scrollbar-color:rgba(34,197,94,0.4)_transparent]"
         >
-          {WALLETS.map((wallet) => {
-            const isInstalled = wallet.detect();
-            const isConnecting = connectingId === wallet.id;
-
-            return (
-              <motion.button
-                key={wallet.id}
-                whileHover={{ scale: 1.015, x: 2 }}
-                whileTap={{ scale: 0.985 }}
-                onClick={() => handleSelectWallet(wallet)}
-                disabled={isConnecting}
-                className="group flex w-full items-center justify-between rounded-xl border border-[#2a1e4a] bg-[#120d2b]/90 p-2.5 px-3.5 transition hover:border-[#7c3aed]/60 hover:bg-[#1a133d] cursor-pointer disabled:opacity-50"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/50 border border-white/10 p-1.5 group-hover:border-[#7c3aed]/40 transition-colors">
-                    <img
-                      src={wallet.icon}
-                      alt={wallet.name}
-                      onError={(e) => {
-                        e.currentTarget.src = '/wallets/metamask.svg';
-                      }}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  <div className="text-left">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-display text-xs font-bold text-white group-hover:text-[#c084fc] transition-colors">
-                        {wallet.name}
-                      </span>
-                      <span className="rounded-full bg-white/5 border border-white/10 px-1.5 py-0.2 font-mono text-[8.5px] text-[#c084fc]">
-                        {wallet.chain}
-                      </span>
-                    </div>
-                    <p className="text-[10.5px] text-[#94a3b8]">
-                      {isInstalled ? 'Ready to connect' : 'Auto-detected'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  {isConnecting ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-[#c084fc]" />
-                  ) : isInstalled ? (
-                    <span className="flex items-center gap-1 font-mono text-[9.5px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      <span>Ready</span>
-                    </span>
-                  ) : (
-                    <span className="font-mono text-[10px] text-white/40 group-hover:text-[#ff7a29] transition-colors">
-                      Connect →
-                    </span>
-                  )}
-                </div>
-              </motion.button>
-            );
-          })}
+          {(tab === 'evm' ? EVM_WALLETS : SOLANA_WALLETS).map((w) => (
+            <button
+              key={w.id}
+              type="button"
+              disabled={connectingId !== null}
+              onClick={() => void select(w)}
+              className="flex items-center gap-3 rounded border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-left text-sm hover:border-[#22c55e] hover:bg-zinc-900/60 transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {w.icon ? (
+                <img
+                  src={w.icon}
+                  alt=""
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 object-contain shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-black font-mono text-xs font-bold text-[#22c55e]"
+                >
+                  {w.name.slice(0, 1)}
+                </span>
+              )}
+              <span className="flex-1 font-medium text-white">{w.name}</span>
+              <span className="font-mono text-xs text-zinc-500">
+                {connectingId === w.id ? '…' : wallet_detect(w) ? 'detected' : 'install'}
+              </span>
+            </button>
+          ))}
         </div>
 
-        {/* Security Footer */}
-        <div className="mt-4 shrink-0 flex items-center justify-center gap-1.5 text-center font-sans text-[11px] text-[#94a3b8] pt-2.5 border-t border-white/5">
-          <ShieldCheck className="h-3.5 w-3.5 text-[#ff7a29]" />
-          <span>Non-custodial & secure. Powered by Robinhood Chain & Tracehop.</span>
-        </div>
-      </motion.div>
+        {errorMessage && (
+          <p role="alert" className="mt-3 shrink-0 text-sm text-[#ef4444]">
+            {errorMessage}
+          </p>
+        )}
+      </div>
     </div>
   );
 
   return createPortal(modalContent, document.body);
 }
+
+export default WalletModal;
