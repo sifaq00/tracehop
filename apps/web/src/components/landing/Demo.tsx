@@ -645,6 +645,7 @@ export function Demo({ registerScanner }: DemoProps) {
                         </div>
                       )}
                     </motion.div>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks */}
                     <ScanReport uaim={(liveResult as any).uaim} trades={(liveResult as any).trades ?? []} meta={(liveResult as any).meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
                     </>
                   )}
