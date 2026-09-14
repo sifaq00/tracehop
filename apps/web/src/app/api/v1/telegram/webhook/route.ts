@@ -77,7 +77,7 @@ const MAIN_KEYBOARD = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    // ponytail: base URL dari host request, env localhost tak berlaku di prod
+    // ponytail: base URL from request host, localhost env invalid in prod
     const appUrl = `https://${request.headers.get('host')}` || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // --- 1. Handle Callback Queries (Button Clicks) ---

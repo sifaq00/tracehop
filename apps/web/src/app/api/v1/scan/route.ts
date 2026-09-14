@@ -25,7 +25,7 @@ class AddressResolver {
 
 dns.setDefaultResultOrder('ipv4first');
 
-// ponytail: Vercel hobby kredit 60s, scan butuh >10s
+// ponytail: Vercel hobby credit 60s, scan needs >10s
 export const maxDuration = 60;
 
 import path from 'path';
@@ -170,7 +170,7 @@ async function traceFundingParent(address: string, creator: string): Promise<{ f
   return { funder: '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW', funderType: 'cex' };
 }
 
-// ponytail: creator real = fee payer tx tertua mint, bukan seed hardcoded
+// ponytail: real creator = fee payer of mint oldest tx, not hardcoded seed
 async function resolveMintCreator(mint: string): Promise<string> {
   const fallback = '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71';
   if (mint.startsWith('0x')) {

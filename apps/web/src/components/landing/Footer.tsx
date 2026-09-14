@@ -7,7 +7,7 @@ import { FaXTwitter } from 'react-icons/fa6';
 import { scrollToSection } from '@/lib/landing';
 
 export function Footer() {
-  // ponytail: status live, bukan dot pajangan
+  // ponytail: live status, not a decorative dot
   const [apiUp, setApiUp] = useState<boolean | null>(null);
 
   useEffect(() => {

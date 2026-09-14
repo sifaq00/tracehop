@@ -54,13 +54,13 @@ export function ScanReport({ uaim, trades, meta }: Props) {
       </Panel>
       <Panel title="Launch buy uniformity" open={open.uniformity} onToggle={() => toggle('uniformity')}>
         {(trades ?? []).length === 0 ? <p className="font-mono text-[11px] text-[#64748b]">no data</p> : (
-          <div className="flex items-end gap-1 h-20">
+          <div className="flex items-end justify-center gap-1.5 h-20">
             {(trades ?? []).map((t, i) => (
-              <div key={`${t.trader}-${i}`} title={`${t.trader} ${t.solAmount}`} className="flex-1 rounded-sm bg-emerald-400/80" style={{ height: `${Math.max(6, (t.solAmount / maxBuy) * 100)}%` }} />
+              <div key={`${t.trader}-${i}`} title={`${t.trader} ${t.solAmount}`} className="flex-1 max-w-[36px] rounded-sm bg-emerald-400/80" style={{ height: `${Math.max(6, (t.solAmount / maxBuy) * 100)}%` }} />
             ))}
           </div>
         )}
-        <p className="font-mono text-[10px] text-[#64748b] mt-1">stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}</p>
+        <p className="font-mono text-[10px] text-[#64748b] mt-1">{(trades ?? []).length} buys · stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}</p>
       </Panel>
       <Panel title="Deployer profile history" open={open.deployer} onToggle={() => toggle('deployer')}>
         <p className="font-mono text-[11px] text-[#cbd5e1]">launches {creator.priorLaunches ?? 0} · died {outcomes.died ?? 0} · graduated {outcomes.graduated ?? 0} · rep {creator.reputationScore ?? 0}</p>

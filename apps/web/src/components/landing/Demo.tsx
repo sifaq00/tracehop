@@ -76,7 +76,7 @@ export function Demo({ registerScanner }: DemoProps) {
   const [scanProgress, setScanProgress] = useState(0);
   const [visibleLogs, setVisibleLogs] = useState<string[]>([]);
   const [showVerdict, setShowVerdict] = useState(false);
-  // ponytail: hasil real dari API, bukan kalengan preset
+  // ponytail: live API result, not preset mock
   const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[] } | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [paywallData, setPaywallData] = useState<PaywallData | null>(null);
@@ -164,7 +164,7 @@ export function Demo({ registerScanner }: DemoProps) {
     setDoneStages([]);
     setActiveStage(null);
 
-    // Animasi log sambil tunggu event SSE pertama
+    // Fake log animation while waiting for first SSE event
     let step = 0;
     const interval = setInterval(() => {
       if (step < 3) {
@@ -238,7 +238,7 @@ export function Demo({ registerScanner }: DemoProps) {
               const message = data.log || `> ${data.step.toUpperCase()}... ${pct}%`;
               setVisibleLogs((prev) => [...prev, message]);
               try { playClick(); } catch { }
-              // Tahap turunan dari event nyata
+              // Derived stages from live events
               if (data.step === 'buyers') { markStage('history'); markStage('known'); }
               if (data.step === 'clustering') { markStage('clusters'); markStage('bundle'); }
               if (data.step === 'scoring') { markStage('similarity'); }
@@ -580,75 +580,8 @@ export function Demo({ registerScanner }: DemoProps) {
                     </div>
                   </div>
 
-                  {/* PROMINENT FINAL VERDICT HERO BANNER */}
-                  {showVerdict && liveResult && (
-                    <>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      transition={{ type: 'spring', stiffness: 450, damping: 25 }}
-                      className={`shrink-0 mb-3.5 p-4 rounded-xl border relative overflow-hidden ${
-                        liveResult.verdict === 'CAP'
-                          ? 'bg-gradient-to-b from-rose-950/60 to-[#140b18] border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.25)]'
-                          : 'bg-gradient-to-b from-emerald-950/60 to-[#0b1614] border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]'
-                      }`}
-                    >
-                      {/* Top Row: Verdict Headline & Confidence */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
-                        <div className="flex items-center gap-3">
-                          {liveResult.verdict === 'CAP' ? (
-                            <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
-                              <ShieldAlert className="w-5 h-5 text-rose-400" />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
-                              <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                            </div>
-                          )}
-                          <div>
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className="text-[10px] font-mono uppercase tracking-wider text-[#94a3b8]">AUDIT VERDICT</span>
-                              <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
-                                liveResult.verdict === 'CAP' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                              }`}>
-                                {liveResult.subclass || 'UNKNOWN PATTERN'}
-                              </span>
-                            </div>
-                            <h3 className={`text-base sm:text-lg font-black tracking-tight font-sans ${
-                              liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'
-                            }`}>
-                              {liveResult.verdict === 'CAP' ? 'CAP DETECTED · HIGH RISK FRAUD' : 'NO CAP · VERIFIED ORGANIC'}
-                            </h3>
-                          </div>
-                        </div>
+                  {/* Result renders in the separate card below */}
 
-                        {/* Confidence Metric */}
-                        <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 font-mono text-xs">
-                          <span className="text-[#94a3b8] text-[10.5px]">CONFIDENCE:</span>
-                          <span className={`font-black text-sm ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                            {Math.round((liveResult.confidence || 0) * 100)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Primary Reasons Breakdown */}
-                      {liveResult.reasons && liveResult.reasons.length > 0 && (
-                        <div className="space-y-1.5 pt-2 border-t border-white/10">
-                          {liveResult.reasons.slice(0, 3).map((r, i) => (
-                            <div key={i} className="flex items-start gap-2 text-[11.5px] leading-snug font-sans">
-                              <span className={`shrink-0 font-bold ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                {liveResult.verdict === 'CAP' ? '✕' : '✓'}
-                              </span>
-                              <span className="text-[#e2e8f0]">{r.text}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </motion.div>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks */}
-                    <ScanReport uaim={(liveResult as any).uaim} trades={(liveResult as any).trades ?? []} meta={(liveResult as any).meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
-                    </>
-                  )}
 
                   {/* Error */}
                   {!isScanning && scanError && (
@@ -739,6 +672,93 @@ export function Demo({ registerScanner }: DemoProps) {
                       );
                     })}
                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Result Card — separate from process terminal */}
+            <AnimatePresence>
+              {showVerdict && liveResult && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.97 }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#090616] border border-[#241a45] p-4 sm:p-5 shadow-2xl font-mono text-xs"
+                >
+                  <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#241a45]">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-2.5 h-2.5 rounded-full ${liveResult.verdict === 'CAP' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
+                      <span className="font-bold text-white uppercase tracking-wide">{selectedToken.name}</span>
+                      <span className="font-mono text-[#94a3b8] text-[11px]">({selectedToken.ticker})</span>
+                    </div>
+                    <div className="flex items-center gap-2 font-mono text-[10px]">
+                      <span className="text-[#64748b]">SCAN REPORT</span>
+                      <span className="text-[#c4b5fd] font-semibold uppercase">{gateStatus?.chain || 'MULTI-CHAIN'}</span>
+                    </div>
+                  </div>
+
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                    className={`p-4 rounded-xl border relative overflow-hidden ${
+                      liveResult.verdict === 'CAP'
+                        ? 'bg-gradient-to-b from-rose-950/60 to-[#140b18] border-rose-500/60 shadow-[0_0_25px_rgba(244,63,94,0.25)]'
+                        : 'bg-gradient-to-b from-emerald-950/60 to-[#0b1614] border-emerald-500/60 shadow-[0_0_25px_rgba(16,185,129,0.25)]'
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
+                      <div className="flex items-center gap-3">
+                        {liveResult.verdict === 'CAP' ? (
+                          <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(244,63,94,0.3)]">
+                            <ShieldAlert className="w-5 h-5 text-rose-400" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-[0_0_12px_rgba(16,185,129,0.3)]">
+                            <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-mono uppercase tracking-wider text-[#94a3b8]">AUDIT VERDICT</span>
+                            <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                              liveResult.verdict === 'CAP' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            }`}>
+                              {liveResult.subclass || 'UNKNOWN PATTERN'}
+                            </span>
+                          </div>
+                          <h3 className={`text-base sm:text-lg font-black tracking-tight font-sans ${
+                            liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'
+                          }`}>
+                            {liveResult.verdict === 'CAP' ? 'CAP DETECTED · HIGH RISK FRAUD' : 'NO CAP · VERIFIED ORGANIC'}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-lg border border-white/10 font-mono text-xs">
+                        <span className="text-[#94a3b8] text-[10.5px]">CONFIDENCE:</span>
+                        <span className={`font-black text-sm ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          {Math.round((liveResult.confidence || 0) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {liveResult.reasons && liveResult.reasons.length > 0 && (
+                      <div className="space-y-1.5 pt-2 border-t border-white/10">
+                        {liveResult.reasons.slice(0, 3).map((r, i) => (
+                          <div key={i} className="flex items-start gap-2 text-[11.5px] leading-snug font-sans">
+                            <span className={`shrink-0 font-bold ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>
+                              {liveResult.verdict === 'CAP' ? '✕' : '✓'}
+                            </span>
+                            <span className="text-[#e2e8f0]">{r.text}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                  {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks */}
+                  <ScanReport uaim={(liveResult as any).uaim} trades={(liveResult as any).trades ?? []} meta={(liveResult as any).meta ?? { mint: selectedToken.mint, regime: 'REGIME W14' }} />
                 </motion.div>
               )}
             </AnimatePresence>

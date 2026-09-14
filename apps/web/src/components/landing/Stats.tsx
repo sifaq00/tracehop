@@ -45,7 +45,7 @@ function StatCounter({ value, decimals, suffix }: { value: number; decimals: num
 }
 
 export function Stats() {
-  // ponytail: live metrics, fallback statis jika API mati
+  // ponytail: live metrics, static fallback if API down
   const [stats, setStats] = useState(FALLBACK_STATS);
 
   useEffect(() => {
