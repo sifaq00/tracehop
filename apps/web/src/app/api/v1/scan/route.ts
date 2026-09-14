@@ -206,29 +206,67 @@ async function performInlineScan(
     console.log(`[STEP 1] User scan request initiated for token CA: ${mint}`);
     const addressType = AddressResolver.resolveAddressType(mint);
     if (addressType === 'evm') {
-      const creator = '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
-      console.log(`[STEP 5] Resolving wallet creation age and profiles for creator: ${creator}`);
+      const explorer = new BlockscoutExplorerAdapter();
+      const [realCreator, tokenInfo] = await Promise.all([
+        Promise.race([
+          explorer.getContractCreator(mint),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]),
+        Promise.race([
+          explorer.getTokenInfo(mint),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+        ]),
+      ]);
+      const creator = realCreator || '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
+      const creatorSource = realCreator ? 'blockscout-creator' : 'mock';
+      const tokenDecimals = Number(tokenInfo?.decimals ?? 18);
+      const tokenSymbol = typeof tokenInfo?.symbol === 'string' && tokenInfo.symbol ? tokenInfo.symbol : 'NVDA';
+      const tokenName = typeof tokenInfo?.name === 'string' && tokenInfo.name ? tokenInfo.name : 'NVIDIA Stock Token';
+      console.log(`[STEP 5] Resolving wallet creation age and profiles for creator: ${creator} (${creatorSource})`);
       await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'deployer', pct: 15, log: '[EVM] Interrogating contract & deployer profile...' })}\n\n`));
       await getOrCreateWalletProfile(creator);
 
       await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 35, log: '[EVM] Fetching earliest transaction history from Blockscout...' })}\n\n`));
       console.log(`[STEP 2] Fetching signatures from Blockscout for ${mint}...`);
 
-      const explorer = new BlockscoutExplorerAdapter();
       const txs = await Promise.race([
         explorer.getTransactionHistory(mint),
-        new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 3000)),
+        new Promise<any[]>((resolve) => setTimeout(() => resolve([]), 8000)),
       ]);
 
-      // Blockscout v2 returns from/to as objects {hash} or plain strings — normalize first
+      // Blockscout v2 returns from/to as objects {hash} or plain strings — normalize first.
+      // Prefer real ERC-20 transfers of this mint (token_transfers), oldest first, max 20.
       const addrOf = (v: unknown): string => (typeof v === 'string' ? v : (v as { hash?: string } | null)?.hash ?? '');
-      const parsedTxs = txs
+      const transferOf = (t: unknown): Record<string, unknown> | null => {
+        const list = Array.isArray((t as { token_transfers?: unknown })?.token_transfers)
+          ? (t as { token_transfers: unknown[] }).token_transfers
+          : [];
+        return (list.find((x) => {
+          const rec = x as Record<string, unknown>;
+          const tok = rec.token as Record<string, unknown> | undefined;
+          const a = (tok?.address_hash ?? rec.token_address ?? '') as string;
+          return a.toLowerCase() === mint.toLowerCase();
+        }) as Record<string, unknown> | undefined) ?? null;
+      };
+      const oldestFirst = [...txs].reverse();
+      const transferTxs = oldestFirst.map((t, i) => {
+        const xfer = transferOf(t);
+        const total = (xfer?.total ?? {}) as Record<string, unknown>;
+        const raw = Number(total.value ?? xfer?.value ?? 0);
+        return {
+          trader: xfer ? addrOf(xfer.to_hash ?? xfer.to) : addrOf(t.from) || addrOf(t.to),
+          solAmount: raw > 0 ? raw / 10 ** tokenDecimals : Number(t.value ?? 0) / 1e18,
+          slot: Number(t.block_number ?? i),
+        };
+      }).filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase());
+      const parsedTxs = transferTxs.length > 0 ? transferTxs : txs
         .map((t, i) => ({
           trader: addrOf(t.from) || addrOf(t.to),
           solAmount: Number(t.value ?? 0) / 1e18,
           slot: Number(t.block_number ?? i),
         }))
         .filter((t) => t.trader && t.trader.toLowerCase() !== creator.toLowerCase());
+      const tradesSource = transferTxs.length > 0 ? 'blockscout-token-transfers' : parsedTxs.length > 0 ? 'blockscout-native-value' : 'mock';
       // Determine buyers list (use mock list if empty, or slice to first 20)
       const evmBuyers = parsedTxs.length > 0
         ? Array.from(new Set(parsedTxs.map((t) => t.trader))).slice(0, 20)
@@ -247,16 +285,46 @@ async function performInlineScan(
       }));
       walletProfilesMap[creator] = await getOrCreateWalletProfile(creator);
 
-      // 3. Build Funding Graph
-      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 55, log: '[FUNDING] Tracing liquidity source routes & creator associations...' })}\n\n`));
+      // 3. Build Funding Graph — DB first, else oldest incoming tx per buyer (real chain trace)
+      await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 55, log: '[FUNDING] Tracing oldest funding source per buyer (chain trace)...' })}\n\n`));
       const fundingSources: Record<string, any> = {};
+      let fundingSource: string = creatorSource === 'mock' ? 'heuristic' : 'db+blockscout';
+      const dbKnown = new Set<string>();
+      try {
+        const { data: known } = await supabase
+          .from('wallet_profiles')
+          .select('address,last_funder,funder_type')
+          .in('address', evmBuyers);
+        for (const row of known ?? []) {
+          if (row.last_funder) {
+            fundingSources[row.address] = { funder: row.last_funder, funderType: row.funder_type || 'unknown' };
+            dbKnown.add(row.address);
+          }
+        }
+      } catch { /* fall through to chain trace */ }
+      const unknownBuyers = evmBuyers.filter((b) => !fundingSources[b]);
+      for (let i = 0; i < unknownBuyers.length; i += 5) {
+        const chunk = unknownBuyers.slice(i, i + 5);
+        await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'funding_graph', pct: 55 + Math.round((i / Math.max(1, unknownBuyers.length)) * 15), log: `[FUNDING] Tracing batch ${Math.floor(i / 5) + 1}/${Math.max(1, Math.ceil(unknownBuyers.length / 5))}...` })}\n\n`));
+        const results = await Promise.allSettled(chunk.map((b) => explorer.getAddressFirstTx(b)));
+        results.forEach((res, idx) => {
+          const trader = chunk[idx];
+          const first = res.status === 'fulfilled' ? res.value : null;
+          const funder = addrOf(first?.from);
+          if (funder && funder.toLowerCase() !== trader.toLowerCase()) {
+            fundingSources[trader] = {
+              funder,
+              funderType: funder.toLowerCase() === creator.toLowerCase() ? 'deployer' : 'unknown',
+            };
+          } else {
+            fundingSources[trader] = { funder: creator, funderType: 'unknown' };
+          }
+        });
+      }
+      if (unknownBuyers.length > 0) fundingSource = creatorSource === 'mock' ? 'db+heuristic+blockscout' : 'db+blockscout';
       await Promise.all(evmBuyers.map(async (trader) => {
-        const parent = {
-          funder: trader.endsWith('71') ? creator : '0x5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW',
-          funderType: trader.endsWith('71') ? 'deployer' : 'cex'
-        };
-        fundingSources[trader] = parent;
-
+        const parent = fundingSources[trader];
+        if (!parent) return;
         try {
           await supabase
             .from('wallet_profiles')
@@ -315,33 +383,42 @@ async function performInlineScan(
 
       const launchContext = {
         launchSource: 'hoodfun',
-        creatorPriorLaunches: 3,
-        creatorDied: mint.endsWith('000') ? 3 : 0,
-        creatorReputationScore: mint.endsWith('000') ? 0 : 0.8
+        creatorPriorLaunches: 0,
+        creatorDied: 0,
+        creatorReputationScore: 0.5
       };
 
+      const holderCount = Number(tokenInfo?.holders_count ?? tokenInfo?.holders ?? 0);
+      const totalSupply = Number(tokenInfo?.total_supply ?? 0);
       const marketContext = {
-        price: 0.05,
-        marketCap: 50000,
-        venues: [
-          { venue: 'Uniswap v3', model: 'nftPosition', depth: 20000, lpCustody: { status: mint.endsWith('000') ? 'heldBy' : 'locked' }, shareOfSupplyInPool: 0.8 }
-        ]
+        price: 0,
+        marketCap: 0,
+        holders: holderCount,
+        totalSupply,
+        venues: [] as any[]
       };
 
       const uaim = normalizeEVMDataToUAIM(
         '4663',
         mint,
-        'NVDA',
-        'NVIDIA Stock Token',
+        tokenSymbol,
+        tokenName,
         creator,
         launchContext,
         marketContext,
         controlSurface
       );
 
-      if (mint.endsWith('000')) {
-        uaim.ownership.clusterAdjustedConcentration = 0.75;
-      }
+      // Real ownership from traced funding (replaces normalize defaults)
+      const groupSizes = Object.values(parentGroups).map((g) => g.length);
+      const biggest = groupSizes.length > 0 ? Math.max(...groupSizes) : 0;
+      const parentShare = evmBuyers.length > 0 ? biggest / evmBuyers.length : 0;
+      const deployerCount = Object.values(fundingSources).filter(
+        (s: any) => s.funder?.toLowerCase() === creator.toLowerCase()
+      ).length;
+      uaim.ownership.clusterAdjustedConcentration = parentShare;
+      uaim.ownership.insiderShareEstimate = evmBuyers.length > 0 ? deployerCount / evmBuyers.length : 0;
+      uaim.ownership.holderCount = holderCount > 0 ? holderCount : uaim.ownership.holderCount;
 
       const fundingNodes: { address: string; type: 'cex' | 'eoa' }[] = [];
       const fundingEdges: { from: string; to: string; amount: number; timestamp: number }[] = [];
@@ -370,11 +447,14 @@ async function performInlineScan(
       console.log(`[STEP 13] Generating structured human-readable reasons for verdict report...`);
 
       let dbSaved = false;
+      const slotFreq = new Map<number, number>();
+      for (const t of parsedTxs) slotFreq.set(t.slot, (slotFreq.get(t.slot) ?? 0) + 1);
+      const sameBlockCount = slotFreq.size > 0 ? Math.max(...slotFreq.values()) : 0;
       const features = {
         funding_parent_share: uaim.ownership.clusterAdjustedConcentration,
-        fresh_wallet_ratio: 0.05,
-        same_block_count: 5,
-        deployer_funded: true,
+        fresh_wallet_ratio: 0,
+        same_block_count: sameBlockCount,
+        deployer_funded: uaim.ownership.insiderShareEstimate,
       };
 
       const reasonsList = scoredUaim.risks.length > 0
@@ -439,7 +519,7 @@ async function performInlineScan(
         features,
         uaim: scoredUaim,
         trades: evmTrades,
-        meta: { mint, regime: 'REGIME W14' },
+        meta: { mint, regime: 'REGIME W14', tradesSource, fundingSource, creatorSource },
       })}\n\n`));
       return;
     }
@@ -507,6 +587,7 @@ async function performInlineScan(
       console.warn(`[Inline Scan] Batch trade fetch notice:`, err);
     }
 
+    const solTradesSource = trades.length > 0 ? 'solana-rpc' : 'mock';
     const finalTrades = trades.length > 0 ? trades : [
       { trader: '3mVcA71pWqFvNuXyL7zK9aA719xUwL4sKmZrT5eYp', solAmount: 0.1, tokenAmount: 1000, slot: 120000, signature: 's1', timestamp: Math.floor(Date.now() / 1000) },
       { trader: 'Fh2sA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', solAmount: 0.1, tokenAmount: 1000, slot: 120000, signature: 's2', timestamp: Math.floor(Date.now() / 1000) },
@@ -710,7 +791,7 @@ async function performInlineScan(
       features,
       uaim,
       trades: finalTrades.slice(0, 20).map((t) => ({ trader: t.trader, solAmount: t.solAmount, slot: t.slot })),
-      meta: { mint, regime: regime.regimeVersion },
+        meta: { mint, regime: regime.regimeVersion, tradesSource: solTradesSource, fundingSource: solTradesSource === 'mock' ? 'mock' : 'solana-rpc', creatorSource: 'solana-rpc' },
     })}\n\n`));
 
   } catch (err: any) {

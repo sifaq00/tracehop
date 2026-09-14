@@ -40,18 +40,6 @@ interface PaywallData {
   reason: string;
 }
 
-const SCAN_LINES = [
-  '> Initializing multi-chain tracer...',
-  '> Connecting to Solana RPC cluster...',
-  '> Resolving deployer wallet...',
-  '> Mapping token holders...',
-  '> Analyzing funding graph...',
-  '> Checking LP lock status...',
-  '> Scanning for honeypot patterns...',
-  '> Cross-referencing known entities...',
-  '> Evaluating risk patterns...',
-  '> Generating verdict...',
-];
 
 // ponytail: 9 stages mirror the engine SSE pipeline, driven by live events
 const STAGES = [
@@ -164,19 +152,12 @@ export function Demo({ registerScanner }: DemoProps) {
     setDoneStages([]);
     setActiveStage(null);
 
-    // Fake log animation while waiting for first SSE event
-    let step = 0;
-    const interval = setInterval(() => {
-      if (step < 3) {
-        const nextLog = SCAN_LINES[step];
-        if (nextLog) setVisibleLogs((prev) => [...prev, nextLog]);
-        step++;
-      }
-    }, 500);
+    // Honest connecting line — all further logs come from live SSE events only
+    setVisibleLogs([`> Connecting to scan engine for ${mint.slice(0, 8)}...`]);
 
     try {
       const ctrl = new AbortController();
-      const timeout = setTimeout(() => ctrl.abort(), 35000);
+      const timeout = setTimeout(() => ctrl.abort(), 55000);
       // SSE stream: call scan API (without requiring userWallet if null)
       const qs = currentWallet
         ? `/api/v1/scan?mint=${encodeURIComponent(mint)}&stream=true&userWallet=${encodeURIComponent(currentWallet)}`
@@ -204,8 +185,7 @@ export function Demo({ registerScanner }: DemoProps) {
             reason: j.reason || '',
           };
         } catch { /* ignore */ }
-        clearInterval(interval);
-        setIsScanning(false);
+                setIsScanning(false);
         setPaywallData(parsed);
         setScanError(null);
         fetchGateStatus(currentWallet);
@@ -252,8 +232,7 @@ export function Demo({ registerScanner }: DemoProps) {
             try { playClick(); } catch { }
           } else if (ev === 'verdict') {
             clearTimeout(timeout);
-            clearInterval(interval);
-            markStage('verdict');
+                        markStage('verdict');
             setLiveResult(data);
             setScanProgress(100);
             const isCap = data.verdict === 'CAP';
@@ -273,16 +252,14 @@ export function Demo({ registerScanner }: DemoProps) {
         }
       }
       clearTimeout(timeout);
-      clearInterval(interval);
-      if (!finished && !liveResult) {
+            if (!finished && !liveResult) {
         setIsScanning(false);
         setScanError('Stream closed before verdict. Try again or pick a quieter mint.');
       }
     } catch (err: any) {
-      clearInterval(interval);
-      setIsScanning(false);
+            setIsScanning(false);
       setScanError(err?.name === 'AbortError'
-        ? 'Scan timed out (>35s). Node network congested — try again or test another mint.'
+        ? 'Scan timed out (>55s). Node network congested — try again or test another mint.'
         : (err?.message || 'Scan failed. Try again.'));
     }
   };

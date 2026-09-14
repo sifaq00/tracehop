@@ -6,7 +6,7 @@ export interface TradePoint { trader: string; solAmount: number; slot: number; }
 interface Props {
   uaim: any;
   trades: TradePoint[];
-  meta: { mint: string; regime: string };
+  meta: { mint: string; regime: string; tradesSource?: string; fundingSource?: string; creatorSource?: string };
 }
 
 function short(addr: string): string {
@@ -26,7 +26,16 @@ function Panel({ title, open, onToggle, children }: { title: string; open: boole
   );
 }
 
-function FundingGraph({ uaim }: { uaim: any }) {
+function SourceBadge({ value }: { value?: string }) {
+  const mock = !value || value === 'mock';
+  return (
+    <span className={`ml-auto text-[8.5px] font-mono px-1.5 py-0.5 rounded border ${mock ? 'text-amber-300 border-amber-500/40 bg-amber-500/10' : 'text-emerald-300 border-emerald-500/40 bg-emerald-500/10'}`}>
+      {mock ? 'MOCK' : 'ON-CHAIN'}
+    </span>
+  );
+}
+
+function FundingGraph({ uaim, source }: { uaim: any; source?: string }) {
   const edges: any[] = uaim?.fundingGraph?.edges ?? [];
   const nodes: any[] = uaim?.fundingGraph?.nodes ?? [];
   const deployer: string = uaim?.deployment?.deployer ?? '';
@@ -98,12 +107,13 @@ function FundingGraph({ uaim }: { uaim: any }) {
         <span><span className="inline-block w-2 h-2 rounded-full bg-[#34d399] mr-1" />cex (benign)</span>
         <span><span className="inline-block w-2 h-2 rounded-full bg-[#f59e0b] mr-1" />clustered</span>
         <span className="ml-auto">{parents.length} parents · {edges.length} links · {Math.round((uaim?.ownership?.clusterAdjustedConcentration ?? 0) * 100)}% share</span>
+        <SourceBadge value={source} />
       </div>
     </div>
   );
 }
 
-function Uniformity({ uaim, trades }: { uaim: any; trades: TradePoint[] }) {
+function Uniformity({ uaim, trades, source }: { uaim: any; trades: TradePoint[]; source?: string }) {
   const list = trades ?? [];
   if (list.length === 0) return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
   const maxBuy = Math.max(0.0001, ...list.map((t) => t.solAmount));
@@ -125,9 +135,12 @@ function Uniformity({ uaim, trades }: { uaim: any; trades: TradePoint[] }) {
           })}
         </div>
       <div className="h-px bg-[#241a45] mt-0" />
-      <p className="font-mono text-[10px] text-[#64748b] mt-1">
-        {list.length} buys · avg {mean.toFixed(4)} · stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}
-      </p>
+      <div className="flex items-center gap-2 mt-1">
+        <p className="font-mono text-[10px] text-[#64748b]">
+          {list.length} buys · avg {mean.toFixed(4)} · stddev {Number(uaim?.trading?.earlyWindowProfile?.buySizeStdDev ?? 0).toFixed(3)} · same block {uaim?.trading?.earlyWindowProfile?.sameBlockCount ?? 0}
+        </p>
+        <SourceBadge value={source} />
+      </div>
     </div>
   );
 }
@@ -141,10 +154,10 @@ export function ScanReport({ uaim, trades, meta }: Props) {
   return (
     <div className="shrink-0 grid gap-2 mt-3">
       <Panel title="Funding relation graph" open={open.graph} onToggle={() => toggle('graph')}>
-        <FundingGraph uaim={uaim} />
+        <FundingGraph uaim={uaim} source={meta.fundingSource} />
       </Panel>
       <Panel title="Launch buy uniformity" open={open.uniformity} onToggle={() => toggle('uniformity')}>
-        <Uniformity uaim={uaim} trades={trades} />
+        <Uniformity uaim={uaim} trades={trades} source={meta.tradesSource} />
       </Panel>
       <Panel title="Deployer profile history" open={open.deployer} onToggle={() => toggle('deployer')}>
         <div className="flex items-center gap-4 font-mono">
@@ -168,6 +181,7 @@ export function ScanReport({ uaim, trades, meta }: Props) {
             <p className="text-[#cbd5e1]">rep score <span className="text-white font-bold">{creator.reputationScore ?? 0}</span></p>
             <p className="text-[#64748b] break-all text-[10px]">{uaim?.deployment?.deployer ?? ''}</p>
           </div>
+          <SourceBadge value={meta.creatorSource} />
         </div>
       </Panel>
       <Panel title="Behavior analysis verdict" open={open.behavior} onToggle={() => toggle('behavior')}>
