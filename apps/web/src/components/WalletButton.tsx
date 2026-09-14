@@ -13,6 +13,10 @@ export function WalletButton() {
   const [balance, setBalance] = useState<string>('0.00');
   const [usdValue, setUsdValue] = useState<string>('0.00');
   const [symbol, setSymbol] = useState<string>('SOL');
+  const [tokenBal, setTokenBal] = useState<string | null>(null);
+  const [tokenSymbol, setTokenSymbol] = useState<string>(
+    process.env.NEXT_PUBLIC_HOLD_TOKEN_SYMBOL || 'ARDRILL'
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,7 +34,7 @@ export function WalletButton() {
     return () => window.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Fetch real on-chain balance from MetaMask or Solana RPC
+  // Fetch real on-chain balance from MetaMask or Solana RPC & configured hold token
   const fetchBalance = useCallback(async (addr: string) => {
     if (!addr) return;
     setIsRefreshing(true);
@@ -38,9 +42,9 @@ export function WalletButton() {
     const isEvmAddr = addr.startsWith('0x');
     setSymbol(isEvmAddr ? 'ETH' : 'SOL');
 
+    // 1. Native balance
     try {
       if (isEvmAddr && typeof window !== 'undefined' && window.ethereum?.request) {
-        // Fetch real balance from MetaMask via RPC
         const hex = await window.ethereum.request({
           method: 'eth_getBalance',
           params: [addr, 'latest'],
@@ -51,11 +55,8 @@ export function WalletButton() {
           const formatted = eth < 0.0001 && eth > 0 ? eth.toFixed(6) : eth.toFixed(4);
           setBalance(formatted);
           setUsdValue((eth * 2680).toFixed(2));
-          setIsRefreshing(false);
-          return;
         }
       } else if (!isEvmAddr) {
-        // Fetch real Solana balance via public RPC
         const res = await fetch('https://api.mainnet-beta.solana.com', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -72,16 +73,61 @@ export function WalletButton() {
           const formatted = sol < 0.001 && sol > 0 ? sol.toFixed(4) : sol.toFixed(3);
           setBalance(formatted);
           setUsdValue((sol * 194.5).toFixed(2));
-          setIsRefreshing(false);
-          return;
         }
       }
     } catch (err) {
-      console.warn('On-chain balance fetch notice:', err);
+      console.warn('On-chain native balance fetch notice:', err);
+      setBalance('0.00');
+      setUsdValue('0.00');
     }
 
-    setBalance('0.00');
-    setUsdValue('0.00');
+    // 2. Token balance for configured token address
+    if (isEvmAddr) {
+      try {
+        const gateRes = await fetch(`/api/v1/gate?wallet=${encodeURIComponent(addr)}`, {
+          cache: 'no-store',
+        });
+        if (gateRes.ok) {
+          const gateData = await gateRes.json();
+          if (gateData?.formattedBalance !== undefined) {
+            setTokenBal(gateData.formattedBalance);
+            if (gateData.symbol) setTokenSymbol(gateData.symbol);
+          }
+        } else {
+          // Direct fallback to Robinhood RPC eth_call
+          const tokenAddr =
+            process.env.NEXT_PUBLIC_HOLD_TOKEN_ADDRESS ||
+            '0x901fc7e22b7bc7353c66f0344a521e6533bf665f';
+          const rpcUrl =
+            process.env.NEXT_PUBLIC_HOOD_RPC_URL ||
+            'https://robinhood-sepolia-rpc.publicnode.com';
+          const data = `0x70a08231${'0'.repeat(24)}${addr.slice(2).toLowerCase()}`;
+          const rpcRes = await fetch(rpcUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_call',
+              params: [{ to: tokenAddr, data }, 'latest'],
+            }),
+          });
+          const json = await rpcRes.json();
+          if (json?.result) {
+            const raw = BigInt(json.result);
+            const dec = Number(process.env.NEXT_PUBLIC_HOLD_TOKEN_DECIMALS || 18);
+            const divisor = BigInt(10) ** BigInt(dec);
+            const whole = raw / divisor;
+            setTokenBal(whole.toLocaleString('en-US'));
+          }
+        }
+      } catch (err) {
+        console.warn('Token balance fetch notice:', err);
+      }
+    } else {
+      setTokenBal(null);
+    }
+
     setIsRefreshing(false);
   }, []);
 
@@ -111,6 +157,7 @@ export function WalletButton() {
         setSelectedWallet(null);
         setBalance('0.00');
         setUsdValue('0.00');
+        setTokenBal(null);
       }
     };
 
@@ -148,6 +195,7 @@ export function WalletButton() {
     setSelectedWallet(null);
     setBalance('0.00');
     setUsdValue('0.00');
+    setTokenBal(null);
     setMenuOpen(false);
     localStorage.removeItem('tracehop-wallet-connected');
     localStorage.removeItem('tracehop-wallet-name');
@@ -223,6 +271,13 @@ export function WalletButton() {
               />
             )}
 
+            {tokenBal !== null && (
+              <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[10.5px] font-bold text-[#22c55e] bg-[#22c55e]/10 border border-[#22c55e]/30 px-1.5 py-0.5 rounded-lg">
+                <span>{tokenBal}</span>
+                <span className="text-[9px] text-[#22c55e]/70">{tokenSymbol}</span>
+              </span>
+            )}
+
             <span className="font-mono text-[11px] text-[#ffb347] font-bold">
               {shortAddress}
             </span>
@@ -269,7 +324,7 @@ export function WalletButton() {
               {/* Real Live Balance Preview */}
               <div className="my-3 rounded-xl bg-black/50 p-2.5 border border-white/10">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-wider text-[#94a3b8]">Live Balance</span>
+                  <span className="text-[10px] uppercase tracking-wider text-[#94a3b8]">Live Native Balance</span>
                   <button
                     onClick={() => fetchBalance(address)}
                     disabled={isRefreshing}
@@ -288,6 +343,26 @@ export function WalletButton() {
                   </span>
                 </div>
               </div>
+
+              {/* Live Hold Token Balance */}
+              {tokenBal !== null && (
+                <div className="mb-3 rounded-xl bg-black/50 p-2.5 border border-[#22c55e]/30 bg-[#22c55e]/5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-wider text-[#94a3b8]">Live Token Balance</span>
+                    <span className="font-mono text-[9px] font-bold text-[#22c55e] bg-[#22c55e]/20 border border-[#22c55e]/30 px-1.5 py-0.5 rounded">
+                      {tokenSymbol}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-baseline justify-between font-mono">
+                    <span className="text-sm font-extrabold text-[#22c55e]">
+                      {tokenBal} <span className="text-xs font-semibold text-[#22c55e]/70">{tokenSymbol}</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-400">
+                      Req: 50,000
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Action Items */}
               <div className="space-y-1 text-xs">

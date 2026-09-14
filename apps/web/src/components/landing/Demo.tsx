@@ -301,7 +301,7 @@ export function Demo({ registerScanner }: DemoProps) {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10.5px] font-semibold text-emerald-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Holder Access: Active</span>
+            <span>Holder: {gateStatus.formattedBalance || '50,000+'} {gateStatus.symbol || 'ARDRILL'} (Active)</span>
           </span>
         );
       }
@@ -320,7 +320,7 @@ export function Demo({ registerScanner }: DemoProps) {
           className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 font-mono text-[10.5px] font-semibold text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span>Need 50,000 {gateStatus.symbol || 'ARDRILL'}</span>
+          <span>Balance: {gateStatus.formattedBalance || '0'} / 50,000 {gateStatus.symbol || 'ARDRILL'} (Need 50k)</span>
         </button>
       );
     }
