@@ -158,7 +158,7 @@ export function Navbar() {
           <motion.a
             whileHover={{ scale: 1.04, y: -1 }}
             whileTap={{ scale: 0.96 }}
-            href="https://t.me/TraceHopAgentBot"
+            href="https://t.me/tracehop_bot"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex items-center gap-2 h-[38px] px-3.5 rounded-xl bg-[#120d2b] hover:bg-[#1b143d] border border-[#2c2054] hover:border-[#7c3aed]/60 text-white text-xs font-semibold transition-all duration-200 shadow-sm"
@@ -250,7 +250,7 @@ export function Navbar() {
               {/* Mobile Telegram Link */}
               <div className="pt-2 border-t border-white/5">
                 <a
-                  href="https://t.me/TraceHopAgentBot"
+                  href="https://t.me/tracehop_bot"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl text-sm font-semibold text-white bg-[#120d2b] border border-[#2c2054] hover:border-[#7c3aed]/60"

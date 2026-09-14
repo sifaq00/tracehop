@@ -50,7 +50,7 @@ export function Features() {
             </div>
 
             <a
-              href="https://t.me/TraceHopAgentBot"
+              href="https://t.me/tracehop_bot"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-gradient-to-r from-[#2AABEE] to-[#229ED9] hover:from-[#38bdf8] hover:to-[#2AABEE] text-white font-bold text-xs uppercase tracking-wider shadow-[0_0_8px_rgba(42,171,238,0.25)] transition-all mb-6 w-fit"

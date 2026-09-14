@@ -8,6 +8,7 @@ import { Hero } from '@/components/landing/Hero';
 import { Demo } from '@/components/landing/Demo';
 import { Engine } from '@/components/landing/Engine';
 import { Why } from '@/components/landing/Why';
+import { Features } from '@/components/landing/Features';
 import { Stats } from '@/components/landing/Stats';
 import { Cta } from '@/components/landing/Cta';
 import { Footer } from '@/components/landing/Footer';
@@ -32,6 +33,7 @@ export default function Home() {
         <Demo registerScanner={(fn) => { scannerRef.current = fn; }} />
         <Engine />
         <Why />
+        <Features />
         <Stats />
         <Cta />
         <Footer />

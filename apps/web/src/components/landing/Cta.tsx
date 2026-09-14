@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Zap, FileText } from 'lucide-react';
+import { Zap } from 'lucide-react';
+import { FaTelegramPlane } from 'react-icons/fa';
 
 function SparkleStar({ x, y, size = 11, delay = 0 }: { x: number; y: number; size?: number; delay?: number }) {
   return (
@@ -150,26 +151,37 @@ export function Cta() {
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-white tracking-tight mb-3">
               Stop <span className="italic text-[#c084fc]">gambling</span>. Start <span className="italic text-[#ff7a29]">tracing</span>.
             </h2>
-            <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed mb-8 max-w-xl">
+            <p className="text-[#94a3b8] text-sm sm:text-base leading-relaxed mb-6 max-w-xl">
               Get Tracehop API and build with the best onchain intelligence engine.
             </p>
+
+            {/* Pricing strip: real gating, no surprises */}
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-8 font-mono text-[11px] sm:text-xs">
+              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">3 FREE SCANS</span>
+              <span className="text-[#475569]">→</span>
+              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">PAY-PER-SCAN IN SOL</span>
+              <span className="text-[#475569]">→</span>
+              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">HOLD 66,666 $TRACEHOP = UNLIMITED</span>
+            </div>
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 font-sans">
               <a
-                href="#api"
+                href="#demo"
                 className="inline-flex items-center gap-2.5 h-12 px-7 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] hover:from-[#9333ea] hover:to-[#7c3aed] text-white font-extrabold text-xs uppercase tracking-wider shadow-[0_0_16px_rgba(124,58,237,0.4)] hover:shadow-[0_0_24px_rgba(124,58,237,0.6)] transition-all"
               >
                 <Zap className="w-4 h-4 fill-current" />
-                <span>GET API ACCESS</span>
+                <span>TRY LIVE SCANNER</span>
               </a>
 
               <a
-                href="#api"
+                href="https://t.me/tracehop_bot"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2.5 h-12 px-7 rounded-xl bg-[#120d2b] hover:bg-[#1c1442] border border-[#2e215c] hover:border-[#7c3aed]/60 text-white font-bold text-xs uppercase tracking-wider transition-all"
               >
-                <FileText className="w-4 h-4 text-[#c4b5fd]" />
-                <span>VIEW API DOCS</span>
+                <FaTelegramPlane className="w-4 h-4 text-[#2AABEE]" />
+                <span>OPEN TELEGRAM BOT</span>
               </a>
             </div>
           </div>

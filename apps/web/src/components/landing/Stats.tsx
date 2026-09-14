@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { motion, useInView, useMotionValue, animate } from 'framer-motion';
 
-const STATS = [
+const FALLBACK_STATS = [
   { value: 12842, suffix: '+', decimals: 0, label: 'Tokens Scanned' },
   { value: 98.7, suffix: '%', decimals: 1, label: 'Accuracy Rate' },
   { value: 3.1, suffix: 's', decimals: 1, label: 'Avg Scan Time' },
@@ -45,6 +45,28 @@ function StatCounter({ value, decimals, suffix }: { value: number; decimals: num
 }
 
 export function Stats() {
+  // ponytail: live metrics, fallback statis jika API mati
+  const [stats, setStats] = useState(FALLBACK_STATS);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/v1/metrics/public')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((m) => {
+        if (!alive || !m) return;
+        const speed = parseFloat(String(m.medianScanSpeed || '').replace(/[^0-9.]/g, '')) || null;
+        const precision = m.accuracyStats?.precision30d;
+        setStats([
+          { value: Number(m.verdictsToday) || FALLBACK_STATS[0].value, suffix: '+', decimals: 0, label: 'Tokens Scanned' },
+          { value: precision ? Math.round(precision * 1000) / 10 : FALLBACK_STATS[1].value, suffix: '%', decimals: 1, label: 'Accuracy Rate' },
+          { value: speed ?? FALLBACK_STATS[2].value, suffix: 's', decimals: 1, label: 'Avg Scan Time' },
+          FALLBACK_STATS[3],
+        ]);
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
   return (
     <section id="stats" className="relative pt-20 pb-2 sm:pt-28 sm:pb-3 overflow-hidden">
       <div className="w-full max-w-[1360px] mx-auto px-4 sm:px-8 lg:px-12 relative">
@@ -67,7 +89,7 @@ export function Stats() {
 
         {/* ================= 4 STAT CARDS ================= */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4 lg:mr-40 xl:mr-48 relative z-10">
-          {STATS.map((stat, idx) => (
+          {stats.map((stat, idx) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 28, scale: 0.95 }}
