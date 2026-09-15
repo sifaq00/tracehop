@@ -428,7 +428,7 @@ export function Why() {
                   {/* User Command Bubble */}
                   <div className="relative z-10 flex justify-end mb-2.5">
                     <div className="px-3 py-1.5 rounded-2xl rounded-br-xs bg-[#2563eb] text-white text-[11px] font-mono shadow-sm">
-                      /scan So111...1112
+                      /scan 0x5C48...C21e
                     </div>
                   </div>
 
@@ -436,7 +436,7 @@ export function Why() {
                   <div className="relative z-10 p-3.5 rounded-2xl rounded-tl-xs bg-[#140e33] border border-[#2e215c] text-[10px] font-mono shadow-xl">
                     <div className="text-[#a855f7] font-bold text-[11px] mb-2 flex items-center justify-between">
                       <span>Analyzing token:</span>
-                      <span className="text-white font-semibold">So111...1112</span>
+                      <span className="text-white font-semibold">0x5C48...C21e</span>
                     </div>
 
                     {/* Step Checklist */}
