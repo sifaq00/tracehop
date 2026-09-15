@@ -27,6 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'TraceHop · Know before you ape',
   description: 'Real-time multi-chain wallet intelligence layer. Trace funding graphs and detect rugs before you ape.',
+  icons: { icon: '/assets/rabbit-minimal.webp' },
 };
 
 export default function RootLayout({
