@@ -206,181 +206,96 @@ export async function POST(request: NextRequest) {
     if (evmMintRegex.test(text) || solMintRegex.test(text)) {
       const targetAddress = text;
 
-      // Check if this Telegram Chat ID has linked their wallet
+      // Check if linked wallet
       const { data: dbSession } = await supabase
         .from('wallet_sessions')
         .select('wallet, free_scans, access')
         .eq('telegram_chat_id', String(chatId))
         .maybeSingle();
 
-      if (!dbSession || !dbSession.wallet) {
-        // EVM scans allowed without wallet (anon free scans)
-        if (evmMintRegex.test(text)) {
-          await sendTelegramMessage(
-            chatId,
-            `🔍 <b>TraceHop Agent</b>\n\n` +
-            `Initiating live scan for token:\n` +
-            `<code>${targetAddress}</code>\n\n` +
-            `Analyzing on-chain activity...\n` +
-            `Building wallet relationship graph...\n` +
-            `Generating intelligence report...\n\n` +
-            `Estimated time: 20–60 seconds.`
-          );
-          try {
-            const response = await handleScan(targetAddress, false, null, `tg_${chatId}`);
-            const result = await response.json();
-            if (result.error) {
-              await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
-              return new Response(JSON.stringify({ ok: true }));
-            }
-            // Format and send report (reuse same logic below)
-            const reply = formatScanReport(targetAddress, result);
-            await sendTelegramMessage(chatId, reply);
-          } catch (err: any) {
-            await sendTelegramMessage(chatId, `❌ <b>Scan Engine Error</b>\n${err.message || err}`);
-          }
-          return new Response(JSON.stringify({ ok: true }));
-        }
-        const connectKeyboard = {
-          inline_keyboard: [
-            [{ text: '🔌 Connect Wallet', url: `${appUrl}/?tg_chat_id=${chatId}` }]
-          ]
-        };
+      const userWallet = dbSession?.wallet || null;
+      const holdBalance = userWallet ? await checkTracehopBalance(userWallet) : 0;
+      const isHolder = holdBalance >= HOLD_CONFIG.threshold || dbSession?.access === true;
+
+      // Gating: same as landing page
+      const anonFreeTotal = Number(process.env.FREE_ANON_SCANS ?? 3);
+      const anonFreeUsed = dbSession?.free_scans ?? 0;
+      const anonRemaining = anonFreeTotal - anonFreeUsed;
+
+      if (!isHolder && anonRemaining <= 0) {
         await sendTelegramMessage(
           chatId,
-          `🔌 <b>Wallet Connection Required</b>\n\n` +
-          `You must link your wallet to TraceHop to perform scans and wallet checks from Telegram.\n\n` +
-          `Please click the button below to connect.`,
-          connectKeyboard
+          `❌ <b>Free Scans Exhausted</b> (${anonFreeUsed}/${anonFreeTotal})\n\n` +
+          `Connect an EVM wallet holding <b>${HOLD_CONFIG.threshold.toLocaleString()}+ $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain for unlimited scans.\n\n` +
+          `<a href="${appUrl}/?tg_chat_id=${chatId}">🔌 Connect Wallet</a>`,
+          { parse_mode: 'HTML', disable_web_page_preview: true }
         );
         return new Response(JSON.stringify({ ok: true }));
       }
 
-      const userWallet = dbSession.wallet;
-      const balance = await checkTracehopBalance(userWallet);
-      const holdsEnoughTokens = balance >= HOLD_CONFIG.threshold || dbSession.access;
-
-      // Determine if targetAddress is a Token Mint or a Wallet Address
+      // Determine isMint vs isWallet for Solana addresses only
       let isMint = true;
-      if (evmMintRegex.test(text)) {
-        isMint = true;
-      } else {
+      if (!evmMintRegex.test(text)) {
         try {
-          const RPC_ENDPOINT = process.env.RPC_ENDPOINT || process.env.HELIUS_API_KEY || 'https://api.mainnet-beta.solana.com';
+          const RPC_ENDPOINT = process.env.RPC_ENDPOINT || 'https://api.mainnet-beta.solana.com';
           const connection = new Connection(RPC_ENDPOINT);
           const accountInfo = await connection.getAccountInfo(new PublicKey(targetAddress));
           if (accountInfo) {
             const owner = accountInfo.owner.toBase58();
-            if (owner === '11111111111111111111111111111111') {
-              isMint = false;
-            }
+            if (owner === '11111111111111111111111111111111') isMint = false;
           }
-        } catch (e) {
-          console.warn('[Telegram Webhook] Failed to determine address type, defaulting to Token Mint:', e);
-        }
+        } catch { /* default: treat as token */ }
       }
 
-      if (isMint) {
-        // Handle Token Scan Gating
-        const remainingFree = dbSession.free_scans !== undefined && dbSession.free_scans !== null ? dbSession.free_scans : 3;
-        if (!holdsEnoughTokens && remainingFree <= 0) {
-          await sendTelegramMessage(
-            chatId,
-            `❌ <b>Access Restricted</b>\n\n` +
-            `Your free scans are exhausted.\n\n` +
-            `Please hold at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet to unlock unlimited free scans and wallet checks.`
-          );
-          return new Response(JSON.stringify({ ok: true }));
-        }
-
+      // Wallet check (Solana only, different endpoint)
+      if (!isMint) {
         await sendTelegramMessage(
           chatId,
-          `🔍 <b>TraceHop Agent</b>\n\n` +
-          `Initiating live scan for token:\n` +
-          `<code>${targetAddress}</code>\n\n` +
-          `Analyzing on-chain activity...\n` +
-          `Building wallet relationship graph...\n` +
-          `Generating intelligence report...\n\n` +
-          `Estimated time: 20–60 seconds.`
+          `👛 <b>Analyzing Wallet</b>\n\n<code>${targetAddress}</code>\nFetching reputation, history & clusters...`
         );
-
-        try {
-          const scanWallet = /^0x[0-9a-fA-F]{40}$/.test(userWallet) ? userWallet : null;
-          const response = await handleScan(targetAddress, false, scanWallet, `tg_${chatId}`);
-          const result = await response.json();
-
-          if (result.error) {
-            if (result.error === 'INSUFFICIENT_BALANCE' || result.error === 'Payment Required' || result.error === 'HOLD_REQUIRED' || result.error === 'ANON_EXHAUSTED') {
-              await sendTelegramMessage(
-                chatId,
-                `❌ <b>Scans Exhausted / Access Restricted</b>\n\n` +
-                (result.message || `Please hold at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet to unlock unlimited scans.`)
-              );
-            } else {
-              await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
-            }
-            return new Response(JSON.stringify({ ok: true }));
-          }
-
-          const reply = formatScanReport(targetAddress, result);
-
-          await sendTelegramMessage(chatId, reply);
-        } catch (err: any) {
-          await sendTelegramMessage(chatId, `❌ <b>Scan Engine Error</b>\n${err.message || err}`);
-        }
-      } else {
-        // Handle Wallet Check Gating
-        if (!holdsEnoughTokens) {
-          await sendTelegramMessage(
-            chatId,
-            `❌ <b>Access Restricted</b>\n\n` +
-            `Wallet analysis requires holding at least <b>${HOLD_CONFIG.threshold.toLocaleString()} $${HOLD_CONFIG.tokenSymbol}</b> on ${HOLD_CONFIG.chainName} Chain in your connected wallet.\n\n` +
-            `Please acquire enough $${HOLD_CONFIG.tokenSymbol} to unlock wallet checks.`
-          );
-          return new Response(JSON.stringify({ ok: true }));
-        }
-
-        await sendTelegramMessage(
-          chatId,
-          `👛 <b>Analyzing Wallet</b>\n\n` +
-          `Address: <code>${targetAddress}</code>\n` +
-          `Fetching reputation, transaction history and cluster data...`
-        );
-
         try {
           const res = await fetch(`${appUrl}/api/v1/wallet/${targetAddress}`);
           const data = await res.json();
-          
           if (data.error) {
             await sendTelegramMessage(chatId, `❌ <b>Wallet Check Failed</b>\n${data.error}`);
           } else {
             const tagEmoji = data.tag === 'RUGGER' ? '🔴' : data.tag === 'CEX' ? '🔵' : '🟢';
-            const trustPercent = Math.round(data.trustScore * 100);
             const stats = data.stats || {};
-            
-            const responseText = `👛 <b>TraceHop Wallet Analysis</b>\n\n` +
-              `<b>Address</b>\n` +
-              `<code>${data.address}</code>\n\n` +
-              `<b>Entity Tag</b>\n` +
-              `${tagEmoji} <b>${data.tag}</b>\n\n` +
-              `<b>Trust Score</b>\n` +
-              `<b>${trustPercent}%</b>\n\n` +
+            const reply = `👛 <b>TraceHop Wallet Analysis</b>\n\n` +
+              `<b>Address</b>\n<code>${data.address}</code>\n\n` +
+              `<b>Entity</b> ${tagEmoji} <b>${data.tag}</b>\n` +
+              `<b>Trust Score</b> <b>${Math.round(data.trustScore * 100)}%</b>\n\n` +
               `━━━━━━━━━━━━━━━━━━\n\n` +
-              `🔎 <b>Historical Stats</b>\n` +
               `• Prior Launches: <b>${stats.priorLaunches || 0}</b>\n` +
               `• Prior Rugs: <b>${stats.priorRugs || 0}</b>\n` +
-              `• Avg Extraction: <b>${(stats.avgExtractionSol || 0).toFixed(2)} SOL</b>\n` +
               `• Funded Snipers: <b>${stats.fundedSnipers || 0}</b>\n\n` +
-              `<b>Cluster Association</b>\n` +
-              `<code>${data.clusterId || 'none'}</code>\n\n` +
-              `━━━━━━━━━━━━━━━━━━\n\n` +
               `Powered by TraceHop Agent.`;
-              
-            await sendTelegramMessage(chatId, responseText);
+            await sendTelegramMessage(chatId, reply);
           }
         } catch (err: any) {
-          await sendTelegramMessage(chatId, `❌ <b>Wallet Scan Error</b>\n${err.message || err}`);
+          await sendTelegramMessage(chatId, `❌ <b>Wallet Error</b>\n${err.message}`);
         }
+        return new Response(JSON.stringify({ ok: true }));
+      }
+
+      // Token scan — unified path, same as landing page handleScan
+      await sendTelegramMessage(
+        chatId,
+        `🔍 <b>Scanning...</b>\n\n<code>${targetAddress}</code>\n\nEst. 20–60 seconds.`
+      );
+      try {
+        const scanWallet = userWallet && /^0x[0-9a-fA-F]{40}$/.test(userWallet) ? userWallet : null;
+        const response = await handleScan(targetAddress, false, scanWallet, `tg_${chatId}`);
+        const result = await response.json();
+
+        if (result.error) {
+          await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
+          return new Response(JSON.stringify({ ok: true }));
+        }
+
+        await sendTelegramMessage(chatId, formatScanReport(targetAddress, result));
+      } catch (err: any) {
+        await sendTelegramMessage(chatId, `❌ <b>Scan Error</b>\n${err.message || err}`);
       }
       return new Response(JSON.stringify({ ok: true }));
     }
