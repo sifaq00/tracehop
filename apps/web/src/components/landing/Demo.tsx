@@ -487,7 +487,10 @@ export function Demo({ registerScanner }: DemoProps) {
                   key={token.ticker}
                   onClick={() => handleStartScan(token)}
                   type="button"
-                  className={`px-3.5 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                  disabled={isScanning}
+                  className={`px-3.5 py-1.5 rounded-xl border transition-all ${
+                    isScanning ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+                  } ${
                     hasScanned && selectedToken.ticker === token.ticker
                       ? 'bg-[#1b143d] border-[#7c3aed] text-white shadow-[0_0_6px_rgba(124,58,237,0.2)]'
                       : 'bg-[#100b26] border-[#2c2054] text-[#c4b5fd] hover:text-white hover:border-[#7c3aed]/60'
