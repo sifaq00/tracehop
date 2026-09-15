@@ -1,5 +1,5 @@
 // Robinhood Chain Gating Module
-// Supports 3 free anonymous scans per IP daily and 50,000+ TRCHP (ARDRILL) token hold tier.
+// Supports free anonymous scans per IP daily and TRCHP (ARDRILL) token hold tier (threshold via HOLD_THRESHOLD env).
 
 export interface HoldResult {
   // 2 = unlimited (>= threshold), 0 = below threshold, -1 = unknown / fail closed
@@ -32,7 +32,9 @@ export interface GatingDecision {
 
 export const HOLD_CONFIG = {
   get threshold(): number {
-    return Number(process.env.HOLD_THRESHOLD ?? 50000);
+    const v = Number(process.env.HOLD_THRESHOLD);
+    if (!Number.isFinite(v)) throw new Error('HOLD_THRESHOLD env missing');
+    return v;
   },
   get tokenSymbol(): string {
     return process.env.HOLD_TOKEN_SYMBOL ?? 'ARDRILL';
@@ -55,7 +57,6 @@ export const HOLD_CONFIG = {
   },
 };
 
-export const HOLD_THRESHOLD = 50000;
 export const HOLD_TOKEN_SYMBOL = 'ARDRILL';
 export const HOOD_CHAIN_NAME = 'Robinhood';
 

@@ -42,6 +42,19 @@ interface PaywallData {
   total?: number;
 }
 
+// ponytail: threshold copy purely env-driven, server truth first
+const envThreshold = Number(process.env.NEXT_PUBLIC_HOLD_THRESHOLD ?? NaN);
+const envFreeTotal = Number(process.env.NEXT_PUBLIC_FREE_ANON_SCANS ?? NaN);
+const fmtThreshold = (n?: number) => {
+  const v = typeof n === 'number' && Number.isFinite(n) ? n : envThreshold;
+  return Number.isFinite(v) ? v.toLocaleString('en-US') : '';
+};
+const shortThreshold = (n?: number) => {
+  const v = typeof n === 'number' && Number.isFinite(n) ? n : envThreshold;
+  if (!Number.isFinite(v)) return '';
+  return v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`;
+};
+
 
 // ponytail: 9 stages mirror the engine SSE pipeline, driven by live events
 const STAGES = [
@@ -172,8 +185,8 @@ export function Demo({ registerScanner }: DemoProps) {
       if (res.status === 402) {
         let parsed: PaywallData = {
           error: 'ANON_EXHAUSTED',
-          message: `Free scans exhausted (${gateStatus?.anonUsed ?? 0}/${(gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`,
-          required: 50000,
+          message: `Free scans exhausted (${gateStatus?.anonUsed ?? 0}/${(gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`,
+          required: gateStatus?.required ?? envThreshold,
           current: '0',
           symbol: 'ARDRILL',
           chain: 'Robinhood Chain',
@@ -184,7 +197,7 @@ export function Demo({ registerScanner }: DemoProps) {
           parsed = {
             error: j.error || 'HOLD_REQUIRED',
             message: j.message || '',
-            required: typeof j.required === 'number' ? j.required : 50000,
+            required: typeof j.required === 'number' ? j.required : envThreshold,
             current: typeof j.current === 'string' ? j.current : String(j.current ?? '0'),
             symbol: j.symbol || 'ARDRILL',
             chain: j.chain || 'Robinhood Chain',
@@ -300,7 +313,7 @@ export function Demo({ registerScanner }: DemoProps) {
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 font-mono text-[10.5px] font-semibold text-emerald-400">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Holder: {gateStatus.formattedBalance || '50,000+'} {gateStatus.symbol || 'ARDRILL'} (Active)</span>
+            <span>Holder: {gateStatus.formattedBalance || fmtThreshold(gateStatus.required) + '+'} {gateStatus.symbol || 'ARDRILL'} (Active)</span>
           </span>
         );
       }
@@ -319,7 +332,7 @@ export function Demo({ registerScanner }: DemoProps) {
           className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 font-mono text-[10.5px] font-semibold text-amber-300 hover:bg-amber-500/20 transition cursor-pointer"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-          <span>Balance: {gateStatus.formattedBalance || '0'} / 50,000 {gateStatus.symbol || 'ARDRILL'} (Need 50k)</span>
+          <span>Balance: {gateStatus.formattedBalance || '0'} / {fmtThreshold(gateStatus.required)} {gateStatus.symbol || 'ARDRILL'} (Need {shortThreshold(gateStatus.required)})</span>
         </button>
       );
     }
@@ -418,7 +431,7 @@ export function Demo({ registerScanner }: DemoProps) {
               Interrogate <span className="text-[#a855f7] italic">any token.</span> Instantly.
             </h2>
             <p className="text-[#94a3b8] text-sm sm:text-base mb-6 leading-relaxed max-w-xl">
-              Paste a mint address. Tracehop will reveal what others try to hide. 3 free anonymous scans daily, or hold 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain for unlimited access.
+              Paste a mint address. Tracehop will reveal what others try to hide. {gateStatus ? gateStatus.anonUsed + gateStatus.anonRemaining : (Number.isFinite(envFreeTotal) ? envFreeTotal : '')} free anonymous scans daily, or hold {fmtThreshold(gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain for unlimited access.
             </p>
 
             {/* Search Input Bar */}
@@ -596,9 +609,9 @@ export function Demo({ registerScanner }: DemoProps) {
 
                       <p className="text-[#cbd5e1] text-[11.5px] leading-relaxed mb-3">
                         {paywallData.error === 'ANON_EXHAUSTED' || paywallData.reason === 'anon_exhausted'
-                          ? `Free scans exhausted (${paywallData.used ?? gateStatus?.anonUsed ?? 0}/${paywallData.total ?? (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding 50,000+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`
+                          ? `Free scans exhausted (${paywallData.used ?? gateStatus?.anonUsed ?? 0}/${paywallData.total ?? (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(paywallData.required ?? gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`
                           : paywallData.error === 'HOLD_REQUIRED' || paywallData.reason === 'insufficient_hold'
-                          ? `Insufficient $TRCHP balance. Required: 50,000. Current: ${paywallData.current}.`
+                          ? `Insufficient $TRCHP balance. Required: ${fmtThreshold(paywallData.required)}. Current: ${paywallData.current}.`
                           : paywallData.message}
                       </p>
 

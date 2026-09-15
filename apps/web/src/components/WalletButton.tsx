@@ -17,6 +17,10 @@ export function WalletButton() {
   const [tokenSymbol, setTokenSymbol] = useState<string>(
     process.env.NEXT_PUBLIC_HOLD_TOKEN_SYMBOL || 'ARDRILL'
   );
+  const [tokenReq, setTokenReq] = useState<string>(() => {
+    const v = Number(process.env.NEXT_PUBLIC_HOLD_THRESHOLD ?? NaN);
+    return Number.isFinite(v) ? v.toLocaleString('en-US') : '';
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,6 +96,7 @@ export function WalletButton() {
           if (gateData?.formattedBalance !== undefined) {
             setTokenBal(gateData.formattedBalance);
             if (gateData.symbol) setTokenSymbol(gateData.symbol);
+            if (typeof gateData.required === 'number') setTokenReq(gateData.required.toLocaleString('en-US'));
           }
         } else {
           // Direct fallback to Robinhood RPC eth_call
@@ -358,7 +363,7 @@ export function WalletButton() {
                       {tokenBal} <span className="text-xs font-semibold text-[#22c55e]/70">{tokenSymbol}</span>
                     </span>
                     <span className="text-[10px] text-zinc-400">
-                      Req: 50,000
+                      Req: {tokenReq}
                     </span>
                   </div>
                 </div>
