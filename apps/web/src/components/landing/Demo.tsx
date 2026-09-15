@@ -588,7 +588,7 @@ export function Demo({ registerScanner }: DemoProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 20, scale: 0.97 }}
                   transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full max-w-2xl mt-4 rounded-2xl bg-[#090616] border border-[#241a45] p-4 sm:p-5 shadow-2xl font-mono text-xs flex flex-col max-h-[500px] overflow-hidden"
+                  className="w-full mt-4 rounded-2xl bg-[#090616] border border-[#241a45] p-4 sm:p-5 shadow-2xl font-mono text-xs flex flex-col max-h-[500px] overflow-hidden"
                 >
                   {/* Terminal header */}
                   <div className="shrink-0 flex items-center justify-between pb-3 mb-3 border-b border-[#241a45]">
@@ -599,7 +599,7 @@ export function Demo({ registerScanner }: DemoProps) {
                     </div>
                     <div className="flex items-center gap-2 font-mono text-[10px]">
                       <span className="text-[#64748b]">NETWORK:</span>
-                      <span className="text-[#c4b5fd] font-semibold uppercase">{liveResult?.meta?.chain || gateStatus?.chain || 'MULTI-CHAIN'}</span>
+                      <span className="text-[#c4b5fd] font-semibold uppercase">{liveResult?.meta?.chain === 'evm' ? 'Robinhood Chain' : liveResult?.meta?.chain?.toUpperCase() || gateStatus?.chain || 'MULTI-CHAIN'}</span>
                     </div>
                   </div>
 
