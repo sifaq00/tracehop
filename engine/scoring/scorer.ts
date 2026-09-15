@@ -40,11 +40,21 @@ export function scoreUaimDocument(uaim: UAIMDocument, risks: UAIMRiskCode[]): UA
     subclass = 'organic';
   }
 
+  // Confidence = how certain we are in the verdict, NOT risk level.
+  // 0 risks + organic = very confident it's safe (high confidence).
+  // Many risks + CAP = very confident it's a threat (high confidence).
+  // Low data quality (few trades, no funding) = low confidence.
+  const tradeCount = uaim.ownership?.holderCount ?? 0;
+  const hasFundingData = uaim.fundingGraph?.edges?.length > 0;
+  const hasRiskData = risks.length > 0;
+  const dataCompleteness = ((tradeCount > 10 ? 0.4 : tradeCount > 3 ? 0.2 : 0) + (hasFundingData ? 0.3 : 0) + (hasRiskData ? 0.3 : 0.15));
+  const confidence = Math.round(Math.min(0.95, Math.max(0.35, dataCompleteness)) * 100) / 100;
+
   uaim.score = {
     value: riskScore,
     verdict,
     subclass,
-    confidence: riskScore / 100,
+    confidence,
     regimeVersion: 'W14',
     oneLineReason: risks[0] ? `Risk detected: ${risks[0].code}` : 'Funding and buyer patterns appear organic.'
   };

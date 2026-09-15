@@ -178,11 +178,16 @@ export function evaluateVerdictUAIM(uaim: UAIMDocument, thresholds: ScorerThresh
     verdictLevel = 'PROVISIONAL';
   }
 
+  // Confidence = how certain we are in the verdict, NOT risk level.
+  const hasRiskData = risks.length > 0;
+  const dataCompleteness = ((tradeCount > 10 ? 0.4 : tradeCount > 3 ? 0.2 : 0) + (hasRiskData ? 0.45 : 0.15));
+  const confidence = Math.round(Math.min(0.95, Math.max(0.35, dataCompleteness)) * 100) / 100;
+
   uaim.score = {
     value: riskScore,
     verdict,
     subclass,
-    confidence: riskScore / 100,
+    confidence,
     regimeVersion: 'W14',
     oneLineReason: reasons[0]?.text || 'No risks detected.'
   };
@@ -325,10 +330,14 @@ export function evaluateVerdict(features: ComputedFeatures, thresholds: ScorerTh
     verdictLevel = 'PROVISIONAL';
   }
 
+  const hasRiskData = reasons.length > 0;
+  const dataCompleteness = ((tradeCount > 10 ? 0.4 : tradeCount > 3 ? 0.2 : 0) + (hasRiskData ? 0.45 : 0.15));
+  const confidence = Math.round(Math.min(0.95, Math.max(0.35, dataCompleteness)) * 100) / 100;
+
   return {
     verdict,
     subclass,
-    confidence: riskScore / 100, // Return riskScore directly (0.0 to 1.0)
+    confidence,
     reasons,
     verdictLevel,
   };
