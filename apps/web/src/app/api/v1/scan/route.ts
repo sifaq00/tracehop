@@ -2,13 +2,23 @@ import { NextRequest } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
 import { evaluateGating, bumpAnonUsage, HOLD_CONFIG } from '../../../../lib/gating';
 import { URL } from 'url';
-import { Connection, PublicKey } from '@solana/web3.js';
 import { computeFeatures, evaluateVerdict } from '@tracehop/core';
 import { runRiskRules, scoreUaimDocument } from '@tracehop/engine';
 import { normalizeEVMDataToUAIM, RobinhoodChainClient, BlockscoutExplorerAdapter } from '@tracehop/robinhood';
-import { mapSolanaContextToUAIM } from '@tracehop/solana';
 import dotenv from 'dotenv';
 import dns from 'dns';
+
+// Lazy-load heavy Solana deps (saves ~2s cold start for EVM scans)
+let _solanaMod: any = null;
+let _solanaUAIMMod: any = null;
+async function getSolana() {
+  if (!_solanaMod) _solanaMod = await import('@solana/web3.js');
+  return _solanaMod;
+}
+async function getSolanaUAIM() {
+  if (!_solanaUAIMMod) _solanaUAIMMod = await import('@tracehop/solana');
+  return _solanaUAIMMod;
+}
 
 class AddressResolver {
   static resolveAddressType(address: string): 'evm' | 'solana' | 'unknown' {
@@ -85,6 +95,7 @@ async function getOrCreateWalletProfile(address: string): Promise<any> {
 
   if (!address.startsWith('0x')) {
     try {
+      const { Connection, PublicKey } = await getSolana();
       const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
       const pubkey = new PublicKey(address);
       const signatures = await Promise.race([
@@ -126,6 +137,7 @@ async function getOrCreateWalletProfile(address: string): Promise<any> {
 async function traceFundingParent(address: string, creator: string): Promise<{ funder: string; funderType: string }> {
   if (!address.startsWith('0x')) {
     try {
+      const { Connection, PublicKey } = await getSolana();
       const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
       const pubkey = new PublicKey(address);
       const sigs = await Promise.race([
@@ -174,6 +186,7 @@ async function resolveMintCreator(mint: string): Promise<string> {
     return '0x7xKpA2q93oWpL4sKmZrT5eYpWqFvNuDoubleEVM';
   }
   try {
+    const { Connection, PublicKey } = await getSolana();
     const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
     const sigs = await Promise.race([
       connection.getSignaturesForAddress(new PublicKey(mint), { limit: 25 }),
@@ -620,6 +633,7 @@ async function performInlineScan(
 
     // 2. Fetch/Interrogate Buyer Profiles via Batch RPC
     await writer.write(encoder.encode(`event: progress\ndata: ${JSON.stringify({ step: 'buyers', pct: 35, log: '[BLOCKCHAIN] Ingesting earliest block transactions via batch RPC...' })}\n\n`));
+    const { Connection, PublicKey } = await getSolana();
     const connection = new Connection(RPC_ENDPOINT, { commitment: 'confirmed' });
 
     let trades: any[] = [];
@@ -630,7 +644,7 @@ async function performInlineScan(
         connection.getSignaturesForAddress(pubkey, { limit: 30 }),
         new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error('sig_timeout')), 3500)),
       ]);
-      const oldestSigs = sigInfos.map(s => s.signature).reverse().slice(0, 25);
+      const oldestSigs = sigInfos.map((s: any) => s.signature).reverse().slice(0, 25);
 
       if (oldestSigs.length > 0) {
         // Chunked parsed fetch (5 per batch) — single 25-tx batch times out on free RPC tiers
@@ -815,6 +829,7 @@ async function performInlineScan(
 
     console.log(`[STEP 13] Generating structured human-readable reasons for verdict report...`);
 
+    const { mapSolanaContextToUAIM } = await getSolanaUAIM();
     const uaim = mapSolanaContextToUAIM({
       mint,
       creator,
