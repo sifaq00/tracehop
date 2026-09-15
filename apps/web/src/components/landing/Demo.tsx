@@ -383,27 +383,47 @@ export function Demo({ registerScanner }: DemoProps) {
                   className="absolute w-72 h-72 rounded-full border border-[#7c3aed]/40 bg-[#7c3aed]/5 pointer-events-none"
                 />
                 <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0.25, 0.1] }}
+                  transition={{ repeat: Infinity, duration: 2.8, ease: 'easeInOut', delay: 0.5 }}
+                  className="absolute w-80 h-80 rounded-full border border-[#a855f7]/20 pointer-events-none"
+                />
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute -top-4 px-3.5 py-1 rounded-full bg-[#120d2b]/95 border border-[#7c3aed]/50 shadow-[0_0_15px_rgba(124,58,237,0.3)] flex items-center gap-2 font-mono text-[10.5px] font-bold text-[#c4b5fd] z-10 select-none"
+                  className="absolute -top-6 px-4 py-2 rounded-2xl bg-[#0c081e]/95 border border-[#7c3aed]/40 shadow-[0_0_25px_rgba(124,58,237,0.25)] flex items-center gap-2.5 font-mono text-[10.5px] font-bold text-[#c4b5fd] z-10 select-none backdrop-blur-sm"
                 >
                   <span className="w-2 h-2 rounded-full bg-[#a855f7] animate-ping" />
-                  <span>INTERROGATING ON-CHAIN</span>
+                  <span className="tracking-wider">{activeStage === 'scoring' ? 'SCORING...' : activeStage === 'clustering' ? 'CLUSTER ANALYSIS...' : activeStage === 'funding_graph' ? 'TRACING FUNDS...' : 'INTERROGATING...'}</span>
                 </motion.div>
               </>
             )}
             {!isScanning && showVerdict && liveResult && (
               <motion.div
-                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                initial={{ opacity: 0, y: 12, scale: 0.92 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={`absolute -top-4 px-3.5 py-1 rounded-full border z-10 select-none flex items-center gap-2 font-mono text-[10.5px] font-bold ${
-                  liveResult.verdict === 'CAP'
-                    ? 'bg-rose-950/90 border-rose-500/60 text-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.35)]'
-                    : 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.35)]'
-                }`}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute -top-8 z-10 select-none"
               >
-                <span className={`w-2 h-2 rounded-full ${liveResult.verdict === 'CAP' ? 'bg-rose-500' : 'bg-emerald-500'}`} />
-                <span>{liveResult.verdict === 'CAP' ? 'THREAT CONFIRMED' : 'CONTRACT VERIFIED'}</span>
+                <div className={`px-5 py-3 rounded-2xl border backdrop-blur-sm ${
+                  liveResult.verdict === 'CAP'
+                    ? 'bg-rose-950/80 border-rose-500/50 shadow-[0_0_30px_rgba(244,63,94,0.3)]'
+                    : 'bg-emerald-950/80 border-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.3)]'
+                }`}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className={`w-3 h-3 rounded-full ${liveResult.verdict === 'CAP' ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
+                    <span className={`font-display text-base font-black tracking-tight ${liveResult.verdict === 'CAP' ? 'text-rose-300' : 'text-emerald-300'}`}>
+                      {liveResult.verdict === 'CAP' ? 'THREAT DETECTED' : 'CONTRACT VERIFIED'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[9px] font-mono text-[#94a3b8]">
+                    <span>CONF <span className={`font-bold ${liveResult.verdict === 'CAP' ? 'text-rose-400' : 'text-emerald-400'}`}>{Math.round((liveResult.confidence || 0) * 100)}%</span></span>
+                    <span className="text-[#475569]">·</span>
+                    <span>{liveResult.subclass ?? 'organic'}</span>
+                    <span className="text-[#475569]">·</span>
+                    <span>{scanMs != null ? `${(scanMs / 1000).toFixed(1)}s` : '—'}</span>
+                  </div>
+                </div>
               </motion.div>
             )}
             <motion.img
