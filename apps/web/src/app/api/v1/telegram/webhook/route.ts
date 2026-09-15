@@ -4,6 +4,46 @@ import { supabase } from '../../../../../lib/supabase';
 import { checkTokenHold, HOLD_CONFIG } from '../../../../../lib/gating';
 import { Connection, PublicKey } from '@solana/web3.js';
 
+function formatScanReport(targetAddress: string, result: any): string {
+  const isCap = result.verdict === 'CAP';
+  const verdictText = isCap ? '🔴 THREAT' : '🟢 SAFE';
+  const confidencePercent = Math.round((result.confidence ?? 0.5) * 100);
+  let patternName = 'Organic Trading';
+  if (result.subclass === 'extraction') patternName = 'Extraction Scheme';
+  else if (result.subclass === 'coordinated') patternName = 'Coordinated Attack';
+  else if (result.subclass) patternName = result.subclass.charAt(0).toUpperCase() + result.subclass.slice(1) + ' Trading';
+  const features = result.features || {};
+  const findingsArray: string[] = [];
+  (result.reasons || []).forEach((r: any) => { if (r.code !== 'ORGANIC_VERDICT' && r.code !== 'COORDINATED_WARNING') findingsArray.push(r.text || r); });
+  const parentShareValue = features.funding_parent_share || 0;
+  findingsArray.push(parentShareValue >= 0.60 ? `High clustering: ${Math.round(parentShareValue * 100)}% of buyers share a single funding parent.` : parentShareValue >= 0.20 ? `Moderate clustering: ${Math.round(parentShareValue * 100)}% shared funding sources.` : `Decentralized funding: less than 20% share a funding source.`);
+  const freshRatioValue = features.fresh_wallet_ratio || 0;
+  findingsArray.push(freshRatioValue >= 0.60 ? `High throwaway ratio: ${Math.round(freshRatioValue * 100)}% wallets < 24h old.` : `Mature wallets: ${Math.round((1 - freshRatioValue) * 100)}% with active history.`);
+  const sameBlockCount = features.same_block_count || 0;
+  findingsArray.push(sameBlockCount > 4 ? `Sniper concentration: ${sameBlockCount} buyers in launch block.` : `Spread execution: buys across multiple blocks.`);
+  const badOverlapValue = features.known_bad_overlap || 0;
+  findingsArray.push(badOverlapValue >= 1 ? `Bad actor alert: ${badOverlapValue} wallet(s) linked to rug creators.` : 'Clean reputation: zero links to blacklisted accounts.');
+  const keyFindings = findingsArray.slice(0, 5).map((f: string) => `• ${f}`).join('\n');
+  const parentShare = Math.round(parentShareValue * 100);
+  const freshRatio = Math.round(freshRatioValue * 100);
+  const sameBlock = sameBlockCount > 4 ? 'High' : 'Low';
+  const devFunding = features.deployer_funded ? 'Traced' : 'None';
+  return `🛡️ <b>TraceHop Agent Report</b>\n\n` +
+    `<b>Contract</b>\n<code>${targetAddress}</code>\n\n` +
+    `<b>Verdict</b>\n<b>${verdictText}</b>\n\n` +
+    `<b>CAP prediction</b>\n${confidencePercent}%\n\n` +
+    `<b>Pattern</b>\n${patternName}\n\n` +
+    `━━━━━━━━━━━━━━━━━━\n\n` +
+    `🔎 <b>Key Findings</b>\n\n${keyFindings}\n\n` +
+    `━━━━━━━━━━━━━━━━━━\n\n` +
+    `🛡️ <b>Security Checks</b>\n\n` +
+    `✅ Shared Funding      <b>${parentShare}%</b>\n` +
+    `✅ Fresh Wallets       <b>${freshRatio}%</b>\n` +
+    `🟢 Same Block Buyers  <b>${sameBlock}</b>\n` +
+    `✅ Deployer Funding    <b>${devFunding}</b>\n\n` +
+    `━━━━━━━━━━━━━━━━━━\n\nPowered by TraceHop Agent.`;
+}
+
 async function checkTracehopBalance(walletAddress: string): Promise<number> {
   if (!walletAddress) return 0;
 
@@ -91,7 +131,7 @@ export async function POST(request: NextRequest) {
       await answerCallbackQuery(callback.id);
 
       if (data === 'action:scan') {
-        await sendTelegramMessage(chatId, 'Paste the Solana Contract Address.');
+        await sendTelegramMessage(chatId, 'Paste a token contract address (EVM 0x or Solana).');
       } else if (data === 'action:wallet') {
         await sendTelegramMessage(chatId, '👛 <b>Wallet Analysis</b>\n\nPaste a Solana wallet address to analyze its history and creator associations.');
       } else if (data === 'action:history') {
@@ -117,8 +157,8 @@ export async function POST(request: NextRequest) {
     // Start / Welcome command
     if (text === '/start') {
       const welcome = `🛡️ <b>Welcome to TraceHop Agent</b>\n\n` +
-        `AI-powered Solana Contract Scanner.\n\n` +
-        `Analyze token contracts, detect suspicious wallet behavior, and identify potential risks before you trade.\n\n` +
+        `AI-powered Multi-Chain Token Scanner.\n\n` +
+        `Analyze token contracts on Robinhood Chain & Solana, detect suspicious wallet behavior, and identify potential risks before you trade.\n\n` +
         `Choose one of the options below to get started.`;
       await sendTelegramMessage(chatId, welcome, MAIN_KEYBOARD);
       return new Response(JSON.stringify({ ok: true }));
@@ -144,7 +184,7 @@ export async function POST(request: NextRequest) {
 
     // Scan command
     if (text === '/scan') {
-      await sendTelegramMessage(chatId, 'Paste the Solana Contract Address.');
+      await sendTelegramMessage(chatId, 'Paste a token contract address (EVM 0x or Solana).');
       return new Response(JSON.stringify({ ok: true }));
     }
 
@@ -154,9 +194,10 @@ export async function POST(request: NextRequest) {
       return new Response(JSON.stringify({ ok: true }));
     }
 
-    // 3. Check if text is a Solana Mint or Wallet Address (Base58, 32-44 chars)
-    const mintRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-    if (mintRegex.test(text)) {
+    // 3. Check if text is a valid token address (Solana Base58 OR EVM 0x)
+    const evmMintRegex = /^0x[0-9a-fA-F]{40}$/;
+    const solMintRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+    if (evmMintRegex.test(text) || solMintRegex.test(text)) {
       const targetAddress = text;
 
       // Check if this Telegram Chat ID has linked their wallet
@@ -167,16 +208,43 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (!dbSession || !dbSession.wallet) {
+        // EVM scans allowed without wallet (anon free scans)
+        if (evmMintRegex.test(text)) {
+          await sendTelegramMessage(
+            chatId,
+            `🔍 <b>TraceHop Agent</b>\n\n` +
+            `Initiating live scan for token:\n` +
+            `<code>${targetAddress}</code>\n\n` +
+            `Analyzing on-chain activity...\n` +
+            `Building wallet relationship graph...\n` +
+            `Generating intelligence report...\n\n` +
+            `Estimated time: 20–60 seconds.`
+          );
+          try {
+            const response = await handleScan(targetAddress, false, null, '127.0.0.1');
+            const result = await response.json();
+            if (result.error) {
+              await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
+              return new Response(JSON.stringify({ ok: true }));
+            }
+            // Format and send report (reuse same logic below)
+            const reply = formatScanReport(targetAddress, result);
+            await sendTelegramMessage(chatId, reply);
+          } catch (err: any) {
+            await sendTelegramMessage(chatId, `❌ <b>Scan Engine Error</b>\n${err.message || err}`);
+          }
+          return new Response(JSON.stringify({ ok: true }));
+        }
         const connectKeyboard = {
           inline_keyboard: [
-            [{ text: '🔌 Connect Phantom Wallet', url: `${appUrl}/?tg_chat_id=${chatId}` }]
+            [{ text: '🔌 Connect Wallet', url: `${appUrl}/?tg_chat_id=${chatId}` }]
           ]
         };
         await sendTelegramMessage(
           chatId,
           `🔌 <b>Wallet Connection Required</b>\n\n` +
-          `You must link your Solana wallet to TraceHop to perform scans and wallet checks from Telegram.\n\n` +
-          `Please click the button below to secure your connection.`,
+          `You must link your wallet to TraceHop to perform scans and wallet checks from Telegram.\n\n` +
+          `Please click the button below to connect.`,
           connectKeyboard
         );
         return new Response(JSON.stringify({ ok: true }));
@@ -188,18 +256,22 @@ export async function POST(request: NextRequest) {
 
       // Determine if targetAddress is a Token Mint or a Wallet Address
       let isMint = true;
-      try {
-        const RPC_ENDPOINT = process.env.RPC_ENDPOINT || process.env.HELIUS_API_KEY || 'https://api.mainnet-beta.solana.com';
-        const connection = new Connection(RPC_ENDPOINT);
-        const accountInfo = await connection.getAccountInfo(new PublicKey(targetAddress));
-        if (accountInfo) {
-          const owner = accountInfo.owner.toBase58();
-          if (owner === '11111111111111111111111111111111') {
-            isMint = false;
+      if (evmMintRegex.test(text)) {
+        isMint = true;
+      } else {
+        try {
+          const RPC_ENDPOINT = process.env.RPC_ENDPOINT || process.env.HELIUS_API_KEY || 'https://api.mainnet-beta.solana.com';
+          const connection = new Connection(RPC_ENDPOINT);
+          const accountInfo = await connection.getAccountInfo(new PublicKey(targetAddress));
+          if (accountInfo) {
+            const owner = accountInfo.owner.toBase58();
+            if (owner === '11111111111111111111111111111111') {
+              isMint = false;
+            }
           }
+        } catch (e) {
+          console.warn('[Telegram Webhook] Failed to determine address type, defaulting to Token Mint:', e);
         }
-      } catch (e) {
-        console.warn('[Telegram Webhook] Failed to determine address type, defaulting to Token Mint:', e);
       }
 
       if (isMint) {
@@ -244,94 +316,7 @@ export async function POST(request: NextRequest) {
             return new Response(JSON.stringify({ ok: true }));
           }
 
-          const isCap = result.verdict === 'CAP';
-          const verdictText = isCap ? '🔴 THREAT' : '🟢 SAFE';
-          const confidencePercent = Math.round((result.confidence !== undefined && result.confidence !== null ? result.confidence : 0.5) * 100);
-
-          let patternName = 'Organic Trading';
-          if (result.subclass === 'extraction') {
-            patternName = 'Extraction Scheme';
-          } else if (result.subclass === 'coordinated') {
-            patternName = 'Coordinated Attack';
-          } else if (result.subclass) {
-            patternName = result.subclass.charAt(0).toUpperCase() + result.subclass.slice(1) + ' Trading';
-          }
-
-          const reasonsList = result.reasons || [];
-          const features = result.features || {};
-          const findingsArray: string[] = [];
-
-          reasonsList.forEach((r: any) => {
-            if (r.code !== 'ORGANIC_VERDICT' && r.code !== 'COORDINATED_WARNING') {
-              findingsArray.push(r.text || r);
-            }
-          });
-
-          const parentShareValue = features.funding_parent_share || 0;
-          if (parentShareValue >= 0.60) {
-            findingsArray.push(`High clustering: ${Math.round(parentShareValue * 100)}% of buyers share a single funding parent, suggesting creator bundling.`);
-          } else if (parentShareValue >= 0.20) {
-            findingsArray.push(`Moderate clustering: ${Math.round(parentShareValue * 100)}% of buyers share funding sources, indicating semi-coordinated setups.`);
-          } else {
-            findingsArray.push(`Decentralized funding: less than 20% of buyers share a funding source, confirming independent retail entries.`);
-          }
-
-          const freshRatioValue = features.fresh_wallet_ratio || 0;
-          if (freshRatioValue >= 0.60) {
-            findingsArray.push(`High throwaway ratio: ${Math.round(freshRatioValue * 100)}% of early buyers use wallets created less than 24h ago, typical of sniper bots.`);
-          } else {
-            findingsArray.push(`Mature wallets: ${Math.round((1 - freshRatioValue) * 100)}% of buyers have active transaction histories older than 24 hours.`);
-          }
-
-          const sameBlockCount = features.same_block_count || 0;
-          if (sameBlockCount > 4) {
-            findingsArray.push(`Sniper concentration: ${sameBlockCount} buyers entered in the exact launch block, suggesting aggressive automated snipers.`);
-          } else {
-            findingsArray.push(`Spread execution: early buys are distributed across multiple blocks, indicating natural retail timing.`);
-          }
-
-          const sizeUniformityValue = features.size_uniformity || 0;
-          if (sizeUniformityValue > 0 && sizeUniformityValue <= 0.05) {
-            findingsArray.push(`Automated bot sizing: standard deviation of buys is extremely uniform (${sizeUniformityValue.toFixed(4)} SOL), typical of bot profiles.`);
-          } else if (sizeUniformityValue > 0.05) {
-            findingsArray.push(`Natural sizing variance: buy sizes deviate naturally by ${sizeUniformityValue.toFixed(4)} SOL, suggesting human retail participation.`);
-          }
-
-          const badOverlapValue = features.known_bad_overlap || 0;
-          if (badOverlapValue >= 1) {
-            findingsArray.push(`Bad actor alert: ${badOverlapValue} buyer wallet(s) have direct funding links to confirmed rug/extraction creators.`);
-          } else {
-            findingsArray.push('Clean reputation: zero buyer wallet links to blacklisted rug accounts or flagged wallets.');
-          }
-
-          const finalFindings = findingsArray.slice(0, 5);
-          const keyFindings = finalFindings.map((f: string) => `• ${f}`).join('\n');
-          const parentShare = Math.round((features.funding_parent_share || 0) * 100);
-          const freshRatio = Math.round((features.fresh_wallet_ratio || 0) * 100);
-          const sameBlock = (features.same_block_count || 0) > 4 ? 'High' : 'Low';
-          const devFunding = features.deployer_funded ? 'Traced' : 'None';
-
-          const reply = `🛡️ <b>TraceHop Agent Report</b>\n\n` +
-            `<b>Contract</b>\n` +
-            `<code>${targetAddress}</code>\n\n` +
-            `<b>Verdict</b>\n` +
-            `<b>${verdictText}</b>\n\n` +
-            `<b>CAP prediction</b>\n` +
-            `${confidencePercent}%\n\n` +
-            `<b>Pattern</b>\n` +
-            `${patternName}\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `🔎 <b>Key Findings</b>\n\n` +
-            `${keyFindings}\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `🛡️ <b>Security Checks</b>\n\n` +
-            `✅ Shared Funding      <b>${parentShare}%</b>\n` +
-            `✅ Fresh Wallets       <b>${freshRatio}%</b>\n` +
-            `🟢 Same Block Buyers  <b>${sameBlock}</b>\n` +
-            `✅ Deployer Funding    <b>${devFunding}</b>\n` +
-            `🔒 Liquidity           <b>Locked</b>\n\n` +
-            `━━━━━━━━━━━━━━━━━━\n\n` +
-            `Powered by TraceHop Agent.`;
+          const reply = formatScanReport(targetAddress, result);
 
           await sendTelegramMessage(chatId, reply);
         } catch (err: any) {
@@ -396,7 +381,7 @@ export async function POST(request: NextRequest) {
 
     // 4. Default Fallback
     if (text.length > 0) {
-      await sendTelegramMessage(chatId, `⚠️ <b>Invalid Input</b>\n\nPlease send a valid Solana token address or select an option from the menu.`, MAIN_KEYBOARD);
+      await sendTelegramMessage(chatId, `⚠️ <b>Invalid Input</b>\n\nPlease send a valid token address (EVM 0x or Solana) or select an option from the menu.`, MAIN_KEYBOARD);
     }
 
     return new Response(JSON.stringify({ ok: true }));
