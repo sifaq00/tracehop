@@ -77,7 +77,7 @@ export function Hero({ onStartDemo }: HeroProps) {
                 Multi-chain wallet intelligence
               </span>
               <span className="text-[#7c3aed]/60">·</span>
-              <span className="text-[#c084fc] font-semibold text-[11px]">Solana & EVM</span>
+              <span className="text-[#c084fc] font-semibold text-[11px]">Robinhood Chain</span>
             </motion.div>
 
             <motion.h1
@@ -152,7 +152,7 @@ export function Hero({ onStartDemo }: HeroProps) {
               variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.7 } } }}
               className="flex flex-wrap items-center gap-2 font-sans text-[11.5px] text-[#64748b]"
             >
-              <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}>Live on Solana & EVM</motion.span>
+              <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}>Live on Robinhood Chain</motion.span>
               <motion.span variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.2 } } }} className="text-[#2a1e4a]">·</motion.span>
               <motion.span variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}>No API key required</motion.span>
               <motion.span variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.2 } } }} className="text-[#2a1e4a]">·</motion.span>
@@ -176,7 +176,7 @@ export function Hero({ onStartDemo }: HeroProps) {
         <div className="w-full max-w-[1360px] mx-auto px-6 sm:px-10 lg:px-12 mt-8 pt-4 border-t border-[#7c3aed]/15 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[#64748b]">
           <div className="flex items-center gap-1.5 shrink-0">
             <Layers className="w-3.5 h-3.5 text-[#38bdf8] shrink-0" />
-            <span className="text-[#cbd5e1] font-semibold">Solana</span>
+            <span className="text-[#cbd5e1] font-semibold">Robinhood Chain</span>
             <span className="text-[#2a1e4a]">&</span>
             <span className="text-[#cbd5e1] font-semibold">EVM</span>
             <span className="text-[#2a1e4a] ml-2">·</span>

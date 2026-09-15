@@ -91,25 +91,25 @@ interface GraphNode {
 }
 
 const GRAPH_NODES: GraphNode[] = [
-  { id: 'n1', type: 'intermediary', label: 'Relay Alpha', address: '0x8f...11a2', role: 'Sybil Relay', balance: '42.5 SOL', cx: 55, cy: 115 },
-  { id: 'n2', type: 'eoa', label: 'Sniper Wallet 1', address: '4vJ9...8Kmn', role: 'First 20 Buyer', balance: '12.0 SOL', cx: 80, cy: 60 },
-  { id: 'n3', type: 'eoa', label: 'Sniper Wallet 2', address: '9wQz...2bPx', role: 'First 20 Buyer', balance: '8.4 SOL', cx: 85, cy: 155 },
-  { id: 'n4', type: 'intermediary', label: 'Cluster Hub A', address: '7xLm...99pQ', role: 'Sub-Relay', balance: '65.2 SOL', cx: 125, cy: 130 },
-  { id: 'n5', type: 'eoa', label: 'Dormant Wallet', address: '1aBc...33dE', role: 'Cluster Member', balance: '5.1 SOL', cx: 110, cy: 185 },
+  { id: 'n1', type: 'intermediary', label: 'Relay Alpha', address: '0x8f...11a2', role: 'Sybil Relay', balance: '42,500', cx: 55, cy: 115 },
+  { id: 'n2', type: 'eoa', label: 'Sniper Wallet 1', address: '0xa2...e412', role: 'First 20 Buyer', balance: '12,000', cx: 80, cy: 60 },
+  { id: 'n3', type: 'eoa', label: 'Sniper Wallet 2', address: '0x3b...9c18', role: 'First 20 Buyer', balance: '8,400', cx: 85, cy: 155 },
+  { id: 'n4', type: 'intermediary', label: 'Cluster Hub A', address: '0x71...f902', role: 'Sub-Relay', balance: '65,200', cx: 125, cy: 130 },
+  { id: 'n5', type: 'eoa', label: 'Dormant Wallet', address: '0x1a...33dE', role: 'Cluster Member', balance: '5,100', cx: 110, cy: 185 },
 
   // Center Deployer
-  { id: 'deployer', type: 'deployer', label: 'Origin Deployer Hub', address: '0x38...9f42', role: 'Genesis Funder', balance: '1,420.5 SOL', cx: 175, cy: 115 },
+  { id: 'deployer', type: 'deployer', label: 'Origin Deployer Hub', address: '0x38...9f42', role: 'Genesis Funder', balance: '1,420,500', cx: 175, cy: 115 },
 
   // Right branch
-  { id: 'n6', type: 'intermediary', label: 'Relay Beta', address: '5yTx...88zZ', role: 'Distribution', balance: '110.0 SOL', cx: 220, cy: 75 },
-  { id: 'n7', type: 'cex', label: 'Binance Hot 14', address: '0xBi...4444', role: 'CEX Deposit', balance: '2,800.0 SOL', cx: 250, cy: 35 },
-  { id: 'n8', type: 'liquidity', label: 'Raydium LP', address: '675k...F78q', role: 'Locked Pool', balance: '850.0 SOL', cx: 295, cy: 55 },
-  { id: 'n9', type: 'intermediary', label: 'Cluster Hub B', address: '2zMM...9Bou', role: 'Sybil Pool', balance: '88.0 SOL', cx: 255, cy: 125 },
-  { id: 'n10', type: 'eoa', label: 'Dev Multi-sig', address: '3kFw...11aa', role: 'Dev Hold', balance: '18.4 SOL', cx: 295, cy: 110 },
-  { id: 'n11', type: 'intermediary', label: 'Relay Gamma', address: '8bNm...3qWe', role: 'Intermediary', balance: '50.0 SOL', cx: 225, cy: 165 },
-  { id: 'n12', type: 'eoa', label: 'Dump Target', address: '1xRUG...DEAD', role: 'Mixer Outflow', balance: '280.0 SOL', cx: 225, cy: 215 },
-  { id: 'n13', type: 'eoa', label: 'Wash Trader', address: '7qQq...22vv', role: 'Volume Bot', balance: '15.3 SOL', cx: 255, cy: 185 },
-  { id: 'n14', type: 'eoa', label: 'Retail Buyer', address: '9pLm...88xx', role: 'Verified EOA', balance: '2.5 SOL', cx: 285, cy: 190 },
+  { id: 'n6', type: 'intermediary', label: 'Relay Beta', address: '0x56...88zZ', role: 'Distribution', balance: '110,000', cx: 220, cy: 75 },
+  { id: 'n7', type: 'cex', label: 'CEX Hot Wallet', address: '0xBi...4444', role: 'CEX Deposit', balance: '2,800,000', cx: 250, cy: 35 },
+  { id: 'n8', type: 'liquidity', label: 'DEX LP Pool', address: '0x67...F78q', role: 'Locked Pool', balance: '850,000', cx: 295, cy: 55 },
+  { id: 'n9', type: 'intermediary', label: 'Cluster Hub B', address: '0x2a...9Bou', role: 'Sybil Pool', balance: '88,000', cx: 255, cy: 125 },
+  { id: 'n10', type: 'eoa', label: 'Dev Multi-sig', address: '0x3a...11aa', role: 'Dev Hold', balance: '18,400', cx: 295, cy: 110 },
+  { id: 'n11', type: 'intermediary', label: 'Relay Gamma', address: '0x8b...3qWe', role: 'Intermediary', balance: '50,000', cx: 225, cy: 165 },
+  { id: 'n12', type: 'eoa', label: 'Dump Target', address: '0xDE...AD00', role: 'Mixer Outflow', balance: '280,000', cx: 225, cy: 215 },
+  { id: 'n13', type: 'eoa', label: 'Wash Trader', address: '0x7a...22vv', role: 'Volume Bot', balance: '15,300', cx: 255, cy: 185 },
+  { id: 'n14', type: 'eoa', label: 'Retail Buyer', address: '0x9c...88xx', role: 'Verified EOA', balance: '2,500', cx: 285, cy: 190 },
 ];
 
 const GRAPH_EDGES = [

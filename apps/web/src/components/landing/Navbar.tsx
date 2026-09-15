@@ -180,7 +180,7 @@ export function Navbar() {
             <FaXTwitter className="w-4 h-4 shrink-0" />
           </motion.a>
 
-          {/* Solana & Multi-Chain Connect Wallet Button */}
+          {/* Multi-Chain Connect Wallet Button */}
           <WalletButton />
 
           {/* Mobile / Tablet Hamburger Button */}

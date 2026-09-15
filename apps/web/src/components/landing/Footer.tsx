@@ -150,7 +150,7 @@ export function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[#64748b] text-[11px]">
           <p>&copy; 2026 Tracehop. All rights reserved.</p>
           <div className="flex items-center gap-2 font-mono">
-            <span>Solana + Robinhood Chain • REGIME W14</span>
+            <span>Robinhood Chain • REGIME W14</span>
           </div>
         </div>
       </motion.div>

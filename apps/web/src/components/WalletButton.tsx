@@ -12,7 +12,7 @@ export function WalletButton() {
   const [selectedWallet, setSelectedWallet] = useState<WalletOption | null>(null);
   const [balance, setBalance] = useState<string>('0.00');
   const [usdValue, setUsdValue] = useState<string>('0.00');
-  const [symbol, setSymbol] = useState<string>('SOL');
+  const [symbol, setSymbol] = useState<string>('ETH');
   const [tokenBal, setTokenBal] = useState<string | null>(null);
   const [tokenSymbol, setTokenSymbol] = useState<string>(
     process.env.NEXT_PUBLIC_HOLD_TOKEN_SYMBOL || 'ARDRILL'
@@ -44,7 +44,7 @@ export function WalletButton() {
     setIsRefreshing(true);
 
     const isEvmAddr = addr.startsWith('0x');
-    setSymbol(isEvmAddr ? 'ETH' : 'SOL');
+    setSymbol(isEvmAddr ? 'ETH' : 'TOKEN');
 
     // 1. Native balance
     try {
