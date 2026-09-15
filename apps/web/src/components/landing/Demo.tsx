@@ -735,28 +735,74 @@ export function Demo({ registerScanner }: DemoProps) {
                       {level}
                     </span>
                   </div>
-                  <div className={`border px-5 py-4 mb-4 ${isCap ? 'border-rose-400/70 shadow-[0_0_25px_rgba(244,63,94,0.25)]' : 'border-emerald-400/70 shadow-[0_0_25px_rgba(16,185,129,0.25)]'}`}>
-                    <p className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: accent }}>
-                      <span className="inline-block w-2.5 h-2.5 mr-2.5" style={{ background: accent }} />
-                      {isCap ? 'THREAT' : 'SAFE'} ({subclass})
-                    </p>
-                  </div>
-                  <p className="text-[#e2e8f0] font-sans text-sm leading-relaxed mb-5">
-                    {liveResult.reasons?.[0]?.text ?? 'No reason returned.'}
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <div className="relative w-16 h-16 shrink-0">
-                      <svg viewBox="0 0 64 64" className="w-16 h-16 -rotate-90">
-                        <circle cx="32" cy="32" r="26" fill="none" stroke="#1e293b" strokeWidth="6" />
-                        <circle cx="32" cy="32" r="26" fill="none" stroke={accent} strokeWidth="6" strokeLinecap="round" strokeDasharray={ring} strokeDashoffset={ring * (1 - risk / 100)} />
-                      </svg>
-                      <span className="absolute inset-0 flex items-center justify-center text-sm font-black" style={{ color: accent }}>{risk}%</span>
+
+                  {/* Verdict hero card */}
+                  <div className={`relative overflow-hidden rounded-xl border px-5 py-4 mb-4 ${isCap ? 'border-rose-400/50 bg-gradient-to-br from-rose-950/60 to-[#090616] shadow-[0_0_30px_rgba(244,63,94,0.15)]' : 'border-emerald-400/50 bg-gradient-to-br from-emerald-950/60 to-[#090616] shadow-[0_0_30px_rgba(16,185,129,0.15)]'}`}>
+                    <div className="absolute top-0 right-0 w-24 h-24 opacity-10 pointer-events-none" style={{ background: `radial-gradient(circle at top right, ${accent}, transparent 70%)` }} />
+                    <div className="flex items-center gap-3 mb-2">
+                      {isCap ? (
+                        <svg className="w-6 h-6 text-rose-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22S4 18 4 12V5L12 2L20 5V12C20 18 12 22 12 22Z" /><line x1="12" y1="8" x2="12" y2="12" /><circle cx="12" cy="16" r="0.5" fill="currentColor" /></svg>
+                      ) : (
+                        <svg className="w-6 h-6 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22S4 18 4 12V5L12 2L20 5V12C20 18 12 22 12 22Z" /><polyline points="9 12 11 14 15 10" /></svg>
+                      )}
+                      <div>
+                        <p className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: accent }}>{isCap ? 'THREAT' : 'SAFE'}</p>
+                        <p className="text-[10px] font-mono text-[#7a8599] mt-0.5">{subclass}</p>
+                      </div>
                     </div>
-                    <div className="text-[11px] leading-[1.9] text-[#64748b]">
-                      <p>RISK&nbsp;&nbsp;<span className="text-[#cbd5e1] font-bold">{risk}%</span></p>
-                      <p>MINT&nbsp;&nbsp;<span className="text-[#cbd5e1]">{mintAddr.slice(0, 6)}...{mintAddr.slice(-4)}</span></p>
-                      <p>SPEED&nbsp;&nbsp;<span className="text-[#cbd5e1]">{scanMs != null ? `${(scanMs / 1000).toFixed(1)}s` : '—'}</span></p>
-                      <p>REGIME&nbsp;&nbsp;<span className="text-[#cbd5e1]">{regime}</span></p>
+                    <p className="text-[#cbd5e1] font-sans text-[13px] leading-relaxed">{liveResult.reasons?.[0]?.text ?? 'No reason returned.'}</p>
+                  </div>
+
+                  {/* Reasons list */}
+                  {(liveResult.reasons ?? []).length > 1 && (
+                    <div className="mb-4 space-y-1.5">
+                      {(liveResult.reasons ?? []).slice(0, 4).map((r: any, i: number) => (
+                        <div key={i} className={`flex items-start gap-2 px-3 py-2 rounded-lg border text-[10px] font-mono ${
+                          r.severity === 'high' ? 'bg-rose-500/5 border-rose-500/15 text-rose-300'
+                          : r.severity === 'medium' ? 'bg-amber-500/5 border-amber-500/15 text-amber-300'
+                          : 'bg-[#0c0a1a] border-[#1e1735]/60 text-[#7a8599]'
+                        }`}>
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 mt-1 bg-current" />
+                          <span className="leading-relaxed">{r.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Metrics grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Risk Score</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-12 h-1.5 rounded-full bg-[#1a1333] overflow-hidden">
+                          <div className={`h-full rounded-full ${risk > 60 ? 'bg-rose-500' : risk > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${risk}%` }} />
+                        </div>
+                        <span className={`text-sm font-bold font-mono ${risk > 60 ? 'text-rose-400' : risk > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>{risk}%</span>
+                      </div>
+                    </div>
+                    <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Scan Speed</p>
+                      <p className="text-sm font-bold font-mono text-white">{scanMs != null ? `${(scanMs / 1000).toFixed(1)}s` : '—'}</p>
+                    </div>
+                    <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Chain</p>
+                      <p className="text-sm font-bold font-mono text-[#c4b5fd]">{meta.chain === 'evm' ? 'Robinhood' : meta.chain?.toUpperCase() ?? '—'}</p>
+                    </div>
+                    <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Regime</p>
+                      <p className="text-sm font-bold font-mono text-[#c4b5fd]">{regime}</p>
+                    </div>
+                  </div>
+
+                  {/* Token + deployer row */}
+                  <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider">Token</p>
+                      <p className="font-mono text-[9px] text-[#4a5568]">{mintAddr.slice(0, 6)}...{mintAddr.slice(-4)}</p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider">Deployer</p>
+                      <p className="font-mono text-[9px] text-[#4a5568]">{(lr.uaim?.deployment?.deployer ?? '').slice(0, 6)}...{(lr.uaim?.deployment?.deployer ?? '').slice(-4)}</p>
                     </div>
                   </div>
                 </div>
