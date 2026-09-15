@@ -206,26 +206,43 @@ function DeployerProfile({ uaim, creatorSource }: { uaim: any; creatorSource?: s
   const diedCount = outcomes.died ?? 0;
   const gradCount = outcomes.graduated ?? 0;
   const ruggedCount = outcomes.rugged ?? 0;
+  const hasHistory = launchCount > 0 || diedCount > 0 || gradCount > 0 || ruggedCount > 0;
   const mx = Math.max(1, launchCount, diedCount, gradCount, ruggedCount);
   const rep = creator?.reputationScore ?? 0;
   const repColor = rep >= 0.7 ? 'text-emerald-400' : rep >= 0.4 ? 'text-amber-400' : 'text-rose-400';
+  const deployer = uaim?.deployment?.deployer ?? '';
+  const txAge = uaim?.deployment?.deployedAt;
+  const ageStr = txAge ? `${Math.floor((Date.now() - txAge) / 3600000)}h ago` : '';
+
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-4">
-        <div className="flex items-end gap-2.5 h-20">
-          {[
-            { label: 'LAUNCH', v: launchCount, c: 'from-[#7c3aed] to-[#a855f7]' },
-            { label: 'DIED', v: diedCount, c: 'from-rose-600 to-rose-400' },
-            { label: 'GRAD', v: gradCount, c: 'from-emerald-600 to-emerald-400' },
-            { label: 'RUG', v: ruggedCount, c: 'from-red-700 to-red-500' },
-          ].map((b) => (
-            <div key={b.label} className="flex flex-col items-center gap-1.5">
-              <span className="text-[11px] text-white font-bold font-mono">{b.v}</span>
-              <div className={`w-8 rounded-t-[4px] bg-gradient-to-t ${b.c} opacity-85`} style={{ height: `${Math.max(6, (b.v / mx) * 60)}px` }} />
-              <span className="text-[8px] text-[#64748b] font-mono tracking-wider">{b.label}</span>
+        {hasHistory ? (
+          <div className="flex items-end gap-2.5 h-20">
+            {[
+              { label: 'LAUNCH', v: launchCount, c: 'from-[#7c3aed] to-[#a855f7]' },
+              { label: 'DIED', v: diedCount, c: 'from-rose-600 to-rose-400' },
+              { label: 'GRAD', v: gradCount, c: 'from-emerald-600 to-emerald-400' },
+              { label: 'RUG', v: ruggedCount, c: 'from-red-700 to-red-500' },
+            ].map((b) => (
+              <div key={b.label} className="flex flex-col items-center gap-1.5">
+                <span className="text-[11px] text-white font-bold font-mono">{b.v}</span>
+                <div className={`w-8 rounded-t-[4px] bg-gradient-to-t ${b.c} opacity-85`} style={{ height: `${Math.max(6, (b.v / mx) * 60)}px` }} />
+                <span className="text-[8px] text-[#64748b] font-mono tracking-wider">{b.label}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 h-20">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
             </div>
-          ))}
-        </div>
+            <div>
+              <p className="font-mono text-[11px] text-emerald-400 font-bold">First-time deployer</p>
+              <p className="font-mono text-[9px] text-[#64748b]">No prior launches recorded on this chain</p>
+            </div>
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <span className="font-mono text-[10px] text-[#7a8599]">REPUTATION</span>
@@ -239,12 +256,14 @@ function DeployerProfile({ uaim, creatorSource }: { uaim: any; creatorSource?: s
               />
             </div>
           </div>
-          <p className="font-mono text-[9px] text-[#4a5568] break-all leading-relaxed">{uaim?.deployment?.deployer ?? ''}</p>
+          <p className="font-mono text-[9px] text-[#4a5568] break-all leading-relaxed">{deployer}</p>
+          {ageStr && <p className="font-mono text-[9px] text-[#64748b] mt-0.5">deployed {ageStr}</p>}
         </div>
       </div>
       <div className="flex items-center gap-3 pt-2 border-t border-[#1e1735]/50 font-mono text-[9.5px] text-[#64748b]">
         <span>socials {creator?.profileLinks?.length ? <span className="text-emerald-400">{creator.profileLinks.length}</span> : <span className="text-[#4a5568]">none</span>}</span>
         <span>reputation <span className={repColor}>{rep.toFixed(1)}</span></span>
+        {hasHistory && <span>history <span className="text-[#c4b5fd]">{launchCount}</span> launches</span>}
         <SourceBadge value={creatorSource} />
       </div>
     </div>

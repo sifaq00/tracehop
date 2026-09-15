@@ -431,6 +431,37 @@ async function performInlineScan(
       }
       const rules = JSON.parse(fs.readFileSync(rulesPath, 'utf-8'));
 
+      // Fetch real deployer stats from Blockscout
+      let creatorPriorLaunches = 0;
+      let creatorDied = 0;
+      let creatorReputationScore = 0.5;
+      try {
+        const stats = await Promise.race([
+          explorer.getDeployerStats(creator),
+          new Promise<{ txCount: number; contractsCreated: number; firstTxTimestamp: number | null }>((resolve) => setTimeout(() => resolve({ txCount: 0, contractsCreated: 0, firstTxTimestamp: null }), 8000)),
+        ]);
+        creatorPriorLaunches = stats.contractsCreated;
+        // Query DB for prior outcomes of this deployer
+        try {
+          const { data: priorScans } = await supabase
+            .from('predictions')
+            .select('verdict, subclass')
+            .eq('wallet', creator)
+            .limit(20);
+          if (priorScans && priorScans.length > 0) {
+            creatorDied = priorScans.filter((p: any) => p.verdict === 'CAP').length;
+          }
+        } catch { /* no prior scans yet */ }
+        // Reputation: based on contracts created + died ratio
+        if (creatorPriorLaunches > 0) {
+          const survivalRate = 1 - (creatorDied / creatorPriorLaunches);
+          creatorReputationScore = Math.round(survivalRate * 100) / 100;
+        }
+        console.log(`[DEPLOYER] ${creator}: ${creatorPriorLaunches} prior launches, ${creatorDied} died, rep=${creatorReputationScore}`);
+      } catch (e) {
+        console.warn(`[DEPLOYER] Failed to fetch stats for ${creator}:`, e);
+      }
+
       const controlSurface = {
         powers: [
           { power: 'pause', holder: creator, severity: 'medium', evidence: 'paused modifier' }
@@ -440,9 +471,9 @@ async function performInlineScan(
 
       const launchContext = {
         launchSource: 'hoodfun',
-        creatorPriorLaunches: 0,
-        creatorDied: 0,
-        creatorReputationScore: 0.5
+        creatorPriorLaunches,
+        creatorDied,
+        creatorReputationScore
       };
 
       const holderCount = Number(tokenInfo?.holders_count ?? tokenInfo?.holders ?? 0);

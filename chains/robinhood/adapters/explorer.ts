@@ -111,4 +111,41 @@ export class BlockscoutExplorerAdapter implements ExplorerAdapter {
       return false;
     }
   }
+
+  async getDeployerStats(address: string): Promise<{ txCount: number; contractsCreated: number; firstTxTimestamp: number | null }> {
+    let txCount = 0;
+    let contractsCreated = 0;
+    let firstTxTimestamp: number | null = null;
+    try {
+      const res = await fetch(`${this.apiBase}/addresses/${address}/internal-transactions?filter=create`, {
+        signal: AbortSignal.timeout(8000),
+        headers: UA_HEADERS,
+      });
+      if (res.ok) {
+        const json = await res.json() as any;
+        const items = json.items || [];
+        contractsCreated = items.length;
+        if (items.length > 0) {
+          const oldest = items[items.length - 1];
+          if (oldest.timestamp) firstTxTimestamp = new Date(oldest.timestamp).getTime();
+          else if (oldest.block_number) firstTxTimestamp = oldest.block_number;
+        }
+      }
+    } catch { /* fallback */ }
+    try {
+      const res = await fetch(`${this.apiBase}/addresses/${address}/transactions?filter=to`, {
+        signal: AbortSignal.timeout(8000),
+        headers: UA_HEADERS,
+      });
+      if (res.ok) {
+        const json = await res.json() as any;
+        txCount = (json.items || []).length;
+        if (!firstTxTimestamp && json.items?.length > 0) {
+          const oldest = json.items[json.items.length - 1];
+          if (oldest.timestamp) firstTxTimestamp = new Date(oldest.timestamp).getTime();
+        }
+      }
+    } catch { /* fallback */ }
+    return { txCount, contractsCreated, firstTxTimestamp };
+  }
 }
