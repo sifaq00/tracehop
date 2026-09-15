@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       if (data === 'action:scan') {
         await sendTelegramMessage(chatId, 'Paste a token contract address (EVM 0x or Solana).');
       } else if (data === 'action:wallet') {
-        await sendTelegramMessage(chatId, '👛 <b>Wallet Analysis</b>\n\nPaste a Solana wallet address to analyze its history and creator associations.');
+        await sendTelegramMessage(chatId, '👛 <b>Wallet Analysis</b>\n\nPaste a wallet address (EVM 0x or Solana) to analyze its history and creator associations.');
       } else if (data === 'action:history') {
         await sendHistory(chatId);
       } else if (data === 'action:settings') {
