@@ -707,7 +707,7 @@ export function Demo({ registerScanner }: DemoProps) {
             const isCap = liveResult.verdict === 'CAP';
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks
             const lr = liveResult as any;
-            const risk = Math.round((liveResult.uaim?.score?.value ?? 0));
+            const risk = Math.round(((lr.uaim as any)?.score?.value ?? 0));
             const conf = Math.round((liveResult.confidence || 0) * 100);
             const accent = isCap ? '#fb7185' : '#34d399';
             const meta = lr.meta ?? {};
