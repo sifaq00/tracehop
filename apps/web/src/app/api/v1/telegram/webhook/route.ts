@@ -194,6 +194,12 @@ export async function POST(request: NextRequest) {
       return new Response(JSON.stringify({ ok: true }));
     }
 
+    // Wallet command
+    if (text === '/wallet') {
+      await sendTelegramMessage(chatId, '👛 <b>Wallet Analysis</b>\n\nPaste a wallet address (EVM 0x or Solana) to analyze its history and creator associations.');
+      return new Response(JSON.stringify({ ok: true }));
+    }
+
     // 3. Check if text is a valid token address (Solana Base58 OR EVM 0x)
     const evmMintRegex = /^0x[0-9a-fA-F]{40}$/;
     const solMintRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
