@@ -159,12 +159,8 @@ export function Cta() {
             </p>
 
             {/* Pricing strip: real gating, no surprises */}
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mb-8 font-mono text-[11px] sm:text-xs">
-              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">3 FREE SCANS</span>
-              <span className="text-[#475569]">→</span>
-              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">OR HOLD {fmtThreshold()}+ $ARDRILL</span>
-              <span className="text-[#475569]">→</span>
-              <span className="px-3 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">HOLD {fmtThreshold()}+ $ARDRILL = UNLIMITED</span>
+            <div className="mb-8 font-mono text-[11px] sm:text-xs whitespace-nowrap">
+              <span className="px-4 py-1.5 rounded-lg bg-[#120d2b] border border-[#2e215c] text-[#c4b5fd]">3 FREE SCANS → HOLD {fmtThreshold()}+ $ARDRILL = UNLIMITED</span>
             </div>
 
             {/* Action Buttons */}
