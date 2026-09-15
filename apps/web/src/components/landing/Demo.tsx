@@ -707,7 +707,8 @@ export function Demo({ registerScanner }: DemoProps) {
             const isCap = liveResult.verdict === 'CAP';
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- liveResult untyped SSE payload, narrowed via ?? fallbacks
             const lr = liveResult as any;
-            const risk = Math.round((liveResult.confidence || 0) * 100);
+            const risk = Math.round((liveResult.uaim?.score?.value ?? 0));
+            const conf = Math.round((liveResult.confidence || 0) * 100);
             const accent = isCap ? '#fb7185' : '#34d399';
             const meta = lr.meta ?? {};
             const mintAddr: string = meta.mint ?? selectedToken.mint;
@@ -772,12 +773,12 @@ export function Demo({ registerScanner }: DemoProps) {
                   {/* Metrics grid */}
                   <div className="grid grid-cols-2 gap-2 mb-4">
                     <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
-                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Risk Score</p>
+                      <p className="font-mono text-[8px] text-[#64748b] uppercase tracking-wider mb-1">Confidence</p>
                       <div className="flex items-center gap-2">
                         <div className="w-12 h-1.5 rounded-full bg-[#1a1333] overflow-hidden">
-                          <div className={`h-full rounded-full ${risk > 60 ? 'bg-rose-500' : risk > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${risk}%` }} />
+                          <div className={`h-full rounded-full ${conf >= 70 ? 'bg-emerald-500' : conf >= 40 ? 'bg-amber-500' : 'bg-rose-500'}`} style={{ width: `${conf}%` }} />
                         </div>
-                        <span className={`text-sm font-bold font-mono ${risk > 60 ? 'text-rose-400' : risk > 30 ? 'text-amber-400' : 'text-emerald-400'}`}>{risk}%</span>
+                        <span className={`text-sm font-bold font-mono ${conf >= 70 ? 'text-emerald-400' : conf >= 40 ? 'text-amber-400' : 'text-rose-400'}`}>{conf}%</span>
                       </div>
                     </div>
                     <div className="px-3 py-2.5 rounded-lg bg-[#0c0a1a] border border-[#1e1735]/50">
