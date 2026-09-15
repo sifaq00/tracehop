@@ -185,7 +185,7 @@ export function Demo({ registerScanner }: DemoProps) {
       if (res.status === 402) {
         let parsed: PaywallData = {
           error: 'ANON_EXHAUSTED',
-          message: `Free scans exhausted (${gateStatus?.anonUsed ?? 0}/${(gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`,
+          message: `Free scans exhausted (${gateStatus?.anonUsed ?? 0}/${(gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(gateStatus?.required)}+ $ARDRILL on Robinhood Chain to continue scanning.`,
           required: gateStatus?.required ?? envThreshold,
           current: '0',
           symbol: 'ARDRILL',
@@ -451,7 +451,7 @@ export function Demo({ registerScanner }: DemoProps) {
               Interrogate <span className="text-[#a855f7] italic">any token.</span> Instantly.
             </h2>
             <p className="text-[#94a3b8] text-sm sm:text-base mb-6 leading-relaxed max-w-xl">
-              Paste a mint address. Tracehop will reveal what others try to hide. {gateStatus ? gateStatus.anonUsed + gateStatus.anonRemaining : (Number.isFinite(envFreeTotal) ? envFreeTotal : '')} free anonymous scans daily, or hold {fmtThreshold(gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain for unlimited access.
+              Paste a mint address. Tracehop will reveal what others try to hide. {gateStatus ? gateStatus.anonUsed + gateStatus.anonRemaining : (Number.isFinite(envFreeTotal) ? envFreeTotal : '')} free anonymous scans daily, or hold {fmtThreshold(gateStatus?.required)}+ $ARDRILL on Robinhood Chain for unlimited access.
             </p>
 
             {/* Search Input Bar */}
@@ -632,9 +632,9 @@ export function Demo({ registerScanner }: DemoProps) {
 
                       <p className="text-[#cbd5e1] text-[11.5px] leading-relaxed mb-3">
                         {paywallData.error === 'ANON_EXHAUSTED' || paywallData.reason === 'anon_exhausted'
-                          ? `Free scans exhausted (${paywallData.used ?? gateStatus?.anonUsed ?? 0}/${paywallData.total ?? (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(paywallData.required ?? gateStatus?.required)}+ $TRCHP ($ARDRILL) on Robinhood Chain to continue scanning.`
+                          ? `Free scans exhausted (${paywallData.used ?? gateStatus?.anonUsed ?? 0}/${paywallData.total ?? (gateStatus?.anonUsed ?? 0) + (gateStatus?.anonRemaining ?? 0)}). Connect an EVM wallet holding ${fmtThreshold(paywallData.required ?? gateStatus?.required)}+ $ARDRILL on Robinhood Chain to continue scanning.`
                           : paywallData.error === 'HOLD_REQUIRED' || paywallData.reason === 'insufficient_hold'
-                          ? `Insufficient $TRCHP balance. Required: ${fmtThreshold(paywallData.required)}. Current: ${paywallData.current}.`
+                          ? `Insufficient $ARDRILL balance. Required: ${fmtThreshold(paywallData.required)}. Current: ${paywallData.current}.`
                           : paywallData.message}
                       </p>
 

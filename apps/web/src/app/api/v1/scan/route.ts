@@ -1005,7 +1005,7 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
     return new Response(JSON.stringify({ error: 'Missing mint address' }), { status: 400 });
   }
 
-  // Evaluate Robinhood Chain gating (free anonymous scans daily per IP or TRCHP (ARDRILL) hold)
+  // Evaluate Robinhood Chain gating (free anonymous scans daily per IP or ARDRILL hold)
   const decision = await evaluateGating(userWallet, clientIp);
   if (!decision.allowed) {
     const anonUsed = decision.used ?? 0;
@@ -1020,10 +1020,10 @@ export async function handleScan(mint: string | null, stream: boolean, userWalle
             : 'HOLD_REQUIRED',
         message:
           decision.reason === 'anon_exhausted'
-            ? `Free anonymous scans exhausted (${anonUsed}/${anonTotal}). Connect wallet with ${HOLD_CONFIG.threshold.toLocaleString('en-US')}+ TRCHP (ARDRILL) on Robinhood Chain to continue.`
+            ? `Free anonymous scans exhausted (${anonUsed}/${anonTotal}). Connect wallet with ${HOLD_CONFIG.threshold.toLocaleString('en-US')}+ $${HOLD_CONFIG.tokenSymbol} on ${HOLD_CONFIG.chainName} Chain to continue.`
             : decision.reason === 'invalid_wallet'
             ? 'Invalid EVM wallet address. Must be 0x followed by 40 hex characters.'
-            : `Wallet holds insufficient TRCHP (ARDRILL). Required: ${HOLD_CONFIG.threshold.toLocaleString('en-US')}. Current: ${decision.formattedBalance || '0'}.`,
+            : `Wallet holds insufficient $${HOLD_CONFIG.tokenSymbol}. Required: ${HOLD_CONFIG.threshold.toLocaleString('en-US')}. Current: ${decision.formattedBalance || '0'}.`,
         required: HOLD_CONFIG.threshold,
         current: decision.formattedBalance || '0',
         symbol: HOLD_CONFIG.tokenSymbol,
