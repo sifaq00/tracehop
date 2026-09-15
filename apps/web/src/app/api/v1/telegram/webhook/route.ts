@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
             `Estimated time: 20–60 seconds.`
           );
           try {
-            const response = await handleScan(targetAddress, false, null, '127.0.0.1');
+            const response = await handleScan(targetAddress, false, null, `tg_${chatId}`);
             const result = await response.json();
             if (result.error) {
               await sendTelegramMessage(chatId, `❌ <b>Scan Failed</b>\n${result.message || result.error}`);
@@ -300,7 +300,7 @@ export async function POST(request: NextRequest) {
 
         try {
           const scanWallet = /^0x[0-9a-fA-F]{40}$/.test(userWallet) ? userWallet : null;
-          const response = await handleScan(targetAddress, false, scanWallet, '127.0.0.1');
+          const response = await handleScan(targetAddress, false, scanWallet, `tg_${chatId}`);
           const result = await response.json();
 
           if (result.error) {
