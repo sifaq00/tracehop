@@ -75,7 +75,7 @@ export function computeFeatures(ctx: FeatureEvaluationContext): ComputedFeatures
   const parentGroups: Record<string, number> = {};
   for (const t of ctx.trades) {
     const funding = ctx.fundingSources[t.trader];
-    if (funding && funding.funder && funding.funderType !== 'cex') {
+    if (funding && funding.funder && funding.funder !== 'unknown' && funding.funderType !== 'cex') {
       parentGroups[funding.funder] = (parentGroups[funding.funder] || 0) + 1;
     }
   }

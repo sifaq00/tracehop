@@ -6,7 +6,7 @@ export interface TradePoint { trader: string; solAmount: number; slot: number; }
 interface Props {
   uaim: any;
   trades: TradePoint[];
-  meta: { mint: string; regime: string; tradesSource?: string; fundingSource?: string; creatorSource?: string };
+  meta: { mint: string; chain?: string; regime: string; tradesSource?: string; fundingSource?: string; creatorSource?: string };
 }
 
 function short(addr: string): string {
@@ -113,7 +113,7 @@ function FundingGraph({ uaim, source }: { uaim: any; source?: string }) {
   );
 }
 
-function Uniformity({ uaim, trades, source }: { uaim: any; trades: TradePoint[]; source?: string }) {
+function Uniformity({ uaim, trades, source, unit }: { uaim: any; trades: TradePoint[]; source?: string; unit: string }) {
   const list = trades ?? [];
   if (list.length === 0) return <p className="font-mono text-[11px] text-[#64748b]">no data</p>;
   const maxBuy = Math.max(0.0001, ...list.map((t) => t.solAmount));
@@ -127,7 +127,7 @@ function Uniformity({ uaim, trades, source }: { uaim: any; trades: TradePoint[];
             return (
               <div
                 key={`${t.trader}-${i}`}
-                title={`${t.trader} · ${t.solAmount.toFixed(4)} SOL · slot ${t.slot}`}
+                title={`${t.trader} · ${t.solAmount.toFixed(4)} ${unit} · slot ${t.slot}`}
                 className={`flex-1 max-w-[40px] rounded-t-[3px] ${whale ? 'bg-gradient-to-t from-amber-600 to-amber-300' : 'bg-gradient-to-t from-emerald-700 to-emerald-300'}`}
                 style={{ height: `${h}%` }}
               />
@@ -157,7 +157,7 @@ export function ScanReport({ uaim, trades, meta }: Props) {
         <FundingGraph uaim={uaim} source={meta.fundingSource} />
       </Panel>
       <Panel title="Launch buy uniformity" open={open.uniformity} onToggle={() => toggle('uniformity')}>
-        <Uniformity uaim={uaim} trades={trades} source={meta.tradesSource} />
+        <Uniformity uaim={uaim} trades={trades} source={meta.tradesSource} unit={meta.chain === 'evm' ? 'tokens' : 'SOL'} />
       </Panel>
       <Panel title="Deployer profile history" open={open.deployer} onToggle={() => toggle('deployer')}>
         <div className="flex items-center gap-4 font-mono">

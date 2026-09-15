@@ -82,16 +82,20 @@ export function mapSolanaContextToUAIM(ctx: FeatureEvaluationContext): UAIMDocum
       freshWalletRatio: features.fresh_wallet_ratio
     },
     fundingGraph: {
-      nodes: Object.keys(ctx.fundingSources).map(addr => ({
-        address: addr,
-        type: ctx.fundingSources[addr].funderType === 'cex' ? 'cex' : 'eoa'
-      })),
-      edges: Object.keys(ctx.fundingSources).map(addr => ({
-        from: ctx.fundingSources[addr].funder,
-        to: addr,
-        amount: 0,
-        timestamp: Date.now() - ctx.fundingSources[addr].timeToLaunchMs
-      }))
+      nodes: Object.keys(ctx.fundingSources)
+        .filter(addr => ctx.fundingSources[addr].funder !== 'unknown')
+        .map(addr => ({
+          address: addr,
+          type: ctx.fundingSources[addr].funderType === 'cex' ? 'cex' : 'eoa'
+        })),
+      edges: Object.keys(ctx.fundingSources)
+        .filter(addr => ctx.fundingSources[addr].funder !== 'unknown')
+        .map(addr => ({
+          from: ctx.fundingSources[addr].funder,
+          to: addr,
+          amount: 0,
+          timestamp: Date.now() - ctx.fundingSources[addr].timeToLaunchMs
+        }))
     },
     market: {
       price: 0,

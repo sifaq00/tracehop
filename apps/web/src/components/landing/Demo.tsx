@@ -67,7 +67,7 @@ export function Demo({ registerScanner }: DemoProps) {
   const [visibleLogs, setVisibleLogs] = useState<string[]>([]);
   const [showVerdict, setShowVerdict] = useState(false);
   // ponytail: live API result, not preset mock
-  const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[]; verdictLevel?: string } | null>(null);
+  const [liveResult, setLiveResult] = useState<{ verdict: string; confidence: number; subclass: string; reasons: { code: string; text: string }[]; verdictLevel?: string; meta?: { chain?: string } } | null>(null);
   const [scanMs, setScanMs] = useState<number | null>(null);
   const scanStartRef = useRef<number>(0);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -563,7 +563,7 @@ export function Demo({ registerScanner }: DemoProps) {
                     </div>
                     <div className="flex items-center gap-2 font-mono text-[10px]">
                       <span className="text-[#64748b]">NETWORK:</span>
-                      <span className="text-[#c4b5fd] font-semibold uppercase">{gateStatus?.chain || 'MULTI-CHAIN'}</span>
+                      <span className="text-[#c4b5fd] font-semibold uppercase">{liveResult?.meta?.chain || gateStatus?.chain || 'MULTI-CHAIN'}</span>
                     </div>
                   </div>
 

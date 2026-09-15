@@ -163,11 +163,8 @@ async function traceFundingParent(address: string, creator: string): Promise<{ f
     }
   }
 
-  // Fallback mocks for sandbox demo compatibility
-  if (address.startsWith('3mVc') || address.startsWith('Fh2s')) {
-    return { funder: '7xKpA2q93oWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71', funderType: 'deployer' };
-  }
-  return { funder: '5nGaJJ3tWpL4sKmZrT5eYpWqFvNuXyL7zK9aA71pW', funderType: 'cex' };
+  // Unknown when untraceable — never invent a shared parent (that fabricates clusters)
+  return { funder: 'unknown', funderType: 'unknown' };
 }
 
 // ponytail: real creator = fee payer of mint oldest tx, not hardcoded seed
@@ -580,7 +577,7 @@ async function performInlineScan(
         features,
         uaim: scoredUaim,
         trades: evmTrades,
-        meta: { mint, regime: 'REGIME W14', tradesSource, fundingSource, creatorSource },
+        meta: { mint, chain: 'evm', regime: 'REGIME W14', tradesSource, fundingSource, creatorSource },
       })}\n\n`));
       return;
     }
@@ -714,7 +711,7 @@ async function performInlineScan(
     const parentGroups: Record<string, string[]> = {};
     for (const t of finalTrades) {
       const parent = fundingSources[t.trader]?.funder;
-      if (parent) {
+      if (parent && parent !== 'unknown') {
         if (!parentGroups[parent]) parentGroups[parent] = [];
         parentGroups[parent].push(t.trader);
       }
@@ -861,7 +858,7 @@ async function performInlineScan(
       features,
       uaim,
       trades: finalTrades.slice(0, 20).map((t) => ({ trader: t.trader, solAmount: t.solAmount, slot: t.slot })),
-        meta: { mint, regime: regime.regimeVersion, tradesSource: solTradesSource, fundingSource: solTradesSource === 'mock' ? 'mock' : 'solana-rpc', creatorSource: 'solana-rpc' },
+        meta: { mint, chain: 'solana', regime: regime.regimeVersion, tradesSource: solTradesSource, fundingSource: solTradesSource === 'mock' ? 'mock' : 'solana-rpc', creatorSource: 'solana-rpc' },
     })}\n\n`));
 
   } catch (err: any) {
